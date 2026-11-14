@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyecto CLIMATE — Sistema Híbrido de Proyección Climática y Alerta Temprana (Gran Chaco)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            space: {
+              950: '#060913',
+              900: '#0B0F19',
+              850: '#0F172A',
+              800: '#1E293B',
+              700: '#334155'
+            },
+            climate: {
+              green: '#10B981',
+              yellow: '#F59E0B',
+              orange: '#F97316',
+              red: '#EF4444',
+              cyan: '#06B6D4',
+              blue: '#3B82F6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- MapLibre GL JS & CSS (Open-Source, 100% compatible con Mapbox GL JS, sin restricciones de token) -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <script>
+    // Mapbox GL JS compatibility shim
+    if (window.maplibregl && !window.mapboxgl) {
+      window.mapboxgl = window.maplibregl;
+    }
+  </script>
+
+  <!-- Chart.js for Quantiles & SHAP -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Pulse animations for Sentinel Node */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.6); opacity: 0.9; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+    .sentinel-pulse {
+      position: relative;
+    }
+    .sentinel-pulse::before {
+      content: '';
+      position: absolute;
+      top: -8px; left: -8px; right: -8px; bottom: -8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.55);
+    }
+
+    /* Mapbox / Maplibre popup styling */
+    .maplibregl-popup-content, .mapboxgl-popup-content {
+      background: #0F172A !important;
+      color: #F8FAFC !important;
+      border: 1px solid #334155 !important;
+      border-radius: 12px !important;
+      padding: 12px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7) !important;
+    }
+    .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+    .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+      border-bottom-color: #0F172A !important;
+    }
+    .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+    .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+      border-top-color: #0F172A !important;
+    }
+    .maplibregl-popup-close-button, .mapboxgl-popup-close-button {
+      color: #94A3B8 !important;
+      font-size: 16px !important;
+      padding: 4px 8px !important;
+    }
+  </style>
+</head>
+
+<body class="bg-space-950 text-slate-100 min-h-screen flex flex-col font-sans select-none antialiased overflow-hidden">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="h-16 border-b border-space-800 bg-space-900/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-30">
+    <!-- Brand / Title -->
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-950/50">
+        <i data-lucide="satellite" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-lg">PROYECTO CLIMATE</span>
+          <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">NASA Space Apps 2026</span>
+        </div>
+        <p class="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+          <span>Sistema Híbrido de Proyección & Alerta</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-300">Gran Chaco Americano</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Sentinel Site Quick Status Pill -->
+    <div class="hidden lg:flex items-center space-x-4 bg-space-950/70 border border-space-800 rounded-xl px-3 py-1.5">
+      <div class="flex items-center space-x-2">
+        <span class="relative flex h-3 w-3">
+          <span id="header-pulse-beacon" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span id="header-pulse-dot" class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+        </span>
+        <div class="text-xs">
+          <span class="text-slate-400 font-mono">Sitio Centinela:</span>
+          <span class="font-semibold text-slate-200">Quimilí, Sgo. del Estero</span>
+          <span class="text-[11px] font-mono text-cyan-400">(-28.64°, -62.42°)</span>
+        </div>
+      </div>
+      <div class="h-4 w-px bg-space-800"></div>
+      <div id="header-alert-badge" class="px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
+        ALERTA ROJA: SEQUÍA SEVERA
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center space-x-2">
+      <!-- Google Earth Engine Status & Config Button -->
+      <button id="btn-modal-gee" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-slate-200 border border-emerald-500/40 shadow-sm transition" title="Configurar Google Earth Engine">
+        <span id="gee-indicator-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="font-mono text-[11px] font-semibold text-emerald-300">Earth Engine (GEE)</span>
+      </button>
+
+      <!-- Map Style Selector -->
+      <div class="flex items-center bg-space-950 border border-space-700/80 rounded-lg p-0.5">
+        <button id="btn-style-dark" class="px-2.5 py-1 rounded-md text-xs font-medium bg-space-800 text-cyan-300 transition">Oscuro</button>
+        <button id="btn-style-sat" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition">Satélite</button>
+        <button id="btn-style-osm" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition">Calles (OSM)</button>
+      </div>
+
+      <!-- Ficha Técnica & Ecuaciones Modal Trigger -->
+      <button id="btn-modal-docs" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-slate-200 border border-space-700 transition">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400"></i>
+        <span>Ficha Técnica</span>
+      </button>
+
+      <!-- Export Report -->
+      <button id="btn-export-report" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition">
+        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+        <span>Reporte Crisis</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSPACE ================= -->
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+    <!-- LEFT / CENTER AREA: MAP + CONTROLS + TIMELINE -->
+    <div class="flex-1 flex flex-col relative h-[55vh] md:h-auto border-r border-space-800">
+      
+      <!-- Top Overlay on Map: Layer Switcher & Recenter -->
+      <div class="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        
+        <!-- Active Layer Switcher (Pointer events auto) -->
+        <div class="pointer-events-auto flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
+          <span class="text-[11px] font-mono text-slate-400 px-2.5 flex items-center gap-1">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> Capa Satelital:
+          </span>
+          <button data-layer="spi" class="layer-btn active px-3 py-1 rounded-lg text-xs font-medium bg-cyan-600 text-white transition">
+            SPI Sequía
+          </button>
+          <button data-layer="gwetroot" class="layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
+            Humedad Radicular (SMAP)
+          </button>
+          <button data-layer="ndvi" class="layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
+            Biomasa NDVI (MODIS)
+          </button>
+          <button data-layer="flood" class="layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
+            Riesgo Anegamiento
+          </button>
+        </div>
+
+        <!-- Recenter on Quimilí -->
+        <div class="pointer-events-auto flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
+          <button id="btn-recenter" class="px-3 py-1 rounded-lg text-xs font-mono text-slate-200 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition" title="Centrar en Quimilí">
+            <i data-lucide="crosshair" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Enfocar Quimilí</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- MAP CONTAINER -->
+      <div id="map" class="w-full flex-1 bg-space-950 relative"></div>
+
+      <!-- MAP LEGEND (Bottom-Right over Map) -->
+      <div id="map-legend" class="absolute bottom-24 right-3 z-10 glass-panel rounded-xl p-2.5 shadow-xl text-xs max-w-[210px]">
+        <div class="font-semibold text-slate-200 mb-1.5 flex items-center justify-between">
+          <span id="legend-title">Escala SPI (Sequía)</span>
+          <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
+        </div>
+        <div id="legend-gradient" class="h-2.5 w-full rounded-sm mb-1" style="background: linear-gradient(to right, #7F1D1D, #EF4444, #F59E0B, #E2E8F0, #3B82F6, #1E40AF);"></div>
+        <div id="legend-labels" class="flex justify-between text-[10px] font-mono text-slate-400">
+          <span>&le; -2.0 (Extrema)</span>
+          <span>0 (Normal)</span>
+          <span>&ge; +2.0</span>
+        </div>
+      </div>
+
+      <!-- ================= TIMELINE SCRUBBER & SIMULATION BAR ================= -->
+      <div class="h-20 bg-space-900/95 border-t border-space-800 px-4 flex flex-col justify-center shrink-0 z-20">
+        
+        <!-- Timeline Controls Row -->
+        <div class="flex items-center justify-between mb-1.5">
+          <!-- Play / Pause / Step Controls -->
+          <div class="flex items-center space-x-2">
+            <button id="btn-play-pause" class="w-8 h-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition shadow-md shadow-cyan-900/30" title="Reproducir Simulación">
+              <i id="play-icon" data-lucide="play" class="w-4 h-4 fill-current"></i>
+            </button>
+            <button id="btn-prev-step" class="w-7 h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Anterior">
+              <i data-lucide="skip-back" class="w-3.5 h-3.5"></i>
+            </button>
+            <button id="btn-next-step" class="w-7 h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Siguiente">
+              <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="text-xs font-mono text-slate-400 pl-1">Paso temporal:</span>
+            <span id="timeline-step-label" class="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded-md">
+              t0 (Noviembre 2026 - HOY)
+            </span>
+          </div>
+
+          <!-- Timeline Phase Legend -->
+          <div class="flex items-center space-x-4 text-xs font-mono">
+            <div class="flex items-center space-x-1.5 text-slate-400">
+              <span class="w-2.5 h-2.5 rounded-sm bg-slate-600"></span>
+              <span>Histórico Satelital (t-6 a t-1)</span>
+            </div>
+            <div class="flex items-center space-x-1.5 text-cyan-400">
+              <span class="w-2.5 h-2.5 rounded-sm bg-cyan-500 animate-pulse"></span>
+              <span>Proyección Híbrida IA (t+1 a t+6)</span>
+            </div>
+            <!-- Speed Selector -->
+            <div class="flex items-center bg-space-950 border border-space-800 rounded-lg p-0.5">
+              <button data-speed="1" class="speed-btn active px-2 py-0.5 rounded text-[11px] font-mono text-cyan-400 bg-space-800">1x</button>
+              <button data-speed="2" class="speed-btn px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 hover:text-white">2x</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slider Bar with Tick Marks -->
+        <div class="relative flex items-center">
+          <input id="timeline-slider" type="range" min="0" max="12" value="6" step="1" 
+                 class="w-full h-2 bg-space-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 focus:outline-none">
+        </div>
+        <div id="timeline-ticks" class="flex justify-between text-[10px] font-mono text-slate-400 mt-1 px-1">
+          <!-- Populated by JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDEBAR: NASA TELEMETRY, ML HYBRID ENGINE, SHAP & CRISIS ACTIONS -->
+    <div class="w-full md:w-[460px] lg:w-[500px] bg-space-900 flex flex-col shrink-0 overflow-y-auto border-l border-space-800 divide-y divide-space-800">
+      
+      <!-- ================= CARD 1: NIVEL 2 MOTOR DE ALERTA & SITIO CENTINELA ================= -->
+      <div class="p-4 bg-gradient-to-b from-space-850 to-space-900">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
+            Nivel 2: Motor de Alerta Categórica
+          </span>
+          <span class="text-[11px] font-mono text-slate-400">Random Forest Classifier</span>
+        </div>
+
+        <div id="alert-card" class="rounded-xl border p-3.5 bg-red-950/30 border-red-500/40 transition-all">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <span id="alert-icon-box" class="w-9 h-9 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-lg">
+                ⚠️
+              </span>
+              <div>
+                <h3 id="alert-title" class="font-bold text-red-400 text-sm tracking-wide">ALERTA ROJA: SEQUÍA SEVERA</h3>
+                <p id="alert-subtitle" class="text-xs text-red-300/80">Quimilí • Índice SPI &le; -1.62 • Estrés radicular crítico</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] font-mono text-slate-400">Confianza RF</div>
+              <div id="alert-confidence" class="text-sm font-bold font-mono text-red-300">94.8%</div>
+            </div>
+          </div>
+
+          <!-- Alert Level Pill Bar -->
+          <div class="grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-red-500/20 text-center font-mono text-[10px]">
+            <div id="pill-verde" class="py-1 rounded bg-space-800 text-slate-500">VERDE</div>
+            <div id="pill-amarillo" class="py-1 rounded bg-space-800 text-slate-500">AMARILLO</div>
+            <div id="pill-naranja" class="py-1 rounded bg-space-800 text-slate-500">NARANJA</div>
+            <div id="pill-rojo" class="py-1 rounded bg-red-500 text-white font-bold shadow-lg shadow-red-950">ROJO</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= CARD 2: TELEMETRÍA SATELITAL ACOPLADA ================= -->
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="satellite" class="w-4 h-4 text-cyan-400"></i>
+            Telemetría Satelital Acoplada
+          </span>
+          <span class="text-[11px] font-mono text-cyan-400">Quimilí (-28.64, -62.42)</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <!-- GPM IMERG Precipitation -->
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+              <span>GPM IMERG</span>
+              <i data-lucide="cloud-rain" class="w-3.5 h-3.5 text-blue-400"></i>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span id="metric-precip" class="text-lg font-bold font-mono text-white">18.4</span>
+              <span class="text-[10px] font-mono text-slate-400">mm/mes</span>
+            </div>
+            <div id="metric-precip-anom" class="text-[10px] font-mono text-red-400 mt-0.5">-62% vs climatología (μ)</div>
+          </div>
+
+          <!-- SMAP Root Moisture -->
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+              <span>SMAP / GLDAS</span>
+              <i data-lucide="droplet" class="w-3.5 h-3.5 text-cyan-400"></i>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span id="metric-gwetroot" class="text-lg font-bold font-mono text-white">0.14</span>
+              <span class="text-[10px] font-mono text-slate-400">GWETROOT</span>
+            </div>
+            <div id="metric-gwetroot-anom" class="text-[10px] font-mono text-red-400 mt-0.5">Z-score: -2.15 σ</div>
+          </div>
+
+          <!-- MODIS NDVI -->
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+              <span>MODIS Terra/Aqua</span>
+              <i data-lucide="leaf" class="w-3.5 h-3.5 text-emerald-400"></i>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span id="metric-ndvi" class="text-lg font-bold font-mono text-white">0.24</span>
+              <span class="text-[10px] font-mono text-slate-400">NDVI (MOD13C2)</span>
+            </div>
+            <div id="metric-ndvi-anom" class="text-[10px] font-mono text-amber-400 mt-0.5">Estrés fotosintético severo</div>
+          </div>
+
+          <!-- NOAA Oceanic Niño Index -->
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+              <span>NOAA CPC (ENSO)</span>
+              <i data-lucide="waves" class="w-3.5 h-3.5 text-purple-400"></i>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span id="metric-oni" class="text-lg font-bold font-mono text-white">+1.65</span>
+              <span class="text-[10px] font-mono text-slate-400">Índice ONI</span>
+            </div>
+            <div class="text-[10px] font-mono text-purple-400 mt-0.5">Fase "El Niño" Moderada/Fuerte</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= CARD 3: NIVEL 1 PROYECCIÓN CONTINUA (LightGBM p10-p90) ================= -->
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i>
+              Nivel 1: Proyección Continua Multivariable
+            </span>
+            <span class="text-[11px] text-slate-400">LightGBM con regresión cuantílica (Incertidumbre p10 - p90)</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800">SPI 3 Meses</span>
+        </div>
+
+        <div class="h-44 w-full bg-space-850 rounded-xl p-2 border border-space-800 relative">
+          <canvas id="chart-projection"></canvas>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-mono text-slate-400 mt-1.5 px-1">
+          <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-slate-300 inline-block"></span> Observado</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-cyan-400 inline-block"></span> Mediana p50</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-2 bg-cyan-500/20 border border-cyan-500/40 inline-block rounded-xs"></span> Intervalo [p10, p90]</span>
+        </div>
+      </div>
+
+      <!-- ================= CARD 4: EXPLICABILIDAD SHAP (SHapley Additive exPlanations) ================= -->
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="brain-circuit" class="w-4 h-4 text-purple-400"></i>
+              Explicabilidad del Modelo (Valores SHAP)
+            </span>
+            <span class="text-[11px] text-slate-400">¿Qué variables detonaron la Alerta?</span>
+          </div>
+          <span class="text-[10px] font-mono text-purple-400">Contribución al Riesgo</span>
+        </div>
+
+        <div class="h-36 w-full bg-space-850 rounded-xl p-2 border border-space-800 relative">
+          <canvas id="chart-shap"></canvas>
+        </div>
+        <p id="shap-summary-text" class="text-xs text-slate-300 font-mono mt-2 bg-space-950/70 p-2 rounded-lg border border-space-800">
+          👉 La combinación del <b class="text-purple-300">Índice ONI (+0.38)</b> y la <b class="text-cyan-300">Caída de Humedad Radicular (-0.29)</b> explican el 67% del salto a Alerta Roja.
+        </p>
+      </div>
+
+      <!-- ================= CARD 5: ACCIONABILIDAD (DE LA TELEMETRÍA A LA DECISIÓN) ================= -->
+      <div class="p-4 bg-space-950/50">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+            Accionabilidad: Recomendaciones Computadas
+          </span>
+          <span class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Tiempo Real
+          </span>
+        </div>
+
+        <div id="actions-container" class="space-y-2">
+          <!-- Populated dynamically based on alert -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ================= MODAL: GOOGLE EARTH ENGINE (GEE) ================= -->
+  <div id="modal-gee" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-space-900 border border-space-700 w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-space-800 flex items-center justify-between bg-space-850">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <i data-lucide="globe" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white">Google Earth Engine (GEE) Hub</h2>
+            <p class="text-[11px] font-mono text-emerald-400">Ingesta y Telemetría Satelital de Misiones NASA en Vivo</p>
+          </div>
+        </div>
+        <button id="btn-close-gee" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-space-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Content (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-5 text-xs text-slate-300">
+        
+        <!-- Connection Status Banner -->
+        <div class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div>
+              <div class="font-bold text-slate-100 text-xs">Módulo GEE Activo</div>
+              <p class="text-[11px] text-slate-400">Sitio Centinela: Quimilí (-28.64°, -62.42°) • Muestreo continuo por píxel</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            DISPONIBLE
+          </span>
+        </div>
+
+        <!-- Satellite Catalog in GEE -->
+        <div>
+          <h4 class="font-bold uppercase tracking-wider text-slate-400 font-mono text-[11px] mb-2">Colecciones Acopladas en Earth Engine:</h4>
+          <div class="grid grid-cols-2 gap-2 font-mono text-[11px]">
+            <div class="bg-space-850 p-2.5 rounded-lg border border-space-800">
+              <span class="text-emerald-400 block font-bold">MODIS/061/MOD13A2</span>
+              <span class="text-slate-400 text-[10px]">NDVI Vigor Vegetativo (16 días, 1km)</span>
+            </div>
+            <div class="bg-space-850 p-2.5 rounded-lg border border-space-800">
+              <span class="text-cyan-400 block font-bold">NASA_USDA/SMAP10KM</span>
+              <span class="text-slate-400 text-[10px]">Humedad Radicular GWETROOT</span>
+            </div>
+            <div class="bg-space-850 p-2.5 rounded-lg border border-space-800">
+              <span class="text-blue-400 block font-bold">NASA/GPM_L3/IMERG_V06</span>
+              <span class="text-slate-400 text-[10px]">Precipitación Acumulada Mensual</span>
+            </div>
+            <div class="bg-space-850 p-2.5 rounded-lg border border-space-800">
+              <span class="text-purple-400 block font-bold">ECMWF/ERA5_LAND</span>
+              <span class="text-slate-400 text-[10px]">Temperatura a 2m y Radiación</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Setup & Instructions -->
+        <div>
+          <h4 class="font-bold uppercase tracking-wider text-slate-400 font-mono text-[11px] mb-2">Cómo conectar tu propia cuenta Google Earth Engine:</h4>
+          <div class="bg-space-950 p-3.5 rounded-xl border border-space-800 space-y-2.5 font-mono text-[11px]">
+            <div class="flex items-start space-x-2">
+              <span class="w-4 h-4 rounded bg-cyan-900 text-cyan-300 flex items-center justify-center text-[10px] shrink-0 font-bold">1</span>
+              <span>Instalar la librería de Python: <code class="text-cyan-300 bg-space-900 px-1.5 py-0.5 rounded">pip install earthengine-api</code></span>
+            </div>
+            <div class="flex items-start space-x-2">
+              <span class="w-4 h-4 rounded bg-cyan-900 text-cyan-300 flex items-center justify-center text-[10px] shrink-0 font-bold">2</span>
+              <span>Autenticar con tu cuenta de Google: <code class="text-cyan-300 bg-space-900 px-1.5 py-0.5 rounded">earthengine authenticate</code></span>
+            </div>
+            <div class="flex items-start space-x-2">
+              <span class="w-4 h-4 rounded bg-cyan-900 text-cyan-300 flex items-center justify-center text-[10px] shrink-0 font-bold">3</span>
+              <span>Iniciar el backend FastAPI: <code class="text-cyan-300 bg-space-900 px-1.5 py-0.5 rounded">python3 server.py</code></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Parameters / Project ID Form -->
+        <div class="bg-space-850 p-3.5 rounded-xl border border-space-800 space-y-3">
+          <h4 class="font-bold text-slate-200">Configuración Rápida de Proyecto GEE</h4>
+          <div>
+            <label class="block text-[11px] font-mono text-slate-400 mb-1">Google Cloud Project ID (Opcional):</label>
+            <div class="flex space-x-2">
+              <input id="input-gee-project" type="text" placeholder="ej: nasa-space-apps-chaco" 
+                     class="flex-1 bg-space-950 border border-space-700 rounded-lg px-3 py-1.5 text-xs font-mono text-white focus:border-emerald-500 focus:outline-none">
+              <button id="btn-save-gee-project" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition">
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FICHA TÉCNICA, ECUACIONES & METODOLOGÍA NASA ================= -->
+  <div id="modal-docs" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-space-900 border border-space-700 w-full max-w-3xl max-h-[85vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-space-800 flex items-center justify-between bg-space-850">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-purple-400"></i>
+          <h2 class="text-base font-bold text-white">Documentación Técnica, Científica y Metodológica</h2>
+        </div>
+        <button id="btn-close-docs" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-space-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Content (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+        
+        <div>
+          <h3 class="text-cyan-400 font-bold uppercase tracking-wider text-xs font-mono mb-2">1. Fundamentación Geográfica & Sitio Centinela</h3>
+          <p class="leading-relaxed">
+            El <b>Gran Chaco Americano</b> es el segundo bosque nativo continuo más extenso de Sudamérica. El proyecto establece su epicentro en <b>Santiago del Estero</b> con sitio centinela en <b>Quimilí (-28.64, -62.42)</b>. Los modelos globales de la NASA (GEOS-CF) operan en resoluciones gruesas que suavizan las micro-variaciones locales. Esta región sufre ciclos acoplados: sequías extremas que diezman la humedad del suelo y la biomasa, seguidas por pulsos de precipitación severos (modulados por ENSO) que provocan anegamientos catastróficos por la pérdida de capacidad de infiltración.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold uppercase tracking-wider text-xs font-mono mb-2">2. Bases Matemáticas y Ecuaciones</h3>
+          <div class="bg-space-950 p-4 rounded-xl border border-space-800 space-y-3 font-mono text-xs">
+            <div>
+              <span class="text-slate-400 block mb-1">Desestacionalización y Anomalías (Z-Score):</span>
+              <div class="bg-space-900 p-2 rounded text-cyan-300">
+                μ_m = (1 / N) ∑ x(a, m)<br>
+                Z(t) = [ x(t) - μ_m(t) ] / σ_m(t)
+              </div>
+            </div>
+            <div>
+              <span class="text-slate-400 block mb-1">Índice Estandarizado de Sequía (SPI con Distribución Gamma):</span>
+              <div class="bg-space-900 p-2 rounded text-cyan-300">
+                H(x) = q + (1 - q) G(x; α, β)<br>
+                SPI = Φ⁻¹( H(x) )
+              </div>
+              <span class="text-slate-400 text-[11px] block mt-1">Un SPI &le; -1.5 indica sequía severa; &le; -2.0 sequía extrema.</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold uppercase tracking-wider text-xs font-mono mb-2">3. Arquitectura Híbrida de Dos Niveles</h3>
+          <ul class="space-y-2 list-disc list-inside">
+            <li><b>Nivel 1 (LightGBM):</b> Modelos de ensamble de árboles con gradiente potenciado con feature engineering temporal (lags de t-1 a t-6 meses). Regresión cuantílica p10, p50 y p90 para cuantificar incertidumbre.</li>
+            <li><b>Nivel 2 (Random Forest + SHAP):</b> Motor de alerta categórica (Verde, Amarillo, Naranja, Rojo) con cálculo de valores SHAP (SHapley Additive exPlanations) para explicabilidad transparente.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold uppercase tracking-wider text-xs font-mono mb-2">4. Misiones Satelitales Acopladas</h3>
+          <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+            <div class="bg-space-950 p-2.5 rounded border border-space-800">
+              <b class="text-blue-300">GPM IMERG:</b> PRECTOTCORR (Precipitación acumulada)
+            </div>
+            <div class="bg-space-950 p-2.5 rounded border border-space-800">
+              <b class="text-cyan-300">SMAP / GLDAS:</b> GWETROOT (Humedad radicular)
+            </div>
+            <div class="bg-space-950 p-2.5 rounded border border-space-800">
+              <b class="text-emerald-300">MODIS Terra:</b> MOD13C2 (NDVI vigor de biomasa)
+            </div>
+            <div class="bg-space-950 p-2.5 rounded border border-space-800">
+              <b class="text-purple-300">NOAA CPC:</b> Índice ONI (Teleconexiones ENSO)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
