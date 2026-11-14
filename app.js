@@ -582,6 +582,27 @@ function getFeatureColor(featureId, layer, stepData) {
   return '#3B82F6';
 }
 
+// ================= AJUSTE DINÁMICO DE ENCUADRE (GRAN CHACO BOUNDS) =================
+function fitGranChacoBounds(animate = true) {
+  if (!map) return;
+  const w = window.innerWidth;
+  const isMobile = w < 768;
+  const isCompact = w < 1280;
+
+  const padding = {
+    top: isMobile ? 35 : 45,
+    bottom: isMobile ? 45 : 65,
+    left: isMobile ? 20 : (isCompact ? 30 : 45),
+    right: isMobile ? 20 : (isCompact ? 30 : 45)
+  };
+
+  map.fitBounds(GRAN_CHACO_BOUNDS, {
+    padding: padding,
+    maxZoom: 6.2,
+    duration: animate ? 1200 : 0
+  });
+}
+
 // ================= INICIALIZACIÓN DEL MAPA =================
 function initMap() {
   try {
@@ -607,6 +628,7 @@ function initMap() {
       setupMapLayers();
       setupSentinelMarkers();
       updateMapData();
+      fitGranChacoBounds(false);
     });
 
   } catch (err) {
@@ -952,11 +974,15 @@ function selectNode(nodeId) {
   }
 
   if (map) {
-    map.flyTo({
-      center: node.coords,
-      zoom: node.zoom || 5.2,
-      duration: 1300
-    });
+    if (nodeId === 'gran_chaco') {
+      fitGranChacoBounds(true);
+    } else {
+      map.flyTo({
+        center: node.coords,
+        zoom: node.zoom || 8.0,
+        duration: 1300
+      });
+    }
   }
 
   updateUI();
@@ -1124,38 +1150,38 @@ function renderActions(stepData, activeNode) {
 
   if (stepData.alert === 'ROJO') {
     html = `
-      <div class="p-2.5 rounded-xl bg-space-900 border border-red-500/40 text-xs space-y-1">
-        <div class="font-bold text-red-400">🚨 Comisión Trinacional Ríos Pilcomayo / Bermejo (ARG • BOL • PRY):</div>
-        <p class="text-slate-300">Activar comités de emergencia de cuenca. Regular bombeo y preservar tajamares y reservorios comunitarios ante sequía continental.</p>
+      <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-red-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
+        <div class="font-bold text-red-400">🚨 Comisión Trinacional Pilcomayo / Bermejo:</div>
+        <p class="text-slate-300">Activar comités de emergencia de cuenca. Regular bombeo y preservar tajamares comunitarios ante sequía continental.</p>
       </div>
-      <div class="p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-xs space-y-1">
-        <div class="font-bold text-amber-400">🚜 Sector Agropecuario y Ganadero (${node.name}):</div>
-        <p class="text-slate-300">Retrasar ventana de siembra en Chaco Seco y Boreal. Ajustar carga animal en pasturas degradadas y mantener cobertura de rastrojo.</p>
+      <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
+        <div class="font-bold text-amber-400">🚜 Sector Agropecuario (${node.name.split('(')[0].trim()}):</div>
+        <p class="text-slate-300">Retrasar siembra en Chaco Seco/Boreal. Ajustar carga animal en pasturas y mantener cobertura de rastrojo.</p>
       </div>
     `;
   } else if (stepData.alert === 'NARANJA' && stepData.floodRisk > 0.6) {
     html = `
-      <div class="p-2.5 rounded-xl bg-space-900 border border-orange-500/40 text-xs space-y-1">
-        <div class="font-bold text-orange-400">⚠️ Defensa Civil & Vialidad Regional (Gran Chaco):</div>
-        <p class="text-slate-300">Riesgo inminente de anegamiento en planicies aluviales de Chaco Húmedo y Central. Monitorear terraplenes y canales sobre rutas troncales.</p>
+      <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-orange-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
+        <div class="font-bold text-orange-400">⚠️ Defensa Civil & Vialidad Regional:</div>
+        <p class="text-slate-300">Riesgo inminente de anegamiento en planicies aluviales de Chaco Húmedo. Monitorear terraplenes y rutas troncales.</p>
       </div>
-      <div class="p-2.5 rounded-xl bg-space-900 border border-cyan-500/40 text-xs space-y-1">
+      <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-cyan-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
         <div class="font-bold text-cyan-400">🚜 Productores Agropecuarios:</div>
-        <p class="text-slate-300">Evitar ingreso de maquinaria pesada para prevenir compactación irreversible por sellado de sedimentos. Mover hacienda a lomas altas.</p>
+        <p class="text-slate-300">Evitar maquinaria pesada por riesgo de sellado de sedimentos. Mover hacienda a lomas altas.</p>
       </div>
     `;
   } else if (stepData.alert === 'AMARILLO') {
     html = `
-      <div class="p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-xs space-y-1">
-        <div class="font-bold text-amber-400">⚡ Gestión de Recursos Hídricos Trinacionales:</div>
-        <p class="text-slate-300">Vigilancia continua de caudales orográficos en Bolivia (Tarija) y su descarga hacia el Chaco argentino-paraguayo. Planificar turnos de riego.</p>
+      <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
+        <div class="font-bold text-amber-400">⚡ Gestión de Recursos Hídricos:</div>
+        <p class="text-slate-300">Vigilancia de caudales orográficos en Tarija (Bolivia) y recarga de cuencas bajas. Planificar turnos de riego.</p>
       </div>
     `;
   } else {
     html = `
-      <div class="p-2.5 rounded-xl bg-space-900 border border-emerald-500/40 text-xs space-y-1">
-        <div class="font-bold text-emerald-400">✅ Gran Chaco en Balance Hídrico Favorable:</div>
-        <p class="text-slate-300">Humedad en perfiles radiculares adecuada en los tres países. Ventana propicia para labores agronómicas y recarga de acuíferos.</p>
+      <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-emerald-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
+        <div class="font-bold text-emerald-400">✅ Gran Chaco en Balance Favorable:</div>
+        <p class="text-slate-300">Humedad radicular adecuada en los tres países. Ventana propicia para labores agronómicas y recarga de acuíferos.</p>
       </div>
     `;
   }
@@ -1286,13 +1312,49 @@ function setupEventHandlers() {
   document.querySelectorAll('.layer-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.layer-btn').forEach(b => {
-        b.className = 'layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition';
+        b.className = 'layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition';
       });
-      btn.className = 'layer-btn active px-3 py-1 rounded-lg text-xs font-medium bg-cyan-600 text-white transition';
+      btn.className = 'layer-btn active px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium bg-cyan-600 text-white transition';
       state.activeLayer = btn.getAttribute('data-layer');
       updateLegend();
       updateMapData();
     });
+  });
+
+  // Alternar Visibilidad del Panel Lateral (Sidebar Toggle)
+  const toggleSidebarBtn = document.getElementById('btn-toggle-sidebar');
+  const toggleSidebarMapBtn = document.getElementById('btn-toggle-sidebar-map');
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar-panel');
+    if (!sidebar) return;
+    sidebar.classList.toggle('hidden');
+
+    setTimeout(() => {
+      if (map) {
+        map.resize();
+        if (state.activeNode === 'gran_chaco') {
+          fitGranChacoBounds(true);
+        }
+      }
+    }, 280);
+  }
+
+  if (toggleSidebarBtn) toggleSidebarBtn.addEventListener('click', toggleSidebar);
+  if (toggleSidebarMapBtn) toggleSidebarMapBtn.addEventListener('click', toggleSidebar);
+
+  // Redimensionamiento Responsivo Automático (Window Resize)
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (map) {
+      map.resize();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (state.activeNode === 'gran_chaco') {
+          fitGranChacoBounds(false);
+        }
+      }, 250);
+    }
   });
 
   // Centrar en Gran Chaco

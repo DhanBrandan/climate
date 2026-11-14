@@ -127,75 +127,81 @@
 <body class="bg-space-950 text-slate-100 min-h-screen flex flex-col font-sans select-none antialiased overflow-hidden">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="h-16 border-b border-space-800 bg-space-900/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-30">
+  <header class="h-14 xl:h-16 border-b border-space-800 bg-space-900/90 backdrop-blur-md px-3 xl:px-4 flex items-center justify-between shrink-0 z-30">
     <!-- Brand / Title -->
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-950/50">
-        <i data-lucide="satellite" class="w-5 h-5 text-white"></i>
+    <div class="flex items-center space-x-2.5 shrink-0">
+      <div class="w-8 h-8 xl:w-9 xl:h-9 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-950/50">
+        <i data-lucide="satellite" class="w-4 h-4 xl:w-5 xl:h-5 text-white"></i>
       </div>
       <div>
-        <div class="flex items-center space-x-2">
-          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-lg">PROYECTO CLIMATE</span>
-          <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">NASA Space Apps 2026</span>
+        <div class="flex items-center space-x-1.5 xl:space-x-2">
+          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-sm xl:text-base">PROYECTO CLIMATE</span>
+          <span class="hidden sm:inline text-[9px] xl:text-[10px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">NASA Space Apps</span>
         </div>
-        <p class="text-xs text-slate-400 font-mono flex items-center gap-1.5">
+        <p class="hidden md:flex text-[10px] xl:text-xs text-slate-400 font-mono items-center gap-1">
           <span>Sistema Híbrido de Proyección & Alerta</span>
           <span class="text-slate-600">•</span>
-          <span class="text-slate-300">Gran Chaco Americano</span>
+          <span class="text-slate-300">Gran Chaco</span>
         </p>
       </div>
     </div>
 
     <!-- Gran Chaco Regional Selector & Status Pill -->
-    <div class="hidden lg:flex items-center space-x-3 bg-space-950/80 border border-space-800 rounded-xl px-3 py-1.5">
-      <div class="flex items-center space-x-2">
-        <span class="relative flex h-3 w-3">
+    <div class="hidden lg:flex items-center space-x-2 xl:space-x-3 bg-space-950/80 border border-space-800 rounded-xl px-2.5 xl:px-3 py-1">
+      <div class="flex items-center space-x-1.5">
+        <span class="relative flex h-2.5 w-2.5">
           <span id="header-pulse-beacon" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span id="header-pulse-dot" class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+          <span id="header-pulse-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
         </span>
-        <div class="text-xs flex items-center gap-1.5">
-          <span class="text-slate-400 font-mono">Monitoreo:</span>
-          <select id="select-active-node" class="bg-space-900 border border-space-700 hover:border-cyan-500 rounded-md text-xs font-semibold text-slate-200 px-2 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition">
-            <option value="gran_chaco" selected>🌎 Gran Chaco Americano (Consolidado Ecorregional)</option>
+        <div class="text-[11px] xl:text-xs flex items-center gap-1.5">
+          <span class="text-slate-400 font-mono hidden xl:inline">Monitoreo:</span>
+          <select id="select-active-node" class="bg-space-900 border border-space-700 hover:border-cyan-500 rounded-md text-[11px] xl:text-xs font-semibold text-slate-200 px-2 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition max-w-[210px] xl:max-w-none">
+            <option value="gran_chaco" selected>🌎 Gran Chaco Americano (Consolidado)</option>
             <option value="quimili">🇦🇷 Quimilí (Chaco Seco Austral)</option>
-            <option value="filadelfia">🇵🇾 Filadelfia (Chaco Boreal Central - PRY)</option>
+            <option value="filadelfia">🇵🇾 Filadelfia (Chaco Boreal - PRY)</option>
             <option value="villamontes">🇧🇴 Villa Montes (Chaco Subandino - BOL)</option>
             <option value="saenzpena">🇦🇷 Sáenz Peña (Chaco Central Agrícola)</option>
             <option value="resistencia">🇦🇷 Resistencia (Chaco Húmedo / Fluvial)</option>
           </select>
         </div>
       </div>
-      <div class="h-4 w-px bg-space-800"></div>
-      <div id="header-alert-badge" class="px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
+      <div class="h-3.5 w-px bg-space-800"></div>
+      <div id="header-alert-badge" class="px-2 py-0.5 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap">
         ALERTA ROJA: SEQUÍA SEVERA
       </div>
     </div>
 
     <!-- Actions -->
-    <div class="flex items-center space-x-2">
+    <div class="flex items-center space-x-1.5 xl:space-x-2">
+      <!-- Toggle Sidebar Button in Header -->
+      <button id="btn-toggle-sidebar" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-space-700 shadow-sm transition" title="Mostrar/Ocultar Panel Lateral">
+        <i data-lucide="panel-right" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span class="hidden sm:inline">Panel</span>
+      </button>
+
       <!-- Google Earth Engine Status & Config Button -->
-      <button id="btn-modal-gee" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-slate-200 border border-emerald-500/40 shadow-sm transition" title="Configurar Google Earth Engine">
+      <button id="btn-modal-gee" class="flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-slate-200 border border-emerald-500/40 shadow-sm transition" title="Configurar Google Earth Engine">
         <span id="gee-indicator-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="font-mono text-[11px] font-semibold text-emerald-300">Earth Engine (GEE)</span>
+        <span class="font-mono text-[10px] xl:text-[11px] font-semibold text-emerald-300">GEE</span>
       </button>
 
       <!-- Map Style Selector -->
       <div class="flex items-center bg-space-950 border border-space-700/80 rounded-lg p-0.5">
-        <button id="btn-style-dark" class="px-2.5 py-1 rounded-md text-xs font-medium bg-space-800 text-cyan-300 transition">Oscuro</button>
-        <button id="btn-style-sat" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition">Satélite</button>
-        <button id="btn-style-osm" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition">Calles (OSM)</button>
+        <button id="btn-style-dark" class="px-2 py-0.5 xl:py-1 rounded-md text-[11px] xl:text-xs font-medium bg-space-800 text-cyan-300 transition">Oscuro</button>
+        <button id="btn-style-sat" class="px-2 py-0.5 xl:py-1 rounded-md text-[11px] xl:text-xs font-medium text-slate-400 hover:text-white transition">Satélite</button>
+        <button id="btn-style-osm" class="hidden xl:block px-2 py-0.5 xl:py-1 rounded-md text-[11px] xl:text-xs font-medium text-slate-400 hover:text-white transition">OSM</button>
       </div>
 
       <!-- Ficha Técnica & Ecuaciones Modal Trigger -->
-      <button id="btn-modal-docs" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-slate-200 border border-space-700 transition">
+      <button id="btn-modal-docs" class="hidden md:flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-slate-200 border border-space-700 transition">
         <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400"></i>
-        <span>Ficha Técnica</span>
+        <span class="text-[11px] xl:text-xs">Ficha</span>
       </button>
 
       <!-- Export Report -->
-      <button id="btn-export-report" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition">
+      <button id="btn-export-report" class="flex items-center space-x-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition">
         <i data-lucide="download" class="w-3.5 h-3.5"></i>
-        <span>Reporte Crisis</span>
+        <span class="hidden sm:inline">Reporte</span>
       </button>
     </div>
   </header>
@@ -204,36 +210,44 @@
   <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
     <!-- LEFT / CENTER AREA: MAP + CONTROLS + TIMELINE -->
-    <div class="flex-1 flex flex-col relative h-[55vh] md:h-auto border-r border-space-800">
+    <div class="flex-1 flex flex-col relative h-[50vh] md:h-auto border-r border-space-800">
       
       <!-- Top Overlay on Map: Layer Switcher & Recenter -->
-      <div class="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+      <div class="absolute top-2.5 left-2.5 right-2.5 z-10 flex flex-wrap items-center justify-between gap-1.5 pointer-events-none">
         
         <!-- Active Layer Switcher (Pointer events auto) -->
         <div class="pointer-events-auto flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
-          <span class="text-[11px] font-mono text-slate-400 px-2.5 flex items-center gap-1">
-            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> Capa Satelital:
+          <span class="text-[10px] xl:text-[11px] font-mono text-slate-400 px-2 hidden sm:flex items-center gap-1">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> Capa:
           </span>
-          <button data-layer="spi" class="layer-btn active px-3 py-1 rounded-lg text-xs font-medium bg-cyan-600 text-white transition">
+          <button data-layer="spi" class="layer-btn active px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium bg-cyan-600 text-white transition">
             SPI Sequía
           </button>
-          <button data-layer="gwetroot" class="layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
-            Humedad Radicular (SMAP)
+          <button data-layer="gwetroot" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
+            Humedad (SMAP)
           </button>
-          <button data-layer="ndvi" class="layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
-            Biomasa NDVI (MODIS)
+          <button data-layer="ndvi" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
+            NDVI (MODIS)
           </button>
-          <button data-layer="flood" class="layer-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
-            Riesgo Anegamiento
+          <button data-layer="flood" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
+            Anegamiento
           </button>
         </div>
 
-        <!-- Recenter on Gran Chaco -->
-        <div class="pointer-events-auto flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
-          <button id="btn-recenter" class="px-3 py-1 rounded-lg text-xs font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition" title="Ver todo el Gran Chaco Americano">
-            <i data-lucide="globe-2" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>Enfocar Gran Chaco</span>
-          </button>
+        <!-- Recenter on Gran Chaco & Toggle Panel (Pointer events auto) -->
+        <div class="pointer-events-auto flex items-center space-x-1.5">
+          <div class="flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
+            <button id="btn-recenter" class="px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition" title="Ver todo el Gran Chaco Americano">
+              <i data-lucide="globe-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Enfocar Gran Chaco</span>
+            </button>
+          </div>
+          <div class="flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl md:hidden">
+            <button id="btn-toggle-sidebar-map" class="px-2 py-1 rounded-lg text-[11px] font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1 transition" title="Ver Datos">
+              <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+              <span>Datos</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -242,55 +256,55 @@
       <div id="map" class="w-full flex-1 bg-space-950 relative"></div>
 
       <!-- MAP LEGEND (Bottom-Right over Map) -->
-      <div id="map-legend" class="absolute bottom-24 right-3 z-10 glass-panel rounded-xl p-2.5 shadow-xl text-xs max-w-[210px]">
-        <div class="font-semibold text-slate-200 mb-1.5 flex items-center justify-between">
+      <div id="map-legend" class="absolute bottom-20 xl:bottom-24 right-3 z-10 glass-panel rounded-xl p-2 xl:p-2.5 shadow-xl text-xs max-w-[190px] xl:max-w-[210px]">
+        <div class="font-semibold text-slate-200 mb-1 flex items-center justify-between text-[11px] xl:text-xs">
           <span id="legend-title">Escala SPI (Sequía)</span>
           <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
         </div>
-        <div id="legend-gradient" class="h-2.5 w-full rounded-sm mb-1" style="background: linear-gradient(to right, #7F1D1D, #EF4444, #F59E0B, #E2E8F0, #3B82F6, #1E40AF);"></div>
-        <div id="legend-labels" class="flex justify-between text-[10px] font-mono text-slate-400">
-          <span>&le; -2.0 (Extrema)</span>
+        <div id="legend-gradient" class="h-2 xl:h-2.5 w-full rounded-sm mb-1" style="background: linear-gradient(to right, #7F1D1D, #EF4444, #F59E0B, #E2E8F0, #3B82F6, #1E40AF);"></div>
+        <div id="legend-labels" class="flex justify-between text-[9px] xl:text-[10px] font-mono text-slate-400">
+          <span>&le; -2.0 (Ext)</span>
           <span>0 (Normal)</span>
           <span>&ge; +2.0</span>
         </div>
       </div>
 
       <!-- ================= TIMELINE SCRUBBER & SIMULATION BAR ================= -->
-      <div class="h-20 bg-space-900/95 border-t border-space-800 px-4 flex flex-col justify-center shrink-0 z-20">
+      <div class="h-16 xl:h-18 bg-space-900/95 border-t border-space-800 px-3 xl:px-4 flex flex-col justify-center shrink-0 z-20">
         
         <!-- Timeline Controls Row -->
-        <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center justify-between mb-1">
           <!-- Play / Pause / Step Controls -->
-          <div class="flex items-center space-x-2">
-            <button id="btn-play-pause" class="w-8 h-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition shadow-md shadow-cyan-900/30" title="Reproducir Simulación">
-              <i id="play-icon" data-lucide="play" class="w-4 h-4 fill-current"></i>
+          <div class="flex items-center space-x-1.5 xl:space-x-2">
+            <button id="btn-play-pause" class="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition shadow-md shadow-cyan-900/30" title="Reproducir Simulación">
+              <i id="play-icon" data-lucide="play" class="w-3.5 h-3.5 xl:w-4 xl:h-4 fill-current"></i>
             </button>
-            <button id="btn-prev-step" class="w-7 h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Anterior">
-              <i data-lucide="skip-back" class="w-3.5 h-3.5"></i>
+            <button id="btn-prev-step" class="w-6 h-6 xl:w-7 xl:h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Anterior">
+              <i data-lucide="skip-back" class="w-3 h-3 xl:w-3.5 xl:h-3.5"></i>
             </button>
-            <button id="btn-next-step" class="w-7 h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Siguiente">
-              <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+            <button id="btn-next-step" class="w-6 h-6 xl:w-7 xl:h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Siguiente">
+              <i data-lucide="skip-forward" class="w-3 h-3 xl:w-3.5 xl:h-3.5"></i>
             </button>
-            <span class="text-xs font-mono text-slate-400 pl-1">Paso temporal:</span>
-            <span id="timeline-step-label" class="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded-md">
+            <span class="text-[11px] xl:text-xs font-mono text-slate-400 pl-1 hidden sm:inline">Paso:</span>
+            <span id="timeline-step-label" class="text-[11px] xl:text-xs font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded-md truncate max-w-[190px] sm:max-w-none">
               t0 (Noviembre 2026 - HOY)
             </span>
           </div>
 
           <!-- Timeline Phase Legend -->
-          <div class="flex items-center space-x-4 text-xs font-mono">
-            <div class="flex items-center space-x-1.5 text-slate-400">
-              <span class="w-2.5 h-2.5 rounded-sm bg-slate-600"></span>
-              <span>Histórico Satelital (t-6 a t-1)</span>
+          <div class="flex items-center space-x-3 xl:space-x-4 text-[10px] xl:text-xs font-mono">
+            <div class="hidden md:flex items-center space-x-1.5 text-slate-400">
+              <span class="w-2 h-2 rounded-sm bg-slate-600"></span>
+              <span>Histórico (t-6 a t-1)</span>
             </div>
-            <div class="flex items-center space-x-1.5 text-cyan-400">
-              <span class="w-2.5 h-2.5 rounded-sm bg-cyan-500 animate-pulse"></span>
-              <span>Proyección Híbrida IA (t+1 a t+6)</span>
+            <div class="hidden md:flex items-center space-x-1.5 text-cyan-400">
+              <span class="w-2 h-2 rounded-sm bg-cyan-500 animate-pulse"></span>
+              <span>Proyección IA (t+1 a t+6)</span>
             </div>
             <!-- Speed Selector -->
             <div class="flex items-center bg-space-950 border border-space-800 rounded-lg p-0.5">
-              <button data-speed="1" class="speed-btn active px-2 py-0.5 rounded text-[11px] font-mono text-cyan-400 bg-space-800">1x</button>
-              <button data-speed="2" class="speed-btn px-2 py-0.5 rounded text-[11px] font-mono text-slate-400 hover:text-white">2x</button>
+              <button data-speed="1" class="speed-btn active px-1.5 xl:px-2 py-0.5 rounded text-[10px] xl:text-[11px] font-mono text-cyan-400 bg-space-800">1x</button>
+              <button data-speed="2" class="speed-btn px-1.5 xl:px-2 py-0.5 rounded text-[10px] xl:text-[11px] font-mono text-slate-400 hover:text-white">2x</button>
             </div>
           </div>
         </div>
@@ -298,9 +312,9 @@
         <!-- Slider Bar with Tick Marks -->
         <div class="relative flex items-center">
           <input id="timeline-slider" type="range" min="0" max="12" value="6" step="1" 
-                 class="w-full h-2 bg-space-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 focus:outline-none">
+                 class="w-full h-1.5 xl:h-2 bg-space-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 focus:outline-none">
         </div>
-        <div id="timeline-ticks" class="flex justify-between text-[10px] font-mono text-slate-400 mt-1 px-1">
+        <div id="timeline-ticks" class="flex justify-between text-[9px] xl:text-[10px] font-mono text-slate-400 mt-0.5 px-1">
           <!-- Populated by JS -->
         </div>
 
@@ -309,172 +323,171 @@
     </div>
 
     <!-- RIGHT SIDEBAR: NASA TELEMETRY, ML HYBRID ENGINE, SHAP & CRISIS ACTIONS -->
-    <div class="w-full md:w-[460px] lg:w-[500px] bg-space-900 flex flex-col shrink-0 overflow-y-auto border-l border-space-800 divide-y divide-space-800">
+    <aside id="sidebar-panel" class="w-full md:w-[340px] lg:w-[370px] xl:w-[420px] 2xl:w-[460px] bg-space-900 flex flex-col shrink-0 overflow-y-auto border-l border-space-800 divide-y divide-space-800 transition-[width,margin] duration-300">
       
       <!-- ================= CARD 1: NIVEL 2 MOTOR DE ALERTA & SITIO CENTINELA ================= -->
-      <div class="p-4 bg-gradient-to-b from-space-850 to-space-900">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
+      <div class="p-2.5 xl:p-3 bg-gradient-to-b from-space-850 to-space-900">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-red-400"></i>
             Nivel 2: Motor de Alerta Categórica
           </span>
-          <span class="text-[11px] font-mono text-slate-400">Random Forest Classifier</span>
+          <span class="text-[10px] xl:text-[11px] font-mono text-slate-400">Random Forest</span>
         </div>
 
-        <div id="alert-card" class="rounded-xl border p-3.5 bg-red-950/30 border-red-500/40 transition-all">
+        <div id="alert-card" class="rounded-xl border p-2.5 xl:p-3 bg-red-950/30 border-red-500/40 transition-all">
           <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2.5">
-              <span id="alert-icon-box" class="w-9 h-9 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-lg">
+            <div class="flex items-center space-x-2">
+              <span id="alert-icon-box" class="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0">
                 ⚠️
               </span>
               <div>
-                <h3 id="alert-title" class="font-bold text-red-400 text-sm tracking-wide">ALERTA ROJA: SEQUÍA SEVERA</h3>
-                <p id="alert-subtitle" class="text-xs text-red-300/80">Gran Chaco Americano • SPI 3M: -1.62 • Déficit hídrico regional</p>
+                <h3 id="alert-title" class="font-bold text-red-400 text-xs xl:text-sm tracking-wide">ALERTA ROJA: SEQUÍA SEVERA</h3>
+                <p id="alert-subtitle" class="text-[10px] xl:text-[11px] text-red-300/80 truncate max-w-[210px] xl:max-w-none">Gran Chaco • SPI 3M: -1.62 • Déficit hídrico</p>
               </div>
             </div>
-            <div class="text-right">
-              <div class="text-[10px] font-mono text-slate-400">Confianza RF</div>
-              <div id="alert-confidence" class="text-sm font-bold font-mono text-red-300">94.8%</div>
+            <div class="text-right shrink-0">
+              <div class="text-[9px] xl:text-[10px] font-mono text-slate-400">Confianza RF</div>
+              <div id="alert-confidence" class="text-xs xl:text-sm font-bold font-mono text-red-300">94.8%</div>
             </div>
           </div>
 
           <!-- Alert Level Pill Bar -->
-          <div class="grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-red-500/20 text-center font-mono text-[10px]">
-            <div id="pill-verde" class="py-1 rounded bg-space-800 text-slate-500">VERDE</div>
-            <div id="pill-amarillo" class="py-1 rounded bg-space-800 text-slate-500">AMARILLO</div>
-            <div id="pill-naranja" class="py-1 rounded bg-space-800 text-slate-500">NARANJA</div>
-            <div id="pill-rojo" class="py-1 rounded bg-red-500 text-white font-bold shadow-lg shadow-red-950">ROJO</div>
+          <div class="grid grid-cols-4 gap-1 mt-2 pt-2 border-t border-red-500/20 text-center font-mono text-[9px] xl:text-[10px]">
+            <div id="pill-verde" class="py-0.5 xl:py-1 rounded bg-space-800 text-slate-500">VERDE</div>
+            <div id="pill-amarillo" class="py-0.5 xl:py-1 rounded bg-space-800 text-slate-500">AMARILLO</div>
+            <div id="pill-naranja" class="py-0.5 xl:py-1 rounded bg-space-800 text-slate-500">NARANJA</div>
+            <div id="pill-rojo" class="py-0.5 xl:py-1 rounded bg-red-500 text-white font-bold shadow-md shadow-red-950">ROJO</div>
           </div>
         </div>
       </div>
 
       <!-- ================= CARD 2: TELEMETRÍA SATELITAL ACOPLADA ================= -->
-      <div class="p-4">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <i data-lucide="satellite" class="w-4 h-4 text-cyan-400"></i>
+      <div class="p-2.5 xl:p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="satellite" class="w-3.5 h-3.5 text-cyan-400"></i>
             Telemetría Satelital Acoplada
           </span>
-          <span id="telemetry-site-label" class="text-[11px] font-mono text-cyan-400">Gran Chaco (~1.1M km²)</span>
+          <span id="telemetry-site-label" class="text-[10px] xl:text-[11px] font-mono text-cyan-400 truncate max-w-[150px]">Gran Chaco (~1.1M km²)</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="grid grid-cols-2 gap-1.5 xl:gap-2 text-xs">
           <!-- GPM IMERG Precipitation -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
               <span>GPM IMERG</span>
-              <i data-lucide="cloud-rain" class="w-3.5 h-3.5 text-blue-400"></i>
+              <i data-lucide="cloud-rain" class="w-3 h-3 text-blue-400"></i>
             </div>
             <div class="flex items-baseline justify-between">
-              <span id="metric-precip" class="text-lg font-bold font-mono text-white">18.4</span>
-              <span class="text-[10px] font-mono text-slate-400">mm/mes</span>
+              <span id="metric-precip" class="text-base xl:text-lg font-bold font-mono text-white">18.4</span>
+              <span class="text-[9px] font-mono text-slate-400">mm/mes</span>
             </div>
-            <div id="metric-precip-anom" class="text-[10px] font-mono text-red-400 mt-0.5">-62% vs climatología (μ)</div>
+            <div id="metric-precip-anom" class="text-[9px] font-mono text-red-400 mt-0.5">-62% vs clim (μ)</div>
           </div>
 
           <!-- SMAP Root Moisture -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
               <span>SMAP / GLDAS</span>
-              <i data-lucide="droplet" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <i data-lucide="droplet" class="w-3 h-3 text-cyan-400"></i>
             </div>
             <div class="flex items-baseline justify-between">
-              <span id="metric-gwetroot" class="text-lg font-bold font-mono text-white">0.14</span>
-              <span class="text-[10px] font-mono text-slate-400">GWETROOT</span>
+              <span id="metric-gwetroot" class="text-base xl:text-lg font-bold font-mono text-white">0.14</span>
+              <span class="text-[9px] font-mono text-slate-400">GWET</span>
             </div>
-            <div id="metric-gwetroot-anom" class="text-[10px] font-mono text-red-400 mt-0.5">Z-score: -2.15 σ</div>
+            <div id="metric-gwetroot-anom" class="text-[9px] font-mono text-red-400 mt-0.5">Z-score: -2.15 σ</div>
           </div>
 
           <!-- MODIS NDVI -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
-              <span>MODIS Terra/Aqua</span>
-              <i data-lucide="leaf" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
+              <span>MODIS NDVI</span>
+              <i data-lucide="leaf" class="w-3 h-3 text-emerald-400"></i>
             </div>
             <div class="flex items-baseline justify-between">
-              <span id="metric-ndvi" class="text-lg font-bold font-mono text-white">0.24</span>
-              <span class="text-[10px] font-mono text-slate-400">NDVI (MOD13C2)</span>
+              <span id="metric-ndvi" class="text-base xl:text-lg font-bold font-mono text-white">0.24</span>
+              <span class="text-[9px] font-mono text-slate-400">MOD13C2</span>
             </div>
-            <div id="metric-ndvi-anom" class="text-[10px] font-mono text-amber-400 mt-0.5">Estrés fotosintético severo</div>
+            <div id="metric-ndvi-anom" class="text-[9px] font-mono text-amber-400 mt-0.5">Estrés severo</div>
           </div>
 
           <!-- NOAA Oceanic Niño Index -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[11px] mb-1">
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
+            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
               <span>NOAA CPC (ENSO)</span>
-              <i data-lucide="waves" class="w-3.5 h-3.5 text-purple-400"></i>
+              <i data-lucide="waves" class="w-3 h-3 text-purple-400"></i>
             </div>
             <div class="flex items-baseline justify-between">
-              <span id="metric-oni" class="text-lg font-bold font-mono text-white">+1.65</span>
-              <span class="text-[10px] font-mono text-slate-400">Índice ONI</span>
+              <span id="metric-oni" class="text-base xl:text-lg font-bold font-mono text-white">+1.65</span>
+              <span class="text-[9px] font-mono text-slate-400">ONI</span>
             </div>
-            <div class="text-[10px] font-mono text-purple-400 mt-0.5">Fase "El Niño" Moderada/Fuerte</div>
+            <div class="text-[9px] font-mono text-purple-400 mt-0.5 truncate">Fase "El Niño"</div>
           </div>
         </div>
       </div>
 
       <!-- ================= CARD 3: NIVEL 1 PROYECCIÓN CONTINUA (LightGBM p10-p90) ================= -->
-      <div class="p-4">
-        <div class="flex items-center justify-between mb-2">
+      <div class="p-2.5 xl:p-3">
+        <div class="flex items-center justify-between mb-1.5">
           <div>
-            <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i>
-              Nivel 1: Proyección Continua Multivariable
+            <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5 text-cyan-400"></i>
+              Nivel 1: Proyección Continua
             </span>
-            <span class="text-[11px] text-slate-400">LightGBM con regresión cuantílica (Incertidumbre p10 - p90)</span>
+            <span class="text-[10px] text-slate-400 hidden xl:inline">LightGBM (Incertidumbre p10-p90)</span>
           </div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800">SPI 3 Meses</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] xl:text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800">SPI 3M</span>
         </div>
 
-        <div class="h-44 w-full bg-space-850 rounded-xl p-2 border border-space-800 relative">
+        <div class="h-32 xl:h-40 w-full bg-space-850 rounded-xl p-1.5 xl:p-2 border border-space-800 relative">
           <canvas id="chart-projection"></canvas>
         </div>
-        <div class="flex justify-between items-center text-[10px] font-mono text-slate-400 mt-1.5 px-1">
-          <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-slate-300 inline-block"></span> Observado</span>
-          <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-cyan-400 inline-block"></span> Mediana p50</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-2 bg-cyan-500/20 border border-cyan-500/40 inline-block rounded-xs"></span> Intervalo [p10, p90]</span>
+        <div class="flex justify-between items-center text-[9px] xl:text-[10px] font-mono text-slate-400 mt-1 px-1">
+          <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-slate-300 inline-block"></span> Obs</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-cyan-400 inline-block"></span> p50</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 bg-cyan-500/20 border border-cyan-500/40 inline-block rounded-xs"></span> [p10, p90]</span>
         </div>
       </div>
 
-      <!-- ================= CARD 4: EXPLICABILIDAD SHAP (SHapley Additive exPlanations) ================= -->
-      <div class="p-4">
-        <div class="flex items-center justify-between mb-2">
+      <!-- ================= CARD 4: EXPLICABILIDAD SHAP ================= -->
+      <div class="p-2.5 xl:p-3">
+        <div class="flex items-center justify-between mb-1.5">
           <div>
-            <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i data-lucide="brain-circuit" class="w-4 h-4 text-purple-400"></i>
-              Explicabilidad del Modelo (Valores SHAP)
+            <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="brain-circuit" class="w-3.5 h-3.5 text-purple-400"></i>
+              Explicabilidad (Valores SHAP)
             </span>
-            <span class="text-[11px] text-slate-400">¿Qué variables detonaron la Alerta?</span>
           </div>
-          <span class="text-[10px] font-mono text-purple-400">Contribución al Riesgo</span>
+          <span class="text-[9px] xl:text-[10px] font-mono text-purple-400">Contribución</span>
         </div>
 
-        <div class="h-36 w-full bg-space-850 rounded-xl p-2 border border-space-800 relative">
+        <div class="h-28 xl:h-34 w-full bg-space-850 rounded-xl p-1.5 xl:p-2 border border-space-800 relative">
           <canvas id="chart-shap"></canvas>
         </div>
-        <p id="shap-summary-text" class="text-xs text-slate-300 font-mono mt-2 bg-space-950/70 p-2 rounded-lg border border-space-800">
-          👉 La combinación del <b class="text-purple-300">Índice ONI (+0.38)</b> y la <b class="text-cyan-300">Caída de Humedad Radicular (-0.29)</b> explican el 67% del salto a Alerta Roja.
+        <p id="shap-summary-text" class="text-[10px] xl:text-[11px] text-slate-300 font-mono mt-1.5 bg-space-950/70 p-1.5 xl:p-2 rounded-lg border border-space-800 leading-tight">
+          👉 <b class="text-purple-300">ONI (+0.38)</b> y <b class="text-cyan-300">Humedad Radicular (-0.29)</b> explican el 67% del riesgo.
         </p>
       </div>
 
-      <!-- ================= CARD 5: ACCIONABILIDAD (DE LA TELEMETRÍA A LA DECISIÓN) ================= -->
-      <div class="p-4 bg-space-950/50">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
-            Accionabilidad: Recomendaciones Computadas
+      <!-- ================= CARD 5: ACCIONABILIDAD ================= -->
+      <div class="p-2.5 xl:p-3 bg-space-950/50">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i>
+            Accionabilidad: Recomendaciones
           </span>
-          <span class="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Tiempo Real
+          <span class="text-[9px] xl:text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> En Vivo
           </span>
         </div>
 
-        <div id="actions-container" class="space-y-2">
+        <div id="actions-container" class="space-y-1.5">
           <!-- Populated dynamically based on alert -->
         </div>
       </div>
 
-    </div>
+    </aside>
 
   </div>
 
