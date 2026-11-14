@@ -29,15 +29,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Sitio Centinela Quimilí
-QUIMILI_METADATA = {
-    "site": "Quimilí",
-    "province": "Santiago del Estero",
-    "country": "Argentina",
-    "coordinates": {"lat": -28.64, "lon": -62.42},
-    "ecoregion": "Chaco Seco (Gran Chaco Americano)",
-    "elevation_m": 105
+# Configuración Geográfica: Gran Chaco Americano
+GRAN_CHACO_METADATA = {
+    "region": "Gran Chaco Americano",
+    "scope": "Trinacional (Argentina, Bolivia, Paraguay, Brasil)",
+    "area_km2": 1100000,
+    "center": {"lat": -24.80, "lon": -61.20},
+    "sentinel_nodes": {
+        "gran_chaco": {"name": "Gran Chaco Americano (Consolidado)", "scope": "Trinacional"},
+        "quimili": {"name": "Quimilí", "province": "Santiago del Estero", "country": "Argentina", "lat": -28.64, "lon": -62.42},
+        "filadelfia": {"name": "Filadelfia", "department": "Boquerón", "country": "Paraguay", "lat": -22.35, "lon": -60.03},
+        "villamontes": {"name": "Villa Montes", "department": "Tarija", "country": "Bolivia", "lat": -21.26, "lon": -63.46},
+        "saenzpena": {"name": "Sáenz Peña", "province": "Chaco", "country": "Argentina", "lat": -26.79, "lon": -60.44},
+        "resistencia": {"name": "Resistencia", "province": "Chaco", "country": "Argentina", "lat": -27.45, "lon": -58.98}
+    }
 }
+
+QUIMILI_METADATA = GRAN_CHACO_METADATA["sentinel_nodes"]["quimili"]
 
 class TelemetryPayload(BaseModel):
     t2m: float
@@ -57,14 +65,18 @@ def read_root():
     return {
         "project": "Proyecto CLIMATE",
         "challenge": "NASA Space Apps Challenge 2026",
-        "sentinel_site": QUIMILI_METADATA,
+        "region": GRAN_CHACO_METADATA,
         "gee_status": gee_manager.get_status(),
         "status": "ONLINE"
     }
 
 @app.get("/api/sentinel")
 def get_sentinel_info():
-    return QUIMILI_METADATA
+    return GRAN_CHACO_METADATA
+
+@app.get("/api/region")
+def get_region_info():
+    return GRAN_CHACO_METADATA
 
 # ================= ENDPOINTS GOOGLE EARTH ENGINE (GEE) =================
 @app.get("/api/gee/status")
@@ -89,13 +101,14 @@ def get_gee_tiles(
 
 @app.get("/api/gee/telemetry")
 def get_gee_telemetry(
+    node: str = Query("gran_chaco", description="Nodo centinela o región: gran_chaco, quimili, filadelfia, villamontes, saenzpena, resistencia"),
     start_date: str = Query("2026-10-01", description="Fecha inicio"),
     end_date: str = Query("2026-11-14", description="Fecha fin")
 ):
     """
-    Extrae la telemetría satelital por píxel en Quimilí directamente desde Earth Engine
+    Extrae la telemetría satelital del Gran Chaco o de un nodo centinela directamente desde Earth Engine
     """
-    return gee_manager.extract_sentinel_telemetry(start_date, end_date)
+    return gee_manager.extract_sentinel_telemetry(node=node, start_date=start_date, end_date=end_date)
 
 @app.post("/api/gee/configure")
 def configure_gee(config: GEEConfigRequest):

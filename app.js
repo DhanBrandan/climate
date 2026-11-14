@@ -6,9 +6,88 @@
  * Motor de Simulación Geoespacial Mapbox / MapLibre GL JS
  */
 
-// ================= GEOGRAPHIC CONFIGURATION =================
-const QUIMILI_COORDS = [-62.42, -28.64]; // Longitud, Latitud (Sitio Centinela)
-const CHACO_CENTER = [-62.70, -28.20];     // Centro del Gran Chaco Santiagueño
+// ================= GEOGRAPHIC CONFIGURATION: GRAN CHACO AMERICANO =================
+const GRAN_CHACO_CENTER = [-61.20, -24.80]; // Centro Macro Ecorregional (Trinacional)
+const GRAN_CHACO_BOUNDS = [[-67.2, -32.5], [-56.0, -17.0]]; // Bounding Box Gran Chaco
+
+// Red de Nodos de Monitoreo Transfronterizo
+const SENTINEL_NODES = {
+  gran_chaco: {
+    id: 'gran_chaco',
+    name: 'Gran Chaco Americano (Consolidado Ecorregional)',
+    country: 'Trinacional (Argentina • Bolivia • Paraguay)',
+    coords: [-61.20, -24.80],
+    zoom: 5.2,
+    spiFactor: 1.0,
+    gwetFactor: 1.0,
+    ndviFactor: 1.0,
+    floodFactor: 1.0,
+    desc: 'Visión Macro Ecorregional (~1.100.000 km²)'
+  },
+  quimili: {
+    id: 'quimili',
+    name: 'Nodo Quimilí (Chaco Seco Austral)',
+    country: 'Argentina (Santiago del Estero)',
+    coords: [-62.42, -28.64],
+    zoom: 8.0,
+    spiFactor: 1.0,
+    gwetFactor: 0.95,
+    ndviFactor: 0.96,
+    floodFactor: 0.90,
+    desc: 'Epicentro Semiárido y Pérdida de Humedad Radicular'
+  },
+  filadelfia: {
+    id: 'filadelfia',
+    name: 'Nodo Filadelfia (Chaco Boreal)',
+    country: 'Paraguay (Boquerón)',
+    coords: [-60.03, -22.35],
+    zoom: 8.0,
+    spiFactor: 0.92,
+    gwetFactor: 0.88,
+    ndviFactor: 0.90,
+    floodFactor: 0.75,
+    desc: 'Corazón Agroganadero y Déficit de Precipitaciones'
+  },
+  villamontes: {
+    id: 'villamontes',
+    name: 'Nodo Villa Montes (Chaco Subandino)',
+    country: 'Bolivia (Tarija)',
+    coords: [-63.46, -21.26],
+    zoom: 8.0,
+    spiFactor: 0.96,
+    gwetFactor: 1.04,
+    ndviFactor: 1.08,
+    floodFactor: 1.15,
+    desc: 'Cuenca Alta del Pilcomayo y Recarga Orográfica'
+  },
+  saenzpena: {
+    id: 'saenzpena',
+    name: 'Nodo Sáenz Peña (Chaco Central)',
+    country: 'Argentina (Chaco)',
+    coords: [-60.44, -26.79],
+    zoom: 8.0,
+    spiFactor: 1.06,
+    gwetFactor: 1.02,
+    ndviFactor: 1.05,
+    floodFactor: 1.10,
+    desc: 'Cinturón Agrícola y Riego en Cuencas Bajas'
+  },
+  resistencia: {
+    id: 'resistencia',
+    name: 'Nodo Resistencia (Chaco Húmedo)',
+    country: 'Argentina (Chaco / Formosa)',
+    coords: [-58.98, -27.45],
+    zoom: 8.0,
+    spiFactor: 1.25,
+    gwetFactor: 1.35,
+    ndviFactor: 1.28,
+    floodFactor: 1.65,
+    desc: 'Confluencia Fluvial Paraná-Paraguay y Riesgo Severo de Anegamiento'
+  }
+};
+
+const QUIMILI_COORDS = SENTINEL_NODES.quimili.coords;
+const CHACO_CENTER = GRAN_CHACO_CENTER;
 
 // Open high-resolution tile styles (NO REQUIEREN API KEY NI TIENEN MARCA DE AGUA)
 const TILE_STYLES = {
@@ -111,133 +190,177 @@ const TIMELINE_STEPS = [
   { id: 12, label: 't+6 (Mayo 2027)', date: '2027-05', phase: 'projection', name: 'May 27' }
 ];
 
-// ================= DEPARTAMENTOS DEL CHACO SECO (GEOJSON) =================
+// ================= MACRO-REGIONES DEL GRAN CHACO AMERICANO (GEOJSON) =================
 const REGIONS_GEOJSON = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      id: 'moreno',
+      id: 'chaco_seco_sur',
       properties: {
-        id: 'moreno',
-        name: 'Dpto. Moreno (Quimilí)',
-        headquarter: 'Quimilí',
+        id: 'chaco_seco_sur',
+        name: 'Gran Chaco Seco Austral',
+        country: 'Argentina',
+        provinces: 'Santiago del Estero, Córdoba Norte, Salta Este',
+        headquarter: 'Quimilí / Añatuya',
         isSentinel: true,
-        infilFactor: 0.18
+        infilFactor: 0.18,
+        areaKm2: 240000
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [-62.90, -28.20],
-          [-61.80, -28.20],
-          [-61.85, -29.10],
-          [-62.95, -29.05],
-          [-62.90, -28.20]
+          [-65.50, -27.20],
+          [-61.50, -27.20],
+          [-61.50, -31.80],
+          [-64.80, -31.80],
+          [-65.50, -27.20]
         ]]
       }
     },
     {
       type: 'Feature',
-      id: 'ibarra',
+      id: 'chaco_central',
       properties: {
-        id: 'ibarra',
-        name: 'Dpto. Juan Felipe Ibarra',
-        headquarter: 'Suncho Corral',
-        isSentinel: false,
-        infilFactor: 0.22
+        id: 'chaco_central',
+        name: 'Gran Chaco Central Argentino',
+        country: 'Argentina',
+        provinces: 'Chaco Centro-Oeste, Formosa Centro',
+        headquarter: 'P. R. Sáenz Peña / Las Lomitas',
+        isSentinel: true,
+        infilFactor: 0.22,
+        areaKm2: 195000
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [-63.60, -28.00],
-          [-62.90, -28.20],
-          [-62.95, -29.05],
-          [-63.70, -28.80],
-          [-63.60, -28.00]
+          [-63.20, -23.80],
+          [-59.80, -24.20],
+          [-59.80, -27.20],
+          [-63.20, -27.20],
+          [-63.20, -23.80]
         ]]
       }
     },
     {
       type: 'Feature',
-      id: 'alberdi',
+      id: 'chaco_humedo',
       properties: {
-        id: 'alberdi',
-        name: 'Dpto. Alberdi',
-        headquarter: 'Campo Gallo',
-        isSentinel: false,
-        infilFactor: 0.25
+        id: 'chaco_humedo',
+        name: 'Gran Chaco Húmedo & Ribereño',
+        country: 'Argentina / Paraguay',
+        provinces: 'Formosa Este, Chaco Este, Santa Fe Norte, Ñeembucú',
+        headquarter: 'Resistencia / Formosa / Pilar',
+        isSentinel: true,
+        infilFactor: 0.14,
+        areaKm2: 160000
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [-63.40, -27.00],
-          [-62.10, -27.05],
-          [-61.80, -28.20],
-          [-62.90, -28.20],
-          [-63.40, -27.00]
+          [-59.80, -24.20],
+          [-57.00, -24.20],
+          [-58.20, -30.50],
+          [-60.50, -29.80],
+          [-59.80, -27.20],
+          [-59.80, -24.20]
         ]]
       }
     },
     {
       type: 'Feature',
-      id: 'copo',
+      id: 'chaco_boreal',
       properties: {
-        id: 'copo',
-        name: 'Dpto. Copo (Norte Chaco)',
-        headquarter: 'Monte Quemado',
-        isSentinel: false,
-        infilFactor: 0.29
+        id: 'chaco_boreal',
+        name: 'Gran Chaco Boreal Central',
+        country: 'Paraguay',
+        provinces: 'Boquerón, Presidente Hayes',
+        headquarter: 'Filadelfia / Mcal. Estigarribia',
+        isSentinel: true,
+        infilFactor: 0.20,
+        areaKm2: 210000
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [-63.60, -25.70],
-          [-61.70, -25.75],
-          [-62.10, -27.05],
-          [-63.40, -27.00],
-          [-63.60, -25.70]
+          [-62.60, -20.50],
+          [-58.20, -20.80],
+          [-57.00, -24.20],
+          [-59.80, -24.20],
+          [-62.60, -23.80],
+          [-62.60, -20.50]
         ]]
       }
     },
     {
       type: 'Feature',
-      id: 'taboada',
+      id: 'chaco_septentrional',
       properties: {
-        id: 'taboada',
-        name: 'Dpto. General Taboada',
-        headquarter: 'Añatuya',
+        id: 'chaco_septentrional',
+        name: 'Chaco Septentrional & Pantanal',
+        country: 'Paraguay / Bolivia / Brasil',
+        provinces: 'Alto Paraguay, Bahía Negra, Pantanal Chaqueño',
+        headquarter: 'Bahía Negra / Fuerte Olimpo',
         isSentinel: false,
-        infilFactor: 0.20
+        infilFactor: 0.16,
+        areaKm2: 130000
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [-63.50, -28.80],
-          [-62.20, -29.00],
-          [-62.20, -29.80],
-          [-63.40, -29.70],
-          [-63.50, -28.80]
+          [-61.50, -17.50],
+          [-57.00, -17.50],
+          [-58.20, -20.80],
+          [-61.50, -20.50],
+          [-61.50, -17.50]
         ]]
       }
     },
     {
       type: 'Feature',
-      id: 'figueroa',
+      id: 'chaco_boliviano',
       properties: {
-        id: 'figueroa',
-        name: 'Dpto. Figueroa (Cuenca Salado)',
-        headquarter: 'La Cañada',
-        isSentinel: false,
-        infilFactor: 0.15
+        id: 'chaco_boliviano',
+        name: 'Gran Chaco Boliviano',
+        country: 'Bolivia',
+        provinces: 'Tarija Este, Chuquisaca Este, Santa Cruz Sur',
+        headquarter: 'Villa Montes / Yacuiba / Camiri',
+        isSentinel: true,
+        infilFactor: 0.25,
+        areaKm2: 125000
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [-64.10, -27.30],
-          [-63.40, -27.00],
-          [-63.60, -28.00],
-          [-64.10, -28.10],
-          [-64.10, -27.30]
+          [-64.50, -18.50],
+          [-61.50, -18.50],
+          [-62.60, -22.80],
+          [-64.50, -22.80],
+          [-64.50, -18.50]
+        ]]
+      }
+    },
+    {
+      type: 'Feature',
+      id: 'chaco_serrano',
+      properties: {
+        id: 'chaco_serrano',
+        name: 'Chaco Serrano & Piedemonte Subandino',
+        country: 'Argentina / Bolivia',
+        provinces: 'Salta Oeste, Jujuy Este, Tarija Oeste',
+        headquarter: 'Tartagal / Orán',
+        isSentinel: false,
+        infilFactor: 0.32,
+        areaKm2: 90000
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [-65.80, -21.50],
+          [-64.20, -21.50],
+          [-64.50, -27.20],
+          [-65.80, -27.20],
+          [-65.80, -21.50]
         ]]
       }
     }
@@ -379,22 +502,26 @@ const QUIMILI_TIME_SERIES = [
 ];
 
 const DEPT_VARIATIONS = {
-  moreno: { spiFactor: 1.0, gwetFactor: 1.0, ndviFactor: 1.0, floodBias: 0.0 },
-  ibarra: { spiFactor: 0.95, gwetFactor: 0.92, ndviFactor: 0.96, floodBias: 0.05 },
-  alberdi: { spiFactor: 1.08, gwetFactor: 1.05, ndviFactor: 1.04, floodBias: -0.05 },
-  copo: { spiFactor: 0.90, gwetFactor: 0.88, ndviFactor: 0.90, floodBias: -0.08 },
-  taboada: { spiFactor: 0.98, gwetFactor: 0.95, ndviFactor: 0.98, floodBias: 0.08 },
-  figueroa: { spiFactor: 0.85, gwetFactor: 0.80, ndviFactor: 0.88, floodBias: 0.15 }
+  chaco_seco_sur: { spiFactor: 1.0, gwetFactor: 0.95, ndviFactor: 0.96, floodBias: -0.05 },
+  chaco_central: { spiFactor: 1.05, gwetFactor: 1.02, ndviFactor: 1.05, floodBias: 0.08 },
+  chaco_humedo: { spiFactor: 1.25, gwetFactor: 1.35, ndviFactor: 1.28, floodBias: 0.28 },
+  chaco_boreal: { spiFactor: 0.92, gwetFactor: 0.90, ndviFactor: 0.92, floodBias: 0.02 },
+  chaco_septentrional: { spiFactor: 1.12, gwetFactor: 1.20, ndviFactor: 1.22, floodBias: 0.22 },
+  chaco_boliviano: { spiFactor: 0.96, gwetFactor: 1.04, ndviFactor: 1.08, floodBias: 0.12 },
+  chaco_serrano: { spiFactor: 1.15, gwetFactor: 1.18, ndviFactor: 1.25, floodBias: 0.10 }
 };
 
 // ================= ESTADO DE LA APLICACIÓN =================
 const state = {
   activeStep: 6, // t0
   activeLayer: 'spi', // 'spi', 'gwetroot', 'ndvi', 'flood'
+  activeNode: 'gran_chaco', // 'gran_chaco', 'quimili', 'filadelfia', 'villamontes', 'saenzpena', 'resistencia'
   isPlaying: false,
   playSpeed: 1,
   playIntervalId: null,
   activeMapStyle: 'dark',
+  mapLoaded: false
+};
   mapLoaded: false
 };
 
@@ -469,8 +596,8 @@ function initMap() {
     map = new mapLib.Map({
       container: 'map',
       style: TILE_STYLES.dark,
-      center: CHACO_CENTER,
-      zoom: 7.8,
+      center: GRAN_CHACO_CENTER,
+      zoom: 5.2,
       attributionControl: false
     });
 
@@ -480,7 +607,7 @@ function initMap() {
     map.on('load', () => {
       state.mapLoaded = true;
       setupMapLayers();
-      setupSentinelMarker();
+      setupSentinelMarkers();
       updateMapData();
     });
 
@@ -504,26 +631,26 @@ function setupMapLayers() {
         source: 'chaco-regions',
         paint: {
           'fill-color': '#EF4444',
-          'fill-opacity': 0.60
+          'fill-opacity': 0.55
         }
       });
 
-      // Bordes departamentales
+      // Bordes ecorregionales
       map.addLayer({
         id: 'chaco-regions-line',
         type: 'line',
         source: 'chaco-regions',
         paint: {
           'line-color': '#06B6D4',
-          'line-width': 2.2,
-          'line-opacity': 0.9
+          'line-width': 2.0,
+          'line-opacity': 0.85
         }
       });
 
-      // Interacción: Click para abrir Popup con telemetría del departamento
+      // Interacción: Click para abrir Popup con telemetría de la macro-región
       map.on('click', 'chaco-regions-fill', (e) => {
         if (e.features && e.features.length > 0) {
-          showDepartmentPopup(e.lngLat, e.features[0].properties);
+          showRegionPopup(e.lngLat, e.features[0].properties);
         }
       });
 
@@ -539,25 +666,29 @@ function setupMapLayers() {
   }
 }
 
-function showDepartmentPopup(lngLat, props) {
+function showRegionPopup(lngLat, props) {
   const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
-  const variation = DEPT_VARIATIONS[props.id] || DEPT_VARIATIONS.moreno;
+  const variation = DEPT_VARIATIONS[props.id] || { spiFactor: 1.0, gwetFactor: 1.0, ndviFactor: 1.0, floodBias: 0.0 };
   const spiVal = (currentStepData.spi * variation.spiFactor).toFixed(2);
   const gwetVal = (currentStepData.gwetroot * variation.gwetFactor).toFixed(2);
   const ndviVal = (currentStepData.ndvi * variation.ndviFactor).toFixed(2);
   const mapLib = window.maplibregl || window.mapboxgl;
 
   const html = `
-    <div style="font-family: inherit; font-size: 12px; color: #F8FAFC;">
-      <div style="font-weight: bold; font-size: 13px; color: #38BDF8; margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 4px;">
+    <div style="font-family: inherit; font-size: 12px; color: #F8FAFC; max-width: 250px;">
+      <div style="font-weight: bold; font-size: 13px; color: #38BDF8; margin-bottom: 4px; border-bottom: 1px solid #334155; padding-bottom: 4px;">
         ${props.name}
       </div>
-      <div style="line-height: 1.6; font-family: monospace;">
-        <div><b>Cabecera:</b> ${props.headquarter}</div>
-        <div><b>SPI 3M:</b> <span style="color: ${spiVal < -1.5 ? '#EF4444' : '#38BDF8'}; font-weight: bold;">${spiVal}</span></div>
-        <div><b>Humedad Radicular (SMAP):</b> ${gwetVal}</div>
+      <div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">
+        📍 <b>${props.country}</b> • ${props.provinces || ''}
+      </div>
+      <div style="line-height: 1.6; font-family: monospace; font-size: 11px;">
+        <div><b>Sede / Monitoreo:</b> ${props.headquarter}</div>
+        <div><b>Superficie:</b> ~${props.areaKm2 ? Number(props.areaKm2).toLocaleString() : '150.000'} km²</div>
+        <div><b>SPI 3M (Sequía):</b> <span style="color: ${spiVal < -1.5 ? '#EF4444' : (spiVal < -0.8 ? '#F59E0B' : '#38BDF8')}; font-weight: bold;">${spiVal}</span></div>
+        <div><b>Humedad Radicular (SMAP):</b> ${gwetVal} GWET</div>
         <div><b>Biomasa NDVI (MODIS):</b> ${ndviVal}</div>
-        <div><b>Infiltración Sedimento:</b> ${(props.infilFactor * 100).toFixed(0)}%</div>
+        <div><b>Infiltración de Suelo:</b> ${(props.infilFactor * 100).toFixed(0)}%</div>
       </div>
     </div>
   `;
@@ -568,31 +699,41 @@ function showDepartmentPopup(lngLat, props) {
     .addTo(map);
 }
 
-function setupSentinelMarker() {
+function setupSentinelMarkers() {
   try {
     const mapLib = window.maplibregl || window.mapboxgl;
-    const el = document.createElement('div');
-    el.className = 'cursor-pointer';
-    el.innerHTML = `
-      <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-        <div class="sentinel-pulse" style="position: absolute; width: 34px; height: 34px; border-radius: 50%; color: #EF4444;"></div>
-        <div style="width: 18px; height: 18px; border-radius: 50%; background: #EF4444; border: 2.5px solid #FFFFFF; box-shadow: 0 0 14px rgba(239, 68, 68, 0.8); z-index: 10;"></div>
-        <div style="position: absolute; top: -32px; padding: 2px 7px; border-radius: 6px; background: rgba(11, 15, 25, 0.95); color: #38BDF8; font-family: monospace; font-size: 10px; font-weight: bold; border: 1px solid rgba(56, 189, 248, 0.5); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
-          QUIMILÍ (CENTINELA)
-        </div>
-      </div>
-    `;
 
-    el.addEventListener('click', () => {
-      map.flyTo({ center: QUIMILI_COORDS, zoom: 8.8, duration: 1200 });
+    const nodeEntries = Object.values(SENTINEL_NODES).filter(n => n.id !== 'gran_chaco');
+
+    nodeEntries.forEach(node => {
+      const el = document.createElement('div');
+      el.className = 'cursor-pointer';
+      
+      const isSelected = state.activeNode === node.id;
+      const pulseColor = isSelected ? '#38BDF8' : '#EF4444';
+
+      el.innerHTML = `
+        <div style="position: relative; display: flex; align-items: center; justify-content: center;" title="${node.name}">
+          <div class="sentinel-pulse" style="position: absolute; width: 30px; height: 30px; border-radius: 50%; color: ${pulseColor};"></div>
+          <div style="width: 14px; height: 14px; border-radius: 50%; background: ${pulseColor}; border: 2px solid #FFFFFF; box-shadow: 0 0 12px ${pulseColor}; z-index: 10;"></div>
+          <div style="position: absolute; top: -28px; padding: 2px 6px; border-radius: 5px; background: rgba(11, 15, 25, 0.95); color: #38BDF8; font-family: monospace; font-size: 10px; font-weight: bold; border: 1px solid rgba(56, 189, 248, 0.4); white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.6);">
+            ${node.name.split(' ')[1] || node.name}
+          </div>
+        </div>
+      `;
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+      });
+
+      new mapLib.Marker({ element: el })
+        .setLngLat(node.coords)
+        .addTo(map);
     });
 
-    new mapLib.Marker({ element: el })
-      .setLngLat(QUIMILI_COORDS)
-      .addTo(map);
-
   } catch (err) {
-    console.error('Error creando el marcador centinela:', err);
+    console.error('Error creando la red de marcadores centinela:', err);
   }
 }
 
@@ -802,10 +943,43 @@ function updateCharts() {
   }
 }
 
+// ================= SELECCIÓN DE NODO / REGIÓN =================
+function selectNode(nodeId) {
+  state.activeNode = nodeId;
+  const node = SENTINEL_NODES[nodeId] || SENTINEL_NODES.gran_chaco;
+
+  const selectEl = document.getElementById('select-active-node');
+  if (selectEl && selectEl.value !== nodeId) {
+    selectEl.value = nodeId;
+  }
+
+  if (map) {
+    map.flyTo({
+      center: node.coords,
+      zoom: node.zoom || 5.2,
+      duration: 1300
+    });
+  }
+
+  updateUI();
+}
+
 // ================= ACTUALIZACIÓN DE TELEMETRÍA Y UI =================
 function updateUI() {
   const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
   const stepInfo = TIMELINE_STEPS[state.activeStep];
+  const activeNode = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
+
+  // Factores regionales del Gran Chaco
+  const spiFactor = activeNode.spiFactor || 1.0;
+  const gwetFactor = activeNode.gwetFactor || 1.0;
+  const ndviFactor = activeNode.ndviFactor || 1.0;
+  const floodFactor = activeNode.floodFactor || 1.0;
+
+  const currentSpi = (currentStepData.spi * spiFactor).toFixed(2);
+  const currentGwet = Math.max(0.08, Math.min(0.85, currentStepData.gwetroot * gwetFactor)).toFixed(2);
+  const currentNdvi = Math.max(0.12, Math.min(0.80, currentStepData.ndvi * ndviFactor)).toFixed(2);
+  const currentFloodRisk = Math.max(0.05, Math.min(0.99, currentStepData.floodRisk * floodFactor));
 
   // 1. Etiqueta y deslizador
   const labelEl = document.getElementById('timeline-step-label');
@@ -826,7 +1000,7 @@ function updateUI() {
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
     } else if (currentStepData.alert === 'NARANJA') {
       headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/40';
-      headerBadge.textContent = currentStepData.floodRisk > 0.6 ? 'ALERTA NARANJA: ANEGAMIENTO' : 'ALERTA NARANJA: DÉFICIT';
+      headerBadge.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: ANEGAMIENTO' : 'ALERTA NARANJA: DÉFICIT';
       if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-orange-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75';
     } else if (currentStepData.alert === 'AMARILLO') {
@@ -865,39 +1039,42 @@ function updateUI() {
   if (currentStepData.alert === 'ROJO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-red-950/30 border-red-500/40 transition-all';
     if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-sm tracking-wide'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
-    if (alertSubtitle) alertSubtitle.textContent = `Quimilí • SPI 3M: ${currentStepData.spi.toFixed(2)} • Humedad Radicular crítica`;
+    if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Humedad Radicular crítica`;
     if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '🚨'; }
     if (pills.ROJO) pills.ROJO.className = 'py-1 rounded bg-red-500 text-white font-bold shadow-lg shadow-red-950';
   } else if (currentStepData.alert === 'NARANJA') {
     if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-orange-950/30 border-orange-500/40 transition-all';
     if (alertTitle) {
       alertTitle.className = 'font-bold text-orange-400 text-sm tracking-wide';
-      alertTitle.textContent = currentStepData.floodRisk > 0.6 ? 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO' : 'ALERTA NARANJA: ESTRÉS HÍDRICO';
+      alertTitle.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO' : 'ALERTA NARANJA: ESTRÉS HÍDRICO';
     }
     if (alertSubtitle) {
-      alertSubtitle.textContent = currentStepData.floodRisk > 0.6 
-        ? `Lluvia torrencial (${currentStepData.precip}mm) sobre suelo sellado sin infiltración`
-        : `Quimilí • SPI 3M: ${currentStepData.spi.toFixed(2)} • Alerta preventiva`;
+      alertSubtitle.textContent = currentFloodRisk > 0.6 
+        ? `${activeNode.name} • Lluvia torrencial sobre suelo sellado sin infiltración`
+        : `${activeNode.name} • SPI 3M: ${currentSpi} • Alerta preventiva regional`;
     }
     if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '⚠️'; }
     if (pills.NARANJA) pills.NARANJA.className = 'py-1 rounded bg-orange-500 text-white font-bold shadow-lg shadow-orange-950';
   } else if (currentStepData.alert === 'AMARILLO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-amber-950/30 border-amber-500/40 transition-all';
     if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-sm tracking-wide'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
-    if (alertSubtitle) alertSubtitle.textContent = `Quimilí • SPI 3M: ${currentStepData.spi.toFixed(2)} • Balance hídrico deficitario`;
+    if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Déficit en cuencas`;
     if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '⚡'; }
     if (pills.AMARILLO) pills.AMARILLO.className = 'py-1 rounded bg-amber-500 text-white font-bold shadow-lg shadow-amber-950';
   } else {
     if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-emerald-950/30 border-emerald-500/40 transition-all';
     if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-sm tracking-wide'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
-    if (alertSubtitle) alertSubtitle.textContent = `Quimilí • SPI 3M: ${currentStepData.spi.toFixed(2)} • Índices biofísicos estables`;
+    if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Índices biofísicos estables`;
     if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '✅'; }
     if (pills.VERDE) pills.VERDE.className = 'py-1 rounded bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-950';
   }
 
-  // 4. Métricas Satelitales
+  // 4. Métricas Satelitales Acopladas
+  const siteLabel = document.getElementById('telemetry-site-label');
+  if (siteLabel) siteLabel.textContent = `${activeNode.name.split('(')[0].trim()} (${activeNode.country})`;
+
   const precEl = document.getElementById('metric-precip');
-  if (precEl) precEl.textContent = currentStepData.precip.toFixed(1);
+  if (precEl) precEl.textContent = (currentStepData.precip * (spiFactor > 1.1 ? 1.25 : 0.95)).toFixed(1);
 
   const precAnomEl = document.getElementById('metric-precip-anom');
   if (precAnomEl) {
@@ -906,16 +1083,16 @@ function updateUI() {
   }
 
   const gwetEl = document.getElementById('metric-gwetroot');
-  if (gwetEl) gwetEl.textContent = currentStepData.gwetroot.toFixed(2);
+  if (gwetEl) gwetEl.textContent = currentGwet;
 
   const gwetAnomEl = document.getElementById('metric-gwetroot-anom');
   if (gwetAnomEl) gwetAnomEl.textContent = `Z-score: ${currentStepData.gwetrootZ >= 0 ? '+' : ''}${currentStepData.gwetrootZ.toFixed(2)} σ`;
 
   const ndviEl = document.getElementById('metric-ndvi');
-  if (ndviEl) ndviEl.textContent = currentStepData.ndvi.toFixed(2);
+  if (ndviEl) ndviEl.textContent = currentNdvi;
 
   const ndviAnomEl = document.getElementById('metric-ndvi-anom');
-  if (ndviAnomEl) ndviAnomEl.textContent = currentStepData.ndvi < 0.28 ? 'Estrés fotosintético severo' : (currentStepData.ndvi < 0.45 ? 'Vigor medio' : 'Biomasa óptima');
+  if (ndviAnomEl) ndviAnomEl.textContent = Number(currentNdvi) < 0.28 ? 'Estrés fotosintético severo' : (Number(currentNdvi) < 0.45 ? 'Vigor medio' : 'Biomasa óptima');
 
   const oniEl = document.getElementById('metric-oni');
   if (oniEl) oniEl.textContent = `${currentStepData.oni >= 0 ? '+' : ''}${currentStepData.oni.toFixed(2)}`;
@@ -924,62 +1101,63 @@ function updateUI() {
   const shapText = document.getElementById('shap-summary-text');
   if (shapText) {
     if (currentStepData.alert === 'ROJO') {
-      shapText.innerHTML = `👉 La anomalía <b class="text-purple-300">ENSO ONI (+${currentStepData.shap.oni.toFixed(2)})</b> acoplada a la caída de <b class="text-cyan-300">Humedad Radicular (-${Math.abs(currentStepData.shap.gwetroot).toFixed(2)})</b> detonan el 67% del riesgo.`;
-    } else if (currentStepData.floodRisk > 0.6) {
-      shapText.innerHTML = `👉 El pulso de <b class="text-blue-300">Lluvia (+${currentStepData.shap.precip.toFixed(2)})</b> sobre suelo compactado con sellado hídrico dispara la probabilidad de anegamiento.`;
+      shapText.innerHTML = `👉 En el <b>Gran Chaco</b>, la anomalía <b class="text-purple-300">ENSO ONI (+${currentStepData.shap.oni.toFixed(2)})</b> acoplada a la caída de <b class="text-cyan-300">Humedad Radicular (-${Math.abs(currentStepData.shap.gwetroot).toFixed(2)})</b> detonan el 67% del riesgo regional.`;
+    } else if (currentFloodRisk > 0.6) {
+      shapText.innerHTML = `👉 El pulso torrencial de <b class="text-blue-300">Lluvia (+${currentStepData.shap.precip.toFixed(2)})</b> sobre planicies sedimentarias de baja pendiente dispara el anegamiento transfronterizo.`;
     } else {
-      shapText.innerHTML = `👉 Índices en amortiguación. La forzante oceánica disminuye y el vigor fotosintético <b class="text-emerald-300">NDVI</b> actúa como amortiguador (-${Math.abs(currentStepData.shap.ndvi).toFixed(2)}).`;
+      shapText.innerHTML = `👉 Índices en amortiguación. La forzante oceánica disminuye y el dosel vegetal del <b class="text-emerald-300">Gran Chaco (NDVI)</b> absorbe el impacto hidroclimático.`;
     }
   }
 
   // 6. Recomendaciones
-  renderActions(currentStepData);
+  renderActions(currentStepData, activeNode);
 
   // 7. Actualizar Mapa y Gráficos
   updateMapData();
   updateCharts();
 }
 
-function renderActions(stepData) {
+function renderActions(stepData, activeNode) {
   const container = document.getElementById('actions-container');
   if (!container) return;
+  const node = activeNode || SENTINEL_NODES.gran_chaco;
 
   let html = '';
 
   if (stepData.alert === 'ROJO') {
     html = `
       <div class="p-2.5 rounded-xl bg-space-900 border border-red-500/40 text-xs space-y-1">
-        <div class="font-bold text-red-400">🚨 Municipio de Quimilí / DPA Santiago:</div>
-        <p class="text-slate-300">Activar bombeo y llenado de reservorios y cisternas comunitarias. Prohibir quemas de pastizales por índice de ignición extremo.</p>
+        <div class="font-bold text-red-400">🚨 Comisión Trinacional Ríos Pilcomayo / Bermejo (ARG • BOL • PRY):</div>
+        <p class="text-slate-300">Activar comités de emergencia de cuenca. Regular bombeo y preservar tajamares y reservorios comunitarios ante sequía continental.</p>
       </div>
       <div class="p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-xs space-y-1">
-        <div class="font-bold text-amber-400">🚜 Productores Agropecuarios (Chaco Seco):</div>
-        <p class="text-slate-300">Retrasar fecha de siembra de soja y maíz tardío hasta que SMAP confirme recuperación ≥ 0.28 en perfil radicular. Mantener rastrojo.</p>
+        <div class="font-bold text-amber-400">🚜 Sector Agropecuario y Ganadero (${node.name}):</div>
+        <p class="text-slate-300">Retrasar ventana de siembra en Chaco Seco y Boreal. Ajustar carga animal en pasturas degradadas y mantener cobertura de rastrojo.</p>
       </div>
     `;
   } else if (stepData.alert === 'NARANJA' && stepData.floodRisk > 0.6) {
     html = `
       <div class="p-2.5 rounded-xl bg-space-900 border border-orange-500/40 text-xs space-y-1">
-        <div class="font-bold text-orange-400">⚠️ Defensa Civil & Vialidad Provincial:</div>
-        <p class="text-slate-300">Riesgo inminente de anegamiento en bajos sedimentarios de Moreno e Ibarra. Desobstruir canales de alivio sobre RP 89 y 92.</p>
+        <div class="font-bold text-orange-400">⚠️ Defensa Civil & Vialidad Regional (Gran Chaco):</div>
+        <p class="text-slate-300">Riesgo inminente de anegamiento en planicies aluviales de Chaco Húmedo y Central. Monitorear terraplenes y canales sobre rutas troncales.</p>
       </div>
       <div class="p-2.5 rounded-xl bg-space-900 border border-cyan-500/40 text-xs space-y-1">
         <div class="font-bold text-cyan-400">🚜 Productores Agropecuarios:</div>
-        <p class="text-slate-300">Evitar ingreso de maquinaria pesada para prevenir pisoteo y compactación irreversible. Mover hacienda a lomas altas del campo.</p>
+        <p class="text-slate-300">Evitar ingreso de maquinaria pesada para prevenir compactación irreversible por sellado de sedimentos. Mover hacienda a lomas altas.</p>
       </div>
     `;
   } else if (stepData.alert === 'AMARILLO') {
     html = `
       <div class="p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-xs space-y-1">
-        <div class="font-bold text-amber-400">⚡ Gestión de Recursos Hídricos:</div>
-        <p class="text-slate-300">Monitoreo continuo quincenal de caudales en azudes del Río Salado. Evaluar turnos de riego para el sector productivo.</p>
+        <div class="font-bold text-amber-400">⚡ Gestión de Recursos Hídricos Trinacionales:</div>
+        <p class="text-slate-300">Vigilancia continua de caudales orográficos en Bolivia (Tarija) y su descarga hacia el Chaco argentino-paraguayo. Planificar turnos de riego.</p>
       </div>
     `;
   } else {
     html = `
       <div class="p-2.5 rounded-xl bg-space-900 border border-emerald-500/40 text-xs space-y-1">
-        <div class="font-bold text-emerald-400">✅ Condiciones Favorables:</div>
-        <p class="text-slate-300">Perfiles de humedad en balance óptimo. Ventana adecuada para labores agronómicas y fertilización de cobertura.</p>
+        <div class="font-bold text-emerald-400">✅ Gran Chaco en Balance Hídrico Favorable:</div>
+        <p class="text-slate-300">Humedad en perfiles radiculares adecuada en los tres países. Ventana propicia para labores agronómicas y recarga de acuíferos.</p>
       </div>
     `;
   }
@@ -1119,13 +1297,19 @@ function setupEventHandlers() {
     });
   });
 
-  // Centrar en Quimilí
+  // Centrar en Gran Chaco
   const recenterBtn = document.getElementById('btn-recenter');
   if (recenterBtn) {
     recenterBtn.addEventListener('click', () => {
-      if (map) {
-        map.flyTo({ center: QUIMILI_COORDS, zoom: 8.5, duration: 1200 });
-      }
+      selectNode('gran_chaco');
+    });
+  }
+
+  // Selector de Monitoreo Transfronterizo
+  const selectNodeEl = document.getElementById('select-active-node');
+  if (selectNodeEl) {
+    selectNodeEl.addEventListener('change', (e) => {
+      selectNode(e.target.value);
     });
   }
 
@@ -1232,15 +1416,17 @@ function setupEventHandlers() {
 function exportCrisisReport() {
   const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
   const stepInfo = TIMELINE_STEPS[state.activeStep];
+  const activeNode = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
 
   const reportText = `===============================================================
 PROYECTO CLIMATE — NASA SPACE APPS CHALLENGE 2026
 SISTEMA HÍBRIDO DE PROYECCIÓN CLIMÁTICA Y ALERTA TEMPRANA
-INFORME DE SITUACIÓN Y RECOMENDACIONES DE CRISIS
+INFORME DE SITUACIÓN Y ACCIÓN: GRAN CHACO AMERICANO
 ===============================================================
 
-SITIO CENTINELA: Quimilí, Dpto. Moreno, Santiago del Estero, Argentina
-COORDENADAS: Lat: ${QUIMILI_COORDS[1]} | Lon: ${QUIMILI_COORDS[0]}
+REGIÓN / NODO ANALIZADO: ${activeNode.name}
+ALCANCE TERRITORIAL: ${activeNode.country} (~1.100.000 km²)
+COORDENADAS CENTROIDE: Lat: ${activeNode.coords[1]} | Lon: ${activeNode.coords[0]}
 PASO TEMPORAL ANALIZADO: ${stepInfo.label} (${stepInfo.date})
 FECHA EMISIÓN REPORTE: ${new Date().toISOString()}
 
@@ -1249,13 +1435,13 @@ FECHA EMISIÓN REPORTE: ${new Date().toISOString()}
 ---------------------------------------------------------------
 - Nivel de Alerta: ${currentStepData.alert}
 - Confianza del Ensamble (Random Forest): ${currentStepData.alertConfidence.toFixed(1)}%
-- Riesgo de Anegamiento Acoplado: ${(currentStepData.floodRisk * 100).toFixed(1)}%
-- Índice Estandarizado de Sequía (SPI 3M): ${currentStepData.spi.toFixed(2)}
+- Riesgo de Anegamiento Acoplado: ${(currentStepData.floodRisk * (activeNode.floodFactor || 1.0) * 100).toFixed(1)}%
+- Índice Estandarizado de Sequía (SPI 3M): ${(currentStepData.spi * (activeNode.spiFactor || 1.0)).toFixed(2)}
 
 ---------------------------------------------------------------
-2. TELEMETRÍA SATELITAL ACOPLADA (NASA / NOAA)
+2. TELEMETRÍA SATELITAL ACOPLADA (NASA / NOAA / GEE)
 ---------------------------------------------------------------
-- Precipitación (GPM IMERG): ${currentStepData.precip} mm/mes (Anomalía: ${currentStepData.precipAnom}%)
+- Precipitación (GPM IMERG V07): ${currentStepData.precip} mm/mes (Anomalía: ${currentStepData.precipAnom}%)
 - Humedad Radicular (SMAP GWETROOT): ${currentStepData.gwetroot} (Z-Score: ${currentStepData.gwetrootZ} σ)
 - Vigor de Biomasa (MODIS NDVI): ${currentStepData.ndvi}
 - Forzante Oceánico (NOAA CPC Índice ONI): +${currentStepData.oni}
@@ -1279,25 +1465,29 @@ FECHA EMISIÓN REPORTE: ${new Date().toISOString()}
   * Escenario Optimista p90: SPI ${currentStepData.p90.toFixed(2)}
 
 ---------------------------------------------------------------
-5. ACCIONABILIDAD Y MEDIDAS PREVENTIVAS RECOMENDADAS
+5. ACCIONABILIDAD Y MEDIDAS ESTRATÉGICAS TRANSFRONTERIZAS
 ---------------------------------------------------------------
-[AUTORIDADES MUNICIPALES Y DEFENSA CIVIL]
-- Activar reservas comunales y protocolos de emergencia hídrica.
-- Relevar canalizaciones sobre Rutas 89 y 92 ante riesgo de anegamiento por pérdida de infiltración.
+[COMISIÓN TRINACIONAL RÍOS PILCOMAYO Y BERMEJO (ARG • BOL • PRY)]
+- Coordinación hidrológica de caudales y compuertas ante pulsos torrenciales pronosticados.
+- Monitoreo de sedimentación y erosión de riberas en cuencas compartidas.
 
-[SECTOR AGROPECUARIO]
-- Adaptar ventanas de siembra según proyección de humedad SMAP.
-- Proteger cobertura de suelo para evitar sellado mecánico.
+[DEFENSA CIVIL Y GOBIERNOS REGIONALES (GRAN CHACO)]
+- Activar reservas estratégicas en cisternas comunitarias y tajamares.
+- Protocolos de prevención de incendios forestales por bajo vigor de biomasa (MODIS NDVI).
+
+[SECTOR AGROPECUARIO Y GANADERO]
+- Ajuste de cargas animales en Chaco Boreal y Chaco Seco.
+- Retrasar fechas de siembra hasta recuperación confirmada de humedad radicular en SMAP.
 
 ===============================================================
-Equipo CLIMATE — Gran Chaco / NASA Space Apps Challenge
+Equipo CLIMATE — Gran Chaco Americano / NASA Space Apps Challenge
 ===============================================================`;
 
   const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Reporte_Crisis_Quimili_${stepInfo.date}.txt`;
+  a.download = `Reporte_Crisis_Gran_Chaco_${stepInfo.date}.txt`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

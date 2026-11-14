@@ -146,17 +146,23 @@
       </div>
     </div>
 
-    <!-- Sentinel Site Quick Status Pill -->
-    <div class="hidden lg:flex items-center space-x-4 bg-space-950/70 border border-space-800 rounded-xl px-3 py-1.5">
+    <!-- Gran Chaco Regional Selector & Status Pill -->
+    <div class="hidden lg:flex items-center space-x-3 bg-space-950/80 border border-space-800 rounded-xl px-3 py-1.5">
       <div class="flex items-center space-x-2">
         <span class="relative flex h-3 w-3">
           <span id="header-pulse-beacon" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span id="header-pulse-dot" class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
         </span>
-        <div class="text-xs">
-          <span class="text-slate-400 font-mono">Sitio Centinela:</span>
-          <span class="font-semibold text-slate-200">Quimilí, Sgo. del Estero</span>
-          <span class="text-[11px] font-mono text-cyan-400">(-28.64°, -62.42°)</span>
+        <div class="text-xs flex items-center gap-1.5">
+          <span class="text-slate-400 font-mono">Monitoreo:</span>
+          <select id="select-active-node" class="bg-space-900 border border-space-700 hover:border-cyan-500 rounded-md text-xs font-semibold text-slate-200 px-2 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition">
+            <option value="gran_chaco" selected>🌎 Gran Chaco Americano (Consolidado Ecorregional)</option>
+            <option value="quimili">🇦🇷 Quimilí (Chaco Seco Austral)</option>
+            <option value="filadelfia">🇵🇾 Filadelfia (Chaco Boreal Central - PRY)</option>
+            <option value="villamontes">🇧🇴 Villa Montes (Chaco Subandino - BOL)</option>
+            <option value="saenzpena">🇦🇷 Sáenz Peña (Chaco Central Agrícola)</option>
+            <option value="resistencia">🇦🇷 Resistencia (Chaco Húmedo / Fluvial)</option>
+          </select>
         </div>
       </div>
       <div class="h-4 w-px bg-space-800"></div>
@@ -222,11 +228,11 @@
           </button>
         </div>
 
-        <!-- Recenter on Quimilí -->
+        <!-- Recenter on Gran Chaco -->
         <div class="pointer-events-auto flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
-          <button id="btn-recenter" class="px-3 py-1 rounded-lg text-xs font-mono text-slate-200 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition" title="Centrar en Quimilí">
-            <i data-lucide="crosshair" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>Enfocar Quimilí</span>
+          <button id="btn-recenter" class="px-3 py-1 rounded-lg text-xs font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition" title="Ver todo el Gran Chaco Americano">
+            <i data-lucide="globe-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Enfocar Gran Chaco</span>
           </button>
         </div>
 
@@ -323,7 +329,7 @@
               </span>
               <div>
                 <h3 id="alert-title" class="font-bold text-red-400 text-sm tracking-wide">ALERTA ROJA: SEQUÍA SEVERA</h3>
-                <p id="alert-subtitle" class="text-xs text-red-300/80">Quimilí • Índice SPI &le; -1.62 • Estrés radicular crítico</p>
+                <p id="alert-subtitle" class="text-xs text-red-300/80">Gran Chaco Americano • SPI 3M: -1.62 • Déficit hídrico regional</p>
               </div>
             </div>
             <div class="text-right">
@@ -349,7 +355,7 @@
             <i data-lucide="satellite" class="w-4 h-4 text-cyan-400"></i>
             Telemetría Satelital Acoplada
           </span>
-          <span class="text-[11px] font-mono text-cyan-400">Quimilí (-28.64, -62.42)</span>
+          <span id="telemetry-site-label" class="text-[11px] font-mono text-cyan-400">Gran Chaco (~1.1M km²)</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-xs">
@@ -503,7 +509,7 @@
             </span>
             <div>
               <div class="font-bold text-slate-100 text-xs">Módulo GEE Activo</div>
-              <p class="text-[11px] text-slate-400">Sitio Centinela: Quimilí (-28.64°, -62.42°) • Muestreo continuo por píxel</p>
+              <p class="text-[11px] text-slate-400">Región: Gran Chaco Americano (Trinacional) • Red de Nodos Satelitales</p>
             </div>
           </div>
           <span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
@@ -590,9 +596,9 @@
       <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
         
         <div>
-          <h3 class="text-cyan-400 font-bold uppercase tracking-wider text-xs font-mono mb-2">1. Fundamentación Geográfica & Sitio Centinela</h3>
+          <h3 class="text-cyan-400 font-bold uppercase tracking-wider text-xs font-mono mb-2">1. Fundamentación Geográfica: Gran Chaco Americano</h3>
           <p class="leading-relaxed">
-            El <b>Gran Chaco Americano</b> es el segundo bosque nativo continuo más extenso de Sudamérica. El proyecto establece su epicentro en <b>Santiago del Estero</b> con sitio centinela en <b>Quimilí (-28.64, -62.42)</b>. Los modelos globales de la NASA (GEOS-CF) operan en resoluciones gruesas que suavizan las micro-variaciones locales. Esta región sufre ciclos acoplados: sequías extremas que diezman la humedad del suelo y la biomasa, seguidas por pulsos de precipitación severos (modulados por ENSO) que provocan anegamientos catastróficos por la pérdida de capacidad de infiltración.
+            El <b>Gran Chaco Americano</b> abarca más de 1.100.000 km² a lo largo de <b>Argentina, Bolivia y Paraguay</b> (con extensiones en Brasil), constituyendo el segundo bosque continuo más extenso de Sudamérica. Esta ecorregión experimenta regímenes hidroclimáticos extremos: desde sequías continentales severas en el Chaco Seco y Boreal que colapsan la biomasa fotosintética, hasta pulsos torrenciales de lluvia (modulados por el fenómeno ENSO) que generan anegamientos masivos en las planicies sedimentarias de baja pendiente. El sistema integra una <b>red de monitoreo transfronterizo</b> acoplada a Google Earth Engine y modelos predictivos multiescala.
           </p>
         </div>
 

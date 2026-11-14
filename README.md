@@ -8,7 +8,7 @@
 
 El **Gran Chaco Americano** experimenta ciclos acoplados extremos: sequías prolongadas que diezman la humedad del suelo y la biomasa, seguidas por pulsos severos de precipitación modulados por el fenómeno ENSO (El Niño) que causan anegamientos por la pérdida de infiltración del suelo sedimentario.
 
-Este sistema establece su **sitio centinela en Quimilí, Santiago del Estero (-28.64°, -62.42°)** y desacopla la baja resolución de los modelos globales mediante una **arquitectura híbrida de dos niveles**:
+Este sistema cubre el **Gran Chaco Americano en su totalidad (~1.100.000 km² a lo largo de Argentina, Bolivia y Paraguay)** y desacopla la baja resolución de los modelos globales mediante una **red de nodos centinela transfronterizos** (Quimilí, Filadelfia, Villa Montes, Sáenz Peña, Resistencia) acoplados a una **arquitectura híbrida de dos niveles**:
 
 1. **Nivel 1 (LightGBM):** Proyección continua multivariable con lags temporales ($t-1$ a $t-6$) e intervalos empíricos de incertidumbre ($p10, p50, p90$).
 2. **Nivel 2 (Random Forest Classifier + SHAP):** Motor de alerta categórica (**Verde, Amarillo, Naranja, Rojo**) con explicabilidad transparente de cada variable que detona la decisión.
@@ -17,9 +17,10 @@ Este sistema establece su **sitio centinela en Quimilí, Santiago del Estero (-2
 
 ## 🗺️ 2. Arquitectura de Visualización (Mapbox GL JS)
 
-La interfaz gráfica implementa **Mapbox GL JS (WebGL)**:
+La interfaz gráfica implementa **Mapbox / MapLibre GL JS (WebGL)**:
 
-* **Sitio Centinela Quimilí:** Marcador interactivo con baliza de pulso sincronizada en tiempo real con el nivel de alerta.
+* **Cobertura Ecorregional Completa:** 7 macro-regiones que cubren Argentina, Bolivia y Paraguay (Chaco Seco Austral, Chaco Central, Chaco Húmedo, Chaco Boreal, Chaco Septentrional, Chaco Boliviano y Chaco Serrano).
+* **Red de Nodos Centinela Trinacional:** Marcadores interactivos con balizas de pulso sincronizadas en tiempo real con el nivel de alerta para Quimilí (ARG), Filadelfia (PRY), Villa Montes (BOL), Sáenz Peña (ARG) y Resistencia (ARG).
 * **Capas Satelitales Intercambiables:**
   * **SPI Sequía:** Índice estandarizado de sequía ajustado con distribución Gamma acumulada.
   * **Humedad Radicular (SMAP/GLDAS):** Variable crítica `GWETROOT` para prevenir colapso agropecuario antes de que se seque la superficie.

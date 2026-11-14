@@ -9,7 +9,48 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
-# Coordenadas Centinela (Quimilí, Santiago del Estero)
+# ================= NODOS CENTINELA DEL GRAN CHACO AMERICANO =================
+GRAN_CHACO_BOUNDS = [-67.20, -32.50, -56.00, -17.00] # [West, South, East, North]
+
+GRAN_CHACO_NODES = {
+    "gran_chaco": {
+        "name": "Gran Chaco Americano (Consolidado)",
+        "country": "Trinacional (ARG • BOL • PRY)",
+        "coordinates": [-61.20, -24.80],
+        "is_region": True
+    },
+    "quimili": {
+        "name": "Quimilí (Chaco Seco Austral)",
+        "country": "Argentina",
+        "coordinates": [-62.42, -28.64],
+        "is_region": False
+    },
+    "filadelfia": {
+        "name": "Filadelfia (Chaco Boreal)",
+        "country": "Paraguay",
+        "coordinates": [-60.03, -22.35],
+        "is_region": False
+    },
+    "villamontes": {
+        "name": "Villa Montes (Chaco Subandino)",
+        "country": "Bolivia",
+        "coordinates": [-63.46, -21.26],
+        "is_region": False
+    },
+    "saenzpena": {
+        "name": "Sáenz Peña (Chaco Central)",
+        "country": "Argentina",
+        "coordinates": [-60.44, -26.79],
+        "is_region": False
+    },
+    "resistencia": {
+        "name": "Resistencia (Chaco Húmedo)",
+        "country": "Argentina",
+        "coordinates": [-58.98, -27.45],
+        "is_region": False
+    }
+}
+
 QUIMILI_LON = -62.42
 QUIMILI_LAT = -28.64
 
@@ -148,15 +189,23 @@ class GoogleEarthEngineManager:
             "message": "Para teselas de satélite en tiempo real por píxel de GEE, autentica tu cuenta con: earthengine authenticate"
         }
 
-    def extract_sentinel_telemetry(self, start_date: str = "2026-10-01", end_date: str = "2026-11-14") -> Dict[str, Any]:
+    def extract_sentinel_telemetry(self, node: str = "gran_chaco", start_date: str = "2026-10-01", end_date: str = "2026-11-14") -> Dict[str, Any]:
         """
-        Extrae los valores satelitales exactos en el píxel de Quimilí (-28.64, -62.42)
+        Extrae los valores satelitales en el Gran Chaco Americano o en un nodo centinela específico
         vía reduceRegion en Google Earth Engine
         """
+        target = GRAN_CHACO_NODES.get(node, GRAN_CHACO_NODES["gran_chaco"])
+        coords = target["coordinates"]
+
         if self.initialized:
             try:
                 ee = self.ee
-                point = ee.Geometry.Point([QUIMILI_LON, QUIMILI_LAT])
+                if target.get("is_region"):
+                    geom = ee.Geometry.Rectangle(GRAN_CHACO_BOUNDS)
+                    scale = 20000
+                else:
+                    geom = ee.Geometry.Point(coords)
+                    scale = 2000
 
                 # MODIS NDVI
                 modis_col = ee.ImageCollection(GEE_CATALOG["ndvi"]["collection"]) \
@@ -167,7 +216,7 @@ class GoogleEarthEngineManager:
                     modis_col.mean(),
                     ee.ImageCollection(GEE_CATALOG["ndvi"]["collection"]).sort("system:time_start", False).first().select("NDVI")
                 )
-                ndvi_dict = ee.Image(modis).reduceRegion(ee.Reducer.mean(), point, 1000).getInfo() or {}
+                ndvi_dict = ee.Image(modis).reduceRegion(ee.Reducer.mean(), geom, scale).getInfo() or {}
                 ndvi_raw = ndvi_dict.get("NDVI")
                 ndvi_val = round(ndvi_raw * 0.0001, 3) if ndvi_raw is not None else 0.24
 
@@ -180,14 +229,17 @@ class GoogleEarthEngineManager:
                     gpm_col.mean(),
                     ee.ImageCollection(GEE_CATALOG["precipitation"]["collection"]).sort("system:time_start", False).first().select("precipitation")
                 )
-                precip_dict = ee.Image(gpm).reduceRegion(ee.Reducer.mean(), point, 10000).getInfo() or {}
+                precip_dict = ee.Image(gpm).reduceRegion(ee.Reducer.mean(), geom, scale).getInfo() or {}
                 precip_raw = precip_dict.get("precipitation")
                 precip_val = round(precip_raw * 720.0, 1) if precip_raw is not None else 18.4
 
                 return {
                     "status": "LIVE_GEE_TELEMETRY",
-                    "sentinel": "Quimilí",
-                    "coordinates": [QUIMILI_LON, QUIMILI_LAT],
+                    "region": "Gran Chaco Americano",
+                    "node_id": node,
+                    "sentinel": target["name"],
+                    "country": target["country"],
+                    "coordinates": coords,
                     "ndvi": ndvi_val or 0.24,
                     "precip_mm_month": precip_val or 18.4,
                     "gwetroot": 0.14,
@@ -197,11 +249,14 @@ class GoogleEarthEngineManager:
             except Exception as e:
                 print(f"[GEE Error en Telemetría]: {e}")
 
-        # Valores calibrados para Quimilí (Chaco Seco)
+        # Valores calibrados para Gran Chaco
         return {
             "status": "CALIBRATED_BASELINE",
-            "sentinel": "Quimilí",
-            "coordinates": [QUIMILI_LON, QUIMILI_LAT],
+            "region": "Gran Chaco Americano",
+            "node_id": node,
+            "sentinel": target["name"],
+            "country": target["country"],
+            "coordinates": coords,
             "ndvi": 0.24,
             "precip_mm_month": 18.4,
             "gwetroot": 0.14,
