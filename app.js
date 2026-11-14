@@ -3856,6 +3856,185 @@ function initCharts() {
   }
 }
 
+// Función auxiliar: Nombre de categoría SPI (Estándar OMM / NOAA / SMN)
+function getSpiCategoryName(val) {
+  if (val <= -2.0) return 'Sequía Extrema (Catastrófica)';
+  if (val <= -1.6) return 'Sequía Extrema';
+  if (val <= -1.3) return 'Sequía Severa';
+  if (val <= -0.8) return 'Sequía Moderada';
+  if (val < 0.8) return 'Condición Normal / Neutra';
+  if (val < 1.3) return 'Húmedo';
+  return 'Muy Húmedo / Superávit';
+}
+
+// Plugin Chart.js: Bandas SPI de fondo, Línea vertical "HOY" y Etiquetas Directas sobre las líneas
+const projectionOverlayPlugin = {
+  id: 'projectionOverlay',
+  beforeDatasetsDraw(chart) {
+    const { ctx, chartArea, scales: { x, y } } = chart;
+    if (!chartArea) return;
+    const { left, right, top, bottom } = chartArea;
+
+    // 1. Bandas de color de fondo por categoría de SPI
+    const spiBands = [
+      { min: 0.8, max: 2.2, color: 'rgba(6, 182, 212, 0.08)', label: 'HÚMEDO' },
+      { min: -0.8, max: 0.8, color: 'rgba(16, 185, 129, 0.04)', label: 'NORMAL' },
+      { min: -1.3, max: -0.8, color: 'rgba(245, 158, 11, 0.07)', label: 'MODERADA' },
+      { min: -1.6, max: -1.3, color: 'rgba(249, 115, 22, 0.09)', label: 'SEVERA' },
+      { min: -2.6, max: -1.6, color: 'rgba(239, 68, 68, 0.12)', label: 'EXTREMA' }
+    ];
+
+    ctx.save();
+    spiBands.forEach(band => {
+      const yTop = Math.max(top, y.getPixelForValue(band.max));
+      const yBottom = Math.min(bottom, y.getPixelForValue(band.min));
+      if (yBottom > yTop) {
+        ctx.fillStyle = band.color;
+        ctx.fillRect(left, yTop, right - left, yBottom - yTop);
+
+        // Etiqueta lateral sutil de categoría en el borde derecho
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.32)';
+        ctx.font = 'bold 8px monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText(band.label, right - 5, yTop + 3);
+      }
+    });
+
+    // Línea base cero horizontal (SPI = 0.0)
+    const yZero = y.getPixelForValue(0);
+    if (yZero >= top && yZero <= bottom) {
+      ctx.beginPath();
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(left, yZero);
+      ctx.lineTo(right, yZero);
+      ctx.stroke();
+    }
+    ctx.restore();
+  },
+
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea, scales: { x, y } } = chart;
+    if (!chartArea) return;
+    const { left, right, top, bottom } = chartArea;
+
+    // 2. Línea vertical marcada "HOY" separando observado (t <= 6) de proyectado (t > 6)
+    const todayIndex = 6;
+    const xToday = x.getPixelForValue(todayIndex);
+
+    if (xToday >= left && xToday <= right) {
+      ctx.save();
+      
+      // Línea vertical punteada
+      ctx.beginPath();
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = '#F59E0B'; // Ámbar destacado
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(xToday, top);
+      ctx.lineTo(xToday, bottom);
+      ctx.stroke();
+
+      // Badge rectangular "HOY" centrado arriba
+      ctx.setLineDash([]);
+      const badgeText = 'HOY';
+      ctx.font = 'bold 9px monospace';
+      const textWidth = ctx.measureText(badgeText).width;
+      const bWidth = textWidth + 10;
+      const bHeight = 15;
+      const bX = xToday - bWidth / 2;
+      const bY = top + 2;
+
+      ctx.fillStyle = 'rgba(120, 53, 15, 0.95)';
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(bX, bY, bWidth, bHeight, 3);
+      } else {
+        ctx.rect(bX, bY, bWidth, bHeight);
+      }
+      ctx.fill();
+
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#FEF3C7';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, xToday, bY + bHeight / 2);
+
+      // Etiquetas indicativas a ambos lados de la línea
+      ctx.font = '7.5px monospace';
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.55)';
+      ctx.textAlign = 'right';
+      ctx.fillText('◀ Histórico', xToday - 4, top + 22);
+      ctx.textAlign = 'left';
+      ctx.fillText('Pronóstico ▶', xToday + 4, top + 22);
+
+      ctx.restore();
+    }
+
+    // 3. Etiquetas directas sobre las líneas en lugar de la leyenda inferior
+    const metaObs = chart.getDatasetMeta(0);
+    const metaP50 = chart.getDatasetMeta(1);
+    const metaP90 = chart.getDatasetMeta(2);
+    const metaP10 = chart.getDatasetMeta(3);
+
+    ctx.save();
+
+    // Etiqueta directa 1: "● Observado" (sobre la curva histórica en step 2)
+    if (metaObs && metaObs.data && metaObs.data[2]) {
+      const ptObs = metaObs.data[2];
+      ctx.font = 'bold 9px monospace';
+      const obsText = '● Observado';
+      const tw = ctx.measureText(obsText).width;
+      ctx.fillStyle = 'rgba(11, 15, 25, 0.88)';
+      ctx.fillRect(ptObs.x - tw / 2 - 3, ptObs.y - 18, tw + 6, 12);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.strokeRect(ptObs.x - tw / 2 - 3, ptObs.y - 18, tw + 6, 12);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(obsText, ptObs.x, ptObs.y - 12);
+    }
+
+    // Etiqueta directa 2: "Mediana p50" (sobre la curva proyectada en step 9)
+    if (metaP50 && metaP50.data && metaP50.data[9]) {
+      const ptP50 = metaP50.data[9];
+      ctx.font = 'bold 9px monospace';
+      const p50Text = 'Mediana p50';
+      const tw = ctx.measureText(p50Text).width;
+      ctx.fillStyle = 'rgba(11, 15, 25, 0.88)';
+      ctx.fillRect(ptP50.x - tw / 2 - 3, ptP50.y - 18, tw + 6, 12);
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)';
+      ctx.strokeRect(ptP50.x - tw / 2 - 3, ptP50.y - 18, tw + 6, 12);
+      ctx.fillStyle = '#38BDF8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p50Text, ptP50.x, ptP50.y - 12);
+    }
+
+    // Etiqueta directa 3: "[p10 - p90]" (dentro del área de incertidumbre en step 8)
+    if (metaP90 && metaP90.data && metaP90.data[8] && metaP10 && metaP10.data && metaP10.data[8]) {
+      const pt90 = metaP90.data[8];
+      const pt10 = metaP10.data[8];
+      const midY = (pt90.y + pt10.y) / 2;
+      ctx.font = 'italic 8.5px monospace';
+      const envText = '[p10 - p90]';
+      const tw = ctx.measureText(envText).width;
+      ctx.fillStyle = 'rgba(11, 15, 25, 0.75)';
+      ctx.fillRect(pt90.x - tw / 2 - 2, midY - 6, tw + 4, 12);
+      ctx.fillStyle = 'rgba(103, 232, 249, 0.9)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(envText, pt90.x, midY);
+    }
+
+    ctx.restore();
+  }
+};
+
 function initProjectionChart() {
   const canvas = document.getElementById('chart-projection');
   if (!canvas) return;
@@ -3876,8 +4055,9 @@ function initProjectionChart() {
           label: 'Observado',
           data: observedData,
           borderColor: '#F8FAFC',
-          borderWidth: 2.2,
+          borderWidth: 2.4,
           pointRadius: 3,
+          pointHoverRadius: 5,
           pointBackgroundColor: '#F8FAFC',
           tension: 0.2
         },
@@ -3887,7 +4067,8 @@ function initProjectionChart() {
           borderColor: '#06B6D4',
           borderWidth: 2,
           borderDash: [4, 4],
-          pointRadius: 2,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
           pointBackgroundColor: '#06B6D4',
           tension: 0.2
         },
@@ -3909,15 +4090,83 @@ function initProjectionChart() {
         }
       ]
     },
+    plugins: [projectionOverlayPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0F172A',
-          borderColor: '#334155',
-          borderWidth: 1
+          backgroundColor: '#0B0F19',
+          borderColor: 'rgba(56, 189, 248, 0.5)',
+          borderWidth: 1.5,
+          padding: 10,
+          titleFont: { family: 'monospace', size: 11, weight: 'bold' },
+          bodyFont: { family: 'monospace', size: 10 },
+          footerFont: { family: 'monospace', size: 9, style: 'italic' },
+          footerColor: '#94A3B8',
+          filter: (tooltipItem) => tooltipItem.datasetIndex <= 1,
+          callbacks: {
+            title: (items) => {
+              const idx = items[0].dataIndex;
+              const step = TIMELINE_STEPS[idx];
+              return `🗓️ ${step.label}`;
+            },
+            beforeBody: (items) => {
+              const idx = items[0].dataIndex;
+              return idx <= 6 ? '• Régimen: Observación Histórica (NASA/NOAA)' : '• Régimen: Proyección Predictiva Multivariable';
+            },
+            label: (ctx) => {
+              const idx = ctx.dataIndex;
+              const s = QUIMILI_TIME_SERIES[idx];
+              const node = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
+              const factor = node.spiFactor || 1.0;
+              const datasetIndex = ctx.datasetIndex;
+
+              const effSpi = s.spi * factor;
+              const effP50 = s.p50 * factor;
+              const effP10 = s.p10 * factor;
+              const effP90 = s.p90 * factor;
+
+              if (datasetIndex === 0) {
+                if (idx <= 6) {
+                  return [
+                    `  SPI Observado: ${effSpi >= 0 ? '+' : ''}${effSpi.toFixed(2)}`,
+                    `  Categoría SPI: ${getSpiCategoryName(effSpi)}`
+                  ];
+                }
+                return null;
+              }
+
+              if (datasetIndex === 1) {
+                if (idx > 6) {
+                  return [
+                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)}`,
+                    `  Intervalo Incertidumbre [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}]`,
+                    `  Amplitud de Incertidumbre: ${(effP90 - effP10).toFixed(2)} σ`,
+                    `  Categoría Mediana: ${getSpiCategoryName(effP50)}`
+                  ];
+                } else if (idx === 6) {
+                  return [
+                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)}`,
+                    `  Intervalo [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}]`
+                  ];
+                }
+                return null;
+              }
+              return null;
+            },
+            footer: (items) => {
+              const idx = items[0].dataIndex;
+              if (idx === 6) return '📍 Línea de corte HOY: Inicia ventana de proyección LightGBM a 6 meses';
+              if (idx > 6) return 'Incertidumbre cuantílica p10-p90 ajustada por regresión LightGBM';
+              return null;
+            }
+          }
         }
       },
       scales: {
@@ -4038,6 +4287,12 @@ function updateCharts() {
   }
 
   if (projectionChart) {
+    const node = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
+    const factor = node.spiFactor || 1.0;
+    projectionChart.data.datasets[0].data = QUIMILI_TIME_SERIES.map((s, idx) => idx <= 6 ? Number((s.spi * factor).toFixed(2)) : null);
+    projectionChart.data.datasets[1].data = QUIMILI_TIME_SERIES.map(s => Number((s.p50 * factor).toFixed(2)));
+    projectionChart.data.datasets[2].data = QUIMILI_TIME_SERIES.map(s => Number((s.p90 * factor).toFixed(2)));
+    projectionChart.data.datasets[3].data = QUIMILI_TIME_SERIES.map(s => Number((s.p10 * factor).toFixed(2)));
     projectionChart.update('none');
   }
 }
