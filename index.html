@@ -215,8 +215,8 @@
       <!-- Top Overlay on Map: Layer Switcher & Recenter -->
       <div class="absolute top-2.5 left-2.5 right-2.5 z-10 flex flex-wrap items-center justify-between gap-1.5 pointer-events-none">
         
-        <!-- Active Layer Switcher (Pointer events auto) -->
-        <div class="pointer-events-auto flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
+        <!-- Active Layer Switcher + Recenter Button (Pointer events auto) -->
+        <div class="pointer-events-auto flex items-center flex-wrap gap-1 bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
           <span class="text-[10px] xl:text-[11px] font-mono text-slate-400 px-2 hidden sm:flex items-center gap-1">
             <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> Capa:
           </span>
@@ -232,16 +232,15 @@
           <button data-layer="flood" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
             Anegamiento
           </button>
+          <div class="h-4 w-px bg-space-700 mx-1 hidden sm:block"></div>
+          <button id="btn-recenter" class="px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition border border-cyan-500/30 bg-cyan-950/40" title="Ver todo el Gran Chaco Americano">
+            <i data-lucide="globe-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Enfocar Gran Chaco</span>
+          </button>
         </div>
 
-        <!-- Recenter on Gran Chaco & Toggle Panel (Pointer events auto) -->
-        <div class="pointer-events-auto flex items-center space-x-1.5">
-          <div class="flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
-            <button id="btn-recenter" class="px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition" title="Ver todo el Gran Chaco Americano">
-              <i data-lucide="globe-2" class="w-3.5 h-3.5 text-cyan-400"></i>
-              <span>Enfocar Gran Chaco</span>
-            </button>
-          </div>
+        <!-- Right Side: Dedicated space for MapLibre zoom controls; mobile toggle only (offset with mr-14) -->
+        <div class="pointer-events-auto flex items-center space-x-1.5 mr-12 md:mr-14">
           <div class="flex items-center bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl md:hidden">
             <button id="btn-toggle-sidebar-map" class="px-2 py-1 rounded-lg text-[11px] font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1 transition" title="Ver Datos">
               <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
@@ -354,11 +353,12 @@
           <div class="flex items-center justify-between gap-2 min-w-0 w-full">
             <div class="flex items-center space-x-2 min-w-0 flex-1 overflow-hidden">
               <span id="alert-icon-box" class="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0">
-                ⚠️
+                🚨
               </span>
-              <div class="min-w-0 flex-1 overflow-hidden">
+              <div id="alert-subtitle-container" class="min-w-0 flex-1 overflow-hidden cursor-help" title="Gran Chaco Americano • SPI 3M: -1.62 • Déficit hídrico crítico en cuenca">
                 <h3 id="alert-title" class="font-bold text-red-400 text-xs xl:text-sm tracking-wide truncate">ALERTA ROJA: SEQUÍA SEVERA</h3>
-                <p id="alert-subtitle" class="text-[10px] xl:text-[11px] text-red-300/80 truncate block">Gran Chaco • SPI: -1.62 • Déficit crítico</p>
+                <div id="alert-subtitle-line1" class="text-[10px] xl:text-[11px] font-semibold text-red-300 truncate">Gran Chaco • SPI 3M: -1.62</div>
+                <div id="alert-subtitle-line2" class="text-[9.5px] xl:text-[10px] text-red-300/80 truncate">Déficit hídrico crítico en cuenca</div>
               </div>
             </div>
             <div class="text-right shrink-0 pl-1">
@@ -373,6 +373,14 @@
             <div id="pill-amarillo" class="py-0.5 xl:py-1 rounded bg-space-800 text-slate-500">AMARILLO</div>
             <div id="pill-naranja" class="py-0.5 xl:py-1 rounded bg-space-800 text-slate-500">NARANJA</div>
             <div id="pill-rojo" class="py-0.5 xl:py-1 rounded bg-red-500 text-white font-bold shadow-md shadow-red-950">ROJO</div>
+          </div>
+
+          <!-- Hydrological Persistence Note below Alert -->
+          <div id="alert-persistence-box" class="mt-2 pt-2 border-t border-red-500/20 text-[10px] xl:text-[10.5px] text-red-200/90 leading-snug font-sans bg-red-950/40 rounded-lg p-2 border border-red-500/30">
+            <div class="flex items-start gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5"></i>
+              <span><b>Nota hidrológica:</b> Aunque la proyección multivariable repunta hacia valores positivos en los próximos meses (Ene–Feb 2027), <b>el déficit hídrico acumulado en el perfil radicular profundo persiste</b>. Mantener medidas de contingencia hasta consolidar recarga efectiva del suelo.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -435,9 +443,9 @@
             </div>
             <div class="flex items-baseline justify-between">
               <span id="metric-oni" class="text-base xl:text-lg font-bold font-mono text-white">+1.65</span>
-              <span class="text-[9px] font-mono text-slate-400">ONI</span>
+              <span class="text-[9px] font-mono text-purple-300 font-semibold" title="Índice Niño Oceánico crudo observado en región Niño 3.4">ONI Observado</span>
             </div>
-            <div class="text-[9px] font-mono text-purple-400 mt-0.5 truncate">Fase "El Niño"</div>
+            <div id="metric-oni-phase" class="text-[9px] font-mono text-purple-400 mt-0.5 truncate">Fase "El Niño" (+1.65 °C)</div>
           </div>
         </div>
       </div>
@@ -474,14 +482,18 @@
               Explicabilidad (Valores SHAP)
             </span>
           </div>
-          <span class="text-[9px] xl:text-[10px] font-mono text-purple-400">Contribución</span>
+          <span class="text-[9px] xl:text-[10px] font-mono text-purple-400" title="Valores SHAP ordenados por magnitud absoluta">Contribución al Riesgo</span>
         </div>
 
-        <div class="h-28 xl:h-34 w-full bg-space-850 rounded-xl p-1.5 xl:p-2 border border-space-800 relative">
+        <div class="h-36 xl:h-40 w-full bg-space-850 rounded-xl p-1.5 xl:p-2 border border-space-800 relative">
           <canvas id="chart-shap"></canvas>
         </div>
+        <div class="flex items-center justify-between text-[9px] font-mono text-slate-400 mt-1 px-1">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-red-500 inline-block"></span> [▲ + Sequía] Aumenta riesgo</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-emerald-500 inline-block"></span> [▼ - Sequía] Reduce riesgo</span>
+        </div>
         <p id="shap-summary-text" class="text-[10px] xl:text-[11px] text-slate-300 font-mono mt-1.5 bg-space-950/70 p-1.5 xl:p-2 rounded-lg border border-space-800 leading-tight">
-          👉 <b class="text-purple-300">ONI (+0.38)</b> y <b class="text-cyan-300">Humedad Radicular (-0.29)</b> explican el 67% del riesgo.
+          👉 El <b>ONI Observado (+1.65)</b> genera una <b class="text-purple-300">Contribución SHAP al Riesgo de +0.38</b> acoplada a la caída de <b class="text-cyan-300">Humedad Radicular (-0.29)</b>.
         </p>
       </div>
 
