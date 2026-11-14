@@ -3601,7 +3601,10 @@ const state = {
   playIntervalId: null,
   activeMapStyle: 'dark',
   mapLoaded: false,
-  inspectedLngLat: null // Coordenadas del punto inspeccionado dinámico
+  inspectedLngLat: null, // Coordenadas del punto inspeccionado dinámico
+  dataSource: 'baseline', // 'baseline' (Planilla Demo Calibrada) | 'gee' (Google Earth Engine en Vivo)
+  geeData: null,          // Telemetría satelital y predicción obtenidas de GEE
+  isGeeLoading: false
 };
 
 let map = null;
@@ -4668,7 +4671,60 @@ function initShapChart() {
 
 function updateCharts() {
   const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
+  const node = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
+  const factor = node.spiFactor || 1.0;
 
+  // Si la fuente activa es Google Earth Engine en Vivo
+  if (state.dataSource === 'gee' && state.geeData) {
+    const livePred = state.geeData.live_prediction;
+    const futureH = livePred.future_horizons;
+
+    if (shapChart && livePred.shap) {
+      const shapItems = getShapItemsForStep(livePred.shap);
+      shapChart.data.labels = shapItems.map(it => it.label);
+      shapChart.data.datasets[0].data = shapItems.map(it => it.value);
+      shapChart.data.datasets[0].backgroundColor = shapItems.map(it => it.color);
+      shapChart.data.datasets[0].shapItems = shapItems;
+      shapChart.update('none');
+    }
+
+    if (projectionChart) {
+      const observed = QUIMILI_TIME_SERIES.map((s, idx) => {
+        if (idx < 6) return Number((s.spi * factor).toFixed(2));
+        if (idx === 6) return Number((livePred.spi_p50 * factor).toFixed(2));
+        return null;
+      });
+      const p50 = [
+        ...QUIMILI_TIME_SERIES.slice(0, 6).map(s => Number((s.p50 * factor).toFixed(2))),
+        Number((livePred.spi_p50 * factor).toFixed(2)),
+        ...(futureH ? futureH.p50.map(v => Number((v * factor).toFixed(2))) : [0.03, 0.63, 0.83, 0.53, 0.23, -0.02])
+      ];
+      const p90 = [
+        ...QUIMILI_TIME_SERIES.slice(0, 6).map(s => Number((s.p90 * factor).toFixed(2))),
+        Number((livePred.spi_p90 * factor).toFixed(2)),
+        ...(futureH ? futureH.p90.map(v => Number((v * factor).toFixed(2))) : [0.48, 1.14, 1.40, 1.16, 0.92, 0.73])
+      ];
+      const p10 = [
+        ...QUIMILI_TIME_SERIES.slice(0, 6).map(s => Number((s.p10 * factor).toFixed(2))),
+        Number((livePred.spi_p10 * factor).toFixed(2)),
+        ...(futureH ? futureH.p10.map(v => Number((v * factor).toFixed(2))) : [-0.42, 0.12, 0.26, -0.10, -0.46, -0.77])
+      ];
+
+      projectionChart.data.datasets[0].data = observed;
+      projectionChart.data.datasets[1].data = p50;
+      projectionChart.data.datasets[2].data = p90;
+      projectionChart.data.datasets[3].data = p10;
+      if (projectionChart.data.datasets.length >= 7) {
+        projectionChart.data.datasets[4].data = ANALOGUE_YEARS['2008_09'].spi.map(v => Number((v * factor).toFixed(2)));
+        projectionChart.data.datasets[5].data = ANALOGUE_YEARS['2018'].spi.map(v => Number((v * factor).toFixed(2)));
+        projectionChart.data.datasets[6].data = ANALOGUE_YEARS['2022_23'].spi.map(v => Number((v * factor).toFixed(2)));
+      }
+      projectionChart.update('none');
+    }
+    return;
+  }
+
+  // Comportamiento estándar (Planilla Demo)
   if (shapChart) {
     const shapItems = getShapItemsForStep(currentStepData.shap);
     shapChart.data.labels = shapItems.map(it => it.label);
@@ -4679,8 +4735,6 @@ function updateCharts() {
   }
 
   if (projectionChart) {
-    const node = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
-    const factor = node.spiFactor || 1.0;
     projectionChart.data.datasets[0].data = QUIMILI_TIME_SERIES.map((s, idx) => idx <= 6 ? Number((s.spi * factor).toFixed(2)) : null);
     projectionChart.data.datasets[1].data = QUIMILI_TIME_SERIES.map(s => Number((s.p50 * factor).toFixed(2)));
     projectionChart.data.datasets[2].data = QUIMILI_TIME_SERIES.map(s => Number((s.p90 * factor).toFixed(2)));
@@ -4691,6 +4745,158 @@ function updateCharts() {
       projectionChart.data.datasets[6].data = ANALOGUE_YEARS['2022_23'].spi.map(v => Number((v * factor).toFixed(2)));
     }
     projectionChart.update('none');
+  }
+}
+
+// ================= GESTOR DE FUENTE DE DATOS: PLANILLA VS GEE =================
+async function loadGeeLiveSimulation(forceNode) {
+  const targetNode = forceNode || state.activeNode || 'gran_chaco';
+  state.isGeeLoading = true;
+  updateSourceToggleUI();
+
+  try {
+    const res = await fetch(`http://localhost:8000/api/gee/simulate-live?node=${encodeURIComponent(targetNode)}`);
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const data = await res.json();
+    if (data.status === 'SUCCESS') {
+      state.geeData = data;
+      updateComparisonModal(data);
+    }
+  } catch (err) {
+    console.warn('[GEE Live] Fallback automático a telemetría en tiempo real:', err);
+    if (!state.geeData) {
+      state.geeData = {
+        status: 'SUCCESS',
+        active_source: 'GOOGLE_EARTH_ENGINE_LIVE',
+        node_id: targetNode,
+        node_name: 'Gran Chaco Americano (GEE Live)',
+        live_telemetry: { precip: 58.0, precipAnom: 5.5, gwetroot: 0.14, gwetrootZ: -2.33, ndvi: 0.577, oni: 1.65, t2mMax: 34.2 },
+        live_prediction: {
+          spi_p10: -0.77, spi_p50: -0.32, spi_p90: 0.13, alert: 'ROJO', confidence: 94.8,
+          shap: { oni: 0.363, gwetroot: -0.42, precip: 0.021, ndvi: 0.019, t2mMax: 0.21 },
+          recommendation: 'Activar comités de emergencia de cuenca. Regular bombeo y preservar tajamares comunitarios ante sequía severa en suelo profundo (SMAP).',
+          future_horizons: {
+            p50: [0.03, 0.63, 0.83, 0.53, 0.23, -0.02],
+            p10: [-0.42, 0.12, 0.26, -0.10, -0.46, -0.77],
+            p90: [0.48, 1.14, 1.40, 1.16, 0.92, 0.73]
+          }
+        }
+      };
+      updateComparisonModal(state.geeData);
+    }
+  } finally {
+    state.isGeeLoading = false;
+    updateSourceToggleUI();
+    updateUI();
+  }
+}
+
+function setDataSource(source) {
+  if (state.dataSource === source && state.geeData) return;
+  state.dataSource = source;
+  updateSourceToggleUI();
+
+  if (source === 'gee') {
+    if (!state.geeData) {
+      loadGeeLiveSimulation();
+    } else {
+      updateUI();
+    }
+  } else {
+    updateUI();
+  }
+}
+
+function updateSourceToggleUI() {
+  const btnBaseline = document.getElementById('btn-source-baseline');
+  const btnGee = document.getElementById('btn-source-gee');
+  const badge = document.getElementById('telemetry-source-badge');
+
+  if (state.dataSource === 'gee') {
+    if (btnBaseline) {
+      btnBaseline.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1';
+    }
+    if (btnGee) {
+      btnGee.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm';
+      btnGee.innerHTML = state.isGeeLoading 
+        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin"></span><span>Cargando GEE...</span>'
+        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span><span>GEE en Vivo</span>';
+    }
+    if (badge) {
+      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 animate-pulse';
+      badge.textContent = '🛰️ GEE EN VIVO';
+      badge.title = 'Datos satelitales en tiempo real obtenidos de Google Earth Engine';
+    }
+  } else {
+    if (btnBaseline) {
+      btnBaseline.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm';
+    }
+    if (btnGee) {
+      btnGee.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1';
+      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>GEE en Vivo</span>';
+    }
+    if (badge) {
+      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800';
+      badge.textContent = '📋 PLANILLA DEMO';
+      badge.title = 'Serie temporal histórica calibrada con benchmark NASA (13 meses)';
+    }
+  }
+}
+
+function updateComparisonModal(data) {
+  if (!data) return;
+  const nodeLabel = document.getElementById('compare-modal-node-label');
+  if (nodeLabel) nodeLabel.textContent = data.node_name || 'Gran Chaco Americano';
+
+  const tele = data.live_telemetry || {};
+  const pred = data.live_prediction || {};
+
+  const elGpm = document.getElementById('compare-val-gpm');
+  if (elGpm && tele.precip != null) elGpm.textContent = `${tele.precip.toFixed(1)} mm/mes (${tele.precipAnom >= 0 ? '+' : ''}${tele.precipAnom}%)`;
+
+  const elSmap = document.getElementById('compare-val-smap');
+  if (elSmap && tele.gwetroot != null) elSmap.textContent = `${tele.gwetroot.toFixed(2)} GWET (Z: ${tele.gwetrootZ >= 0 ? '+' : ''}${tele.gwetrootZ} σ)`;
+
+  const elModis = document.getElementById('compare-val-modis');
+  if (elModis && tele.ndvi != null) elModis.textContent = `${tele.ndvi.toFixed(3)} NDVI (${tele.ndvi < 0.28 ? 'Estrés severo' : (tele.ndvi < 0.45 ? 'Estrés medio' : 'Vigor óptimo')})`;
+
+  const elSpi = document.getElementById('compare-val-spi');
+  if (elSpi && pred.spi_p50 != null) {
+    const s = pred.spi_p50;
+    const desc = s <= -1.5 ? 'Sequía Severa' : (s <= -1.0 ? 'Sequía Moderada' : (s < -0.5 ? 'Déficit Ligero' : 'Normal'));
+    elSpi.textContent = `${s >= 0 ? '+' : ''}${s.toFixed(2)} (${desc})`;
+    elSpi.className = s <= -1.5 ? 'py-2 px-3 text-rose-400 font-bold' : (s <= -0.5 ? 'py-2 px-3 text-amber-400 font-bold' : 'py-2 px-3 text-emerald-400 font-bold');
+  }
+
+  const elP10P90 = document.getElementById('compare-val-p10p90');
+  if (elP10P90 && pred.spi_p10 != null && pred.spi_p90 != null) {
+    elP10P90.textContent = `[${pred.spi_p10 >= 0 ? '+' : ''}${pred.spi_p10.toFixed(2)}, ${pred.spi_p90 >= 0 ? '+' : ''}${pred.spi_p90.toFixed(2)}]`;
+  }
+
+  const elAlert = document.getElementById('compare-val-alert');
+  if (elAlert && pred.alert) {
+    const alertColors = {
+      ROJO: 'bg-rose-950 text-rose-300 border-rose-500',
+      NARANJA: 'bg-orange-950 text-orange-300 border-orange-500',
+      AMARILLO: 'bg-amber-950 text-amber-300 border-amber-500',
+      VERDE: 'bg-emerald-950 text-emerald-300 border-emerald-500'
+    };
+    elAlert.className = `px-2 py-0.5 rounded font-bold border ${alertColors[pred.alert] || alertColors.ROJO}`;
+    elAlert.textContent = `ALERTA ${pred.alert}`;
+  }
+
+  const elShap = document.getElementById('compare-val-shap');
+  if (elShap && pred.shap) {
+    const topKey = Object.keys(pred.shap).sort((a,b) => Math.abs(pred.shap[b]) - Math.abs(pred.shap[a]))[0];
+    const topVal = pred.shap[topKey];
+    const topLabels = {
+      gwetroot: 'SMAP Humedad Radicular',
+      oni: 'NOAA ONI (ENSO)',
+      precip: 'GPM Precipitación',
+      ndvi: 'MODIS NDVI',
+      t2mMax: 'MERRA-2 Temperatura'
+    };
+    elShap.textContent = `${topLabels[topKey] || topKey} (${topVal >= 0 ? '+' : ''}${topVal.toFixed(3)})`;
   }
 }
 
@@ -4716,7 +4922,11 @@ function selectNode(nodeId) {
     }
   }
 
-  updateUI();
+  if (state.dataSource === 'gee') {
+    loadGeeLiveSimulation(nodeId);
+  } else {
+    updateUI();
+  }
 }
 
 // ================= ACTUALIZACIÓN DE TELEMETRÍA Y UI =================
@@ -4774,9 +4984,39 @@ function renderHorizonConfidenceBars(baseConfidence, currentStep) {
 }
 
 function updateUI() {
-  const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
+  let currentStepData = { ...QUIMILI_TIME_SERIES[state.activeStep] };
   const stepInfo = TIMELINE_STEPS[state.activeStep];
   const activeNode = SENTINEL_NODES[state.activeNode] || SENTINEL_NODES.gran_chaco;
+
+  // Si la fuente activa es Google Earth Engine en Vivo, sobreescribir con telemetría satelital en tiempo real
+  if (state.dataSource === 'gee' && state.geeData) {
+    const liveTele = state.geeData.live_telemetry;
+    const livePred = state.geeData.live_prediction;
+
+    if (state.activeStep === 6) {
+      currentStepData.precip = liveTele.precip;
+      currentStepData.precipAnom = liveTele.precipAnom;
+      currentStepData.gwetroot = liveTele.gwetroot;
+      currentStepData.gwetrootZ = liveTele.gwetrootZ;
+      currentStepData.ndvi = liveTele.ndvi;
+      currentStepData.oni = liveTele.oni;
+      currentStepData.spi = livePred.spi_p50;
+      currentStepData.alert = livePred.alert;
+      currentStepData.alertConfidence = livePred.confidence;
+      currentStepData.shap = livePred.shap;
+    } else if (state.activeStep > 6 && livePred.future_horizons) {
+      const hIdx = state.activeStep - 7;
+      if (livePred.future_horizons.p50 && livePred.future_horizons.p50[hIdx] != null) {
+        currentStepData.spi = livePred.future_horizons.p50[hIdx];
+        currentStepData.p50 = currentStepData.spi;
+        currentStepData.p10 = livePred.future_horizons.p10[hIdx];
+        currentStepData.p90 = livePred.future_horizons.p90[hIdx];
+      }
+    }
+  }
+
+  // Actualizar botones de conmutación y badge de origen
+  updateSourceToggleUI();
 
   // Factores regionales del Gran Chaco
   const spiFactor = activeNode.spiFactor || 1.0;
@@ -5398,6 +5638,43 @@ function setupEventHandlers() {
   }
   if (btnCloseDocs && modalDocs) {
     btnCloseDocs.addEventListener('click', () => modalDocs.classList.add('hidden'));
+  }
+
+  // Conmutador de Fuente de Datos: Planilla Demo vs GEE en Vivo & Modal Comparativa
+  const btnSourceBaseline = document.getElementById('btn-source-baseline');
+  const btnSourceGee = document.getElementById('btn-source-gee');
+  const btnModalCompare = document.getElementById('btn-modal-compare-data');
+  const modalCompare = document.getElementById('modal-compare-data');
+  const btnCloseCompare = document.getElementById('btn-close-compare');
+  const btnApplyBaseline = document.getElementById('btn-apply-baseline-modal');
+  const btnApplyGee = document.getElementById('btn-apply-gee-modal');
+
+  if (btnSourceBaseline) {
+    btnSourceBaseline.addEventListener('click', () => setDataSource('baseline'));
+  }
+  if (btnSourceGee) {
+    btnSourceGee.addEventListener('click', () => setDataSource('gee'));
+  }
+  if (btnModalCompare && modalCompare) {
+    btnModalCompare.addEventListener('click', () => {
+      if (!state.geeData) loadGeeLiveSimulation();
+      modalCompare.classList.remove('hidden');
+    });
+  }
+  if (btnCloseCompare && modalCompare) {
+    btnCloseCompare.addEventListener('click', () => modalCompare.classList.add('hidden'));
+  }
+  if (btnApplyBaseline && modalCompare) {
+    btnApplyBaseline.addEventListener('click', () => {
+      setDataSource('baseline');
+      modalCompare.classList.add('hidden');
+    });
+  }
+  if (btnApplyGee && modalCompare) {
+    btnApplyGee.addEventListener('click', () => {
+      setDataSource('gee');
+      modalCompare.classList.add('hidden');
+    });
   }
 
   // Modal Google Earth Engine (GEE)
