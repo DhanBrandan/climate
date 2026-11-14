@@ -3556,6 +3556,31 @@ const QUIMILI_TIME_SERIES = [
   }
 ];
 
+// Curvas de referencia de sequías históricas (Años Análogos en el Gran Chaco)
+const ANALOGUE_YEARS = {
+  '2008_09': {
+    name: '2008–09 (La Niña Extrema)',
+    shortName: '2008–09',
+    color: '#F59E0B',
+    desc: 'Sequía histórica récord: La Niña extrema y colapso productivo',
+    spi: [-0.45, -0.68, -0.92, -1.25, -1.55, -1.82, -2.10, -2.18, -1.95, -1.60, -1.20, -0.85, -0.60]
+  },
+  '2018': {
+    name: '2018 (Estrés Estival Severo)',
+    shortName: '2018',
+    color: '#C084FC',
+    desc: 'Sequía agrícola repentina con olas de calor extremo en floración',
+    spi: [-0.20, -0.35, -0.50, -0.75, -1.10, -1.45, -1.75, -1.85, -1.90, -1.65, -1.30, -0.95, -0.70]
+  },
+  '2022_23': {
+    name: '2022–23 (Triple Niña / Bajante)',
+    shortName: '2022–23',
+    color: '#FB7185',
+    desc: 'Triple Niña consecutiva con bajante crítica Paraná-Paraguay',
+    spi: [-0.60, -0.85, -1.15, -1.40, -1.70, -2.00, -2.25, -2.30, -2.20, -1.90, -1.55, -1.25, -0.95]
+  }
+};
+
 const DEPT_VARIATIONS = {
   chaco_seco_sur: { spiFactor: 1.0, gwetFactor: 0.95, ndviFactor: 0.96, floodBias: -0.05 },
   chaco_central: { spiFactor: 1.05, gwetFactor: 1.02, ndviFactor: 1.05, floodBias: 0.08 },
@@ -3575,7 +3600,8 @@ const state = {
   playSpeed: 1,
   playIntervalId: null,
   activeMapStyle: 'dark',
-  mapLoaded: false
+  mapLoaded: false,
+  inspectedLngLat: null // Coordenadas del punto inspeccionado dinámico
 };
 
 let map = null;
@@ -3722,15 +3748,13 @@ function setupMapLayers() {
         }
       });
 
-      // Interacción: Click para abrir Popup con telemetría de la macro-región
-      map.on('click', 'chaco-regions-fill', (e) => {
-        if (e.features && e.features.length > 0) {
-          showRegionPopup(e.lngLat, e.features[0].properties);
-        }
+      // Interacción: Click en cualquier punto del mapa (no solo en las ciudades)
+      map.on('click', (e) => {
+        handleMapPointClick(e.lngLat);
       });
 
       map.on('mouseenter', 'chaco-regions-fill', () => {
-        map.getCanvas().style.cursor = 'pointer';
+        map.getCanvas().style.cursor = 'crosshair';
       });
       map.on('mouseleave', 'chaco-regions-fill', () => {
         map.getCanvas().style.cursor = '';
@@ -3741,37 +3765,308 @@ function setupMapLayers() {
   }
 }
 
-function showRegionPopup(lngLat, props) {
-  const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
-  const variation = DEPT_VARIATIONS[props.id] || { spiFactor: 1.0, gwetFactor: 1.0, ndviFactor: 1.0, floodBias: 0.0 };
-  const spiVal = (currentStepData.spi * variation.spiFactor).toFixed(2);
-  const gwetVal = (currentStepData.gwetroot * variation.gwetFactor).toFixed(2);
-  const ndviVal = (currentStepData.ndvi * variation.ndviFactor).toFixed(2);
-  const mapLib = window.maplibregl || window.mapboxgl;
+// ================= INSPECCIÓN PUNTUAL DINÁMICA DEL MAPA =================
+let pointInspectorMarker = null;
 
-  const html = `
-    <div style="font-family: inherit; font-size: 12px; color: #F8FAFC; max-width: 250px;">
-      <div style="font-weight: bold; font-size: 13px; color: #38BDF8; margin-bottom: 4px; border-bottom: 1px solid #334155; padding-bottom: 4px;">
-        ${props.name}
-      </div>
-      <div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">
-        📍 <b>${props.country}</b> • ${props.provinces || ''}
-      </div>
-      <div style="line-height: 1.6; font-family: monospace; font-size: 11px;">
-        <div><b>Sede / Monitoreo:</b> ${props.headquarter}</div>
-        <div><b>Superficie:</b> ~${props.areaKm2 ? Number(props.areaKm2).toLocaleString() : '150.000'} km²</div>
-        <div><b>SPI 3M (Sequía):</b> <span style="color: ${spiVal < -1.5 ? '#EF4444' : (spiVal < -0.8 ? '#F59E0B' : '#38BDF8')}; font-weight: bold;">${spiVal}</span></div>
-        <div><b>Humedad Radicular (SMAP):</b> ${gwetVal} GWET</div>
-        <div><b>Biomasa NDVI (MODIS):</b> ${ndviVal}</div>
-        <div><b>Infiltración de Suelo:</b> ${(props.infilFactor * 100).toFixed(0)}%</div>
-      </div>
+function setPointInspectorMarker(lngLat) {
+  const mapLib = window.maplibregl || window.mapboxgl;
+  if (!mapLib || !map) return;
+
+  if (pointInspectorMarker) {
+    pointInspectorMarker.remove();
+    pointInspectorMarker = null;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'point-inspector-marker';
+  el.innerHTML = `
+    <div style="position: relative; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+      <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #06B6D4; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.85;"></div>
+      <div style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: rgba(6, 182, 212, 0.45); border: 2px solid #38BDF8; box-shadow: 0 0 10px #06B6D4;"></div>
+      <div style="width: 5px; height: 5px; border-radius: 50%; background: #FFFFFF;"></div>
     </div>
   `;
 
-  new mapLib.Popup({ offset: 12 })
-    .setLngLat(lngLat)
-    .setHTML(html)
+  pointInspectorMarker = new mapLib.Marker({ element: el })
+    .setLngLat([lngLat.lng, lngLat.lat])
     .addTo(map);
+}
+
+function closePointInspector() {
+  const inspector = document.getElementById('map-point-inspector');
+  if (inspector) inspector.classList.add('hidden');
+  state.inspectedLngLat = null;
+  if (pointInspectorMarker) {
+    pointInspectorMarker.remove();
+    pointInspectorMarker = null;
+  }
+}
+
+function getPointAgroclimaticData(lngLat) {
+  const lng = Number(lngLat.lng != null ? lngLat.lng : lngLat[0]);
+  const lat = Number(lngLat.lat != null ? lngLat.lat : lngLat[1]);
+
+  let regionName = 'Gran Chaco Americano';
+  let countryName = 'ARG • BOL • PRY';
+  let baseFactor = 1.0;
+
+  if (map && state.mapLoaded) {
+    try {
+      const point = map.project([lng, lat]);
+      const features = map.queryRenderedFeatures(point, { layers: ['chaco-regions-fill'] });
+      if (features && features.length > 0) {
+        const p = features[0].properties;
+        regionName = p.name || regionName;
+        countryName = p.country || countryName;
+        if (p.id && DEPT_VARIATIONS[p.id]) {
+          baseFactor = DEPT_VARIATIONS[p.id].spiFactor || 1.0;
+        }
+      } else {
+        // Asignación por sector biogeográfico según coordenadas
+        if (lat > -22) {
+          regionName = lng > -60.5 ? 'Chaco Boreal Oriental' : 'Chaco Boliviano / Serranías';
+          countryName = lng > -60.5 ? 'Paraguay' : 'Bolivia';
+          baseFactor = 0.94;
+        } else if (lat > -27) {
+          regionName = lng > -61.0 ? 'Chaco Húmedo / Ribereño' : 'Chaco Seco Central';
+          countryName = 'Argentina';
+          baseFactor = 1.06;
+        } else {
+          regionName = lng > -61.5 ? 'Bajos Submeridionales' : 'Chaco Árido Austral';
+          countryName = 'Argentina';
+          baseFactor = 1.14;
+        }
+      }
+    } catch (e) {
+      console.warn('Error detectando feature en coordenadas:', e);
+    }
+  }
+
+  // Gradiente espacial continuo y coherente con lat/lon
+  const latGrad = Math.sin((lat + 26.5) * 2.1) * 0.12;
+  const lngGrad = Math.cos((lng + 61.5) * 1.8) * 0.10;
+  const pointFactor = Math.max(0.65, Math.min(1.45, baseFactor + latGrad + lngGrad));
+
+  // Generar la serie temporal de 13 meses interpolada a escala de parcela
+  const timeSeries = QUIMILI_TIME_SERIES.map((s) => {
+    const rawSpi = s.spi * pointFactor;
+    const rawP50 = s.p50 * pointFactor;
+    const rawP10 = s.p10 * pointFactor;
+    const rawP90 = s.p90 * pointFactor;
+
+    return {
+      step: s.step,
+      spi: Number(rawSpi.toFixed(2)),
+      p50: Number(rawP50.toFixed(2)),
+      p10: Number(rawP10.toFixed(2)),
+      p90: Number(rawP90.toFixed(2)),
+      gwetroot: Number((s.gwetroot * Math.max(0.7, Math.min(1.3, 1 / pointFactor))).toFixed(2))
+    };
+  });
+
+  const currentStep = timeSeries[state.activeStep] || timeSeries[6];
+  const currentSpi = currentStep.spi;
+
+  let alertBadgeText = 'ALERTA VERDE';
+  let alertBadgeClass = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+  let spiColorClass = 'text-emerald-400';
+  const spiCatName = getSpiCategoryName(currentSpi);
+
+  if (currentSpi <= -1.5) {
+    alertBadgeText = 'ALERTA ROJA (CRÍTICA)';
+    alertBadgeClass = 'bg-red-500/20 text-red-400 border border-red-500/40';
+    spiColorClass = 'text-red-400';
+  } else if (currentSpi <= -1.0) {
+    alertBadgeText = 'ALERTA NARANJA (SEVERA)';
+    alertBadgeClass = 'bg-orange-500/20 text-orange-400 border border-orange-500/40';
+    spiColorClass = 'text-orange-400';
+  } else if (currentSpi <= -0.5) {
+    alertBadgeText = 'ALERTA AMARILLA (LEVE)';
+    alertBadgeClass = 'bg-amber-500/20 text-amber-400 border border-amber-500/40';
+    spiColorClass = 'text-amber-400';
+  }
+
+  return {
+    lng,
+    lat,
+    regionName,
+    countryName,
+    pointFactor,
+    timeSeries,
+    currentSpi,
+    currentStep,
+    alertBadgeText,
+    alertBadgeClass,
+    spiColorClass,
+    spiCatName
+  };
+}
+
+function renderPointSparklineSvg(timeSeries) {
+  const W = 280;
+  const H = 44;
+  const padX = 6;
+  const padY = 5;
+
+  const minVal = -2.4;
+  const maxVal = +1.5;
+
+  function toY(val) {
+    const clamped = Math.max(minVal, Math.min(maxVal, val));
+    return padY + ((maxVal - clamped) / (maxVal - minVal)) * (H - 2 * padY);
+  }
+
+  function toX(idx) {
+    return padX + (idx / 12) * (W - 2 * padX);
+  }
+
+  const yZero = toY(0);
+  const xToday = toX(6);
+
+  // 1. Línea cero (referencia condición normal)
+  let svg = `<line x1="${padX}" y1="${yZero.toFixed(1)}" x2="${W - padX}" y2="${yZero.toFixed(1)}" stroke="rgba(148, 163, 184, 0.22)" stroke-dasharray="2,2" stroke-width="1" />`;
+
+  // 2. Banda de incertidumbre cuantílica p10-p90 (step 6 a step 12)
+  let p90Points = [];
+  let p10Points = [];
+  for (let i = 6; i <= 12; i++) {
+    const s = timeSeries[i];
+    p90Points.push(`${toX(i).toFixed(1)},${toY(s.p90).toFixed(1)}`);
+    p10Points.unshift(`${toX(i).toFixed(1)},${toY(s.p10).toFixed(1)}`);
+  }
+  const areaPolygon = p90Points.concat(p10Points).join(' ');
+  svg += `<polygon points="${areaPolygon}" fill="rgba(6, 182, 212, 0.18)" />`;
+
+  // 3. Trayectoria histórica observada (t-6 a t0) en blanco sólido
+  let obsPath = [];
+  for (let i = 0; i <= 6; i++) {
+    const s = timeSeries[i];
+    obsPath.push(`${i === 0 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(s.spi).toFixed(1)}`);
+  }
+  svg += `<path d="${obsPath.join(' ')}" fill="none" stroke="#F8FAFC" stroke-width="2" stroke-linecap="round" />`;
+
+  // 4. Trayectoria proyectada (t0 a t+6) en cyan punteado
+  let projPath = [];
+  for (let i = 6; i <= 12; i++) {
+    const s = timeSeries[i];
+    projPath.push(`${i === 6 ? 'M' : 'L'} ${toX(i).toFixed(1)} ${toY(s.p50).toFixed(1)}`);
+  }
+  svg += `<path d="${projPath.join(' ')}" fill="none" stroke="#06B6D4" stroke-width="1.8" stroke-dasharray="3,2" stroke-linecap="round" />`;
+
+  // 5. Línea vertical marcadora de HOY (step 6)
+  svg += `<line x1="${xToday.toFixed(1)}" y1="${padY}" x2="${xToday.toFixed(1)}" y2="${H - padY}" stroke="#F59E0B" stroke-dasharray="2,2" stroke-width="1.2" />`;
+
+  // 6. Puntos destacados (HOY y Pronóstico final)
+  const yToday = toY(timeSeries[6].spi);
+  svg += `<circle cx="${xToday.toFixed(1)}" cy="${yToday.toFixed(1)}" r="3" fill="#F59E0B" stroke="#0B0F19" stroke-width="1.2" />`;
+
+  const xFinal = toX(12);
+  const yFinal = toY(timeSeries[12].p50);
+  svg += `<circle cx="${xFinal.toFixed(1)}" cy="${yFinal.toFixed(1)}" r="2.5" fill="#06B6D4" stroke="#0B0F19" stroke-width="1" />`;
+
+  return svg;
+}
+
+function renderPointForecastGrid(timeSeries) {
+  const forecastSteps = [
+    { label: 't+1', month: 'Dic', data: timeSeries[7] },
+    { label: 't+2', month: 'Ene', data: timeSeries[8] },
+    { label: 't+3', month: 'Feb', data: timeSeries[9] },
+    { label: 't+4', month: 'Mar', data: timeSeries[10] },
+    { label: 't+5', month: 'Abr', data: timeSeries[11] },
+    { label: 't+6', month: 'May', data: timeSeries[12] }
+  ];
+
+  return forecastSteps.map(f => {
+    const val = f.data ? f.data.p50 : 0;
+    let bg = 'bg-space-850';
+    let text = 'text-slate-300';
+    let border = 'border-space-800';
+
+    if (val <= -1.5) {
+      bg = 'bg-red-950/60';
+      text = 'text-red-400 font-bold';
+      border = 'border-red-500/30';
+    } else if (val <= -0.8) {
+      bg = 'bg-amber-950/50';
+      text = 'text-amber-400 font-bold';
+      border = 'border-amber-500/30';
+    } else if (val >= 0.5) {
+      bg = 'bg-cyan-950/50';
+      text = 'text-cyan-300 font-bold';
+      border = 'border-cyan-500/30';
+    } else {
+      bg = 'bg-emerald-950/40';
+      text = 'text-emerald-400 font-semibold';
+      border = 'border-emerald-500/30';
+    }
+
+    const sign = val >= 0 ? '+' : '';
+    return `
+      <div class="${bg} border ${border} rounded p-1 flex flex-col justify-between">
+        <span class="text-[7.5px] text-slate-400 font-sans">${f.month} (${f.label})</span>
+        <span class="text-[9.5px] ${text} mt-0.5">${sign}${val.toFixed(2)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function handleMapPointClick(lngLat, createMarker = true) {
+  state.inspectedLngLat = lngLat;
+  const data = getPointAgroclimaticData(lngLat);
+
+  const inspector = document.getElementById('map-point-inspector');
+  if (!inspector) return;
+
+  const regEl = document.getElementById('point-inspector-region');
+  const countryEl = document.getElementById('point-inspector-country');
+  const coordsEl = document.getElementById('point-inspector-coords');
+  const spiEl = document.getElementById('point-inspector-spi');
+  const spiCatEl = document.getElementById('point-inspector-spi-cat');
+  const alertBadgeEl = document.getElementById('point-inspector-alert-badge');
+  const sparklineSvgEl = document.getElementById('point-inspector-sparkline');
+  const forecastGridEl = document.getElementById('point-inspector-forecast-grid');
+
+  if (regEl) regEl.textContent = data.regionName;
+  if (countryEl) countryEl.textContent = data.countryName;
+  if (coordsEl) coordsEl.textContent = `Lat: ${data.lat.toFixed(3)}°, Lng: ${data.lng.toFixed(3)}°`;
+
+  if (spiEl) {
+    spiEl.textContent = `${data.currentSpi >= 0 ? '+' : ''}${data.currentSpi.toFixed(2)}`;
+    spiEl.className = `text-base sm:text-lg font-bold font-mono ${data.spiColorClass}`;
+  }
+
+  if (spiCatEl) {
+    spiCatEl.textContent = data.spiCatName;
+    spiCatEl.className = `text-[8.5px] font-mono ${data.spiColorClass} font-semibold truncate`;
+  }
+
+  if (alertBadgeEl) {
+    alertBadgeEl.textContent = data.alertBadgeText;
+    alertBadgeEl.className = `inline-block px-1.5 py-0.5 rounded text-[9px] font-bold font-mono truncate ${data.alertBadgeClass}`;
+  }
+
+  if (sparklineSvgEl) {
+    sparklineSvgEl.innerHTML = renderPointSparklineSvg(data.timeSeries);
+  }
+
+  if (forecastGridEl) {
+    forecastGridEl.innerHTML = renderPointForecastGrid(data.timeSeries);
+  }
+
+  if (createMarker) {
+    setPointInspectorMarker(lngLat);
+  }
+
+  inspector.classList.remove('hidden');
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function showRegionPopup(lngLat, props) {
+  handleMapPointClick(lngLat);
 }
 
 function setupSentinelMarkers() {
@@ -3800,6 +4095,7 @@ function setupSentinelMarkers() {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         selectNode(node.id);
+        handleMapPointClick({ lng: node.coords[0], lat: node.coords[1] });
       });
 
       new mapLib.Marker({ element: el })
@@ -4031,6 +4327,33 @@ const projectionOverlayPlugin = {
       ctx.fillText(envText, pt90.x, midY);
     }
 
+    // Etiquetas directas para Curvas de Años Análogos (si están activas)
+    const analogueConfigs = [
+      { idx: 4, name: '2008–09', color: '#F59E0B', stepIdx: 11 },
+      { idx: 5, name: '2018', color: '#C084FC', stepIdx: 10 },
+      { idx: 6, name: '2022–23', color: '#FB7185', stepIdx: 12 }
+    ];
+
+    analogueConfigs.forEach(an => {
+      if (chart.isDatasetVisible(an.idx)) {
+        const meta = chart.getDatasetMeta(an.idx);
+        if (meta && meta.data && meta.data[an.stepIdx]) {
+          const pt = meta.data[an.stepIdx];
+          ctx.font = 'bold 8.5px monospace';
+          const tw = ctx.measureText(an.name).width;
+          ctx.fillStyle = 'rgba(11, 15, 25, 0.92)';
+          ctx.fillRect(pt.x - tw / 2 - 3, pt.y - 15, tw + 6, 12);
+          ctx.strokeStyle = an.color;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(pt.x - tw / 2 - 3, pt.y - 15, tw + 6, 12);
+          ctx.fillStyle = an.color;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(an.name, pt.x, pt.y - 9);
+        }
+      }
+    });
+
     ctx.restore();
   }
 };
@@ -4087,6 +4410,43 @@ function initProjectionChart() {
           borderColor: 'transparent',
           pointRadius: 0,
           tension: 0.2
+        },
+        // Datasets 4, 5, 6: Curvas Análogas Históricas de Sequía
+        {
+          label: 'Análogo 2008–09 (La Niña Extrema)',
+          data: ANALOGUE_YEARS['2008_09'].spi,
+          borderColor: '#F59E0B',
+          borderWidth: 1.8,
+          borderDash: [5, 3],
+          pointRadius: 2,
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#F59E0B',
+          tension: 0.2,
+          hidden: true
+        },
+        {
+          label: 'Análogo 2018 (Estrés Estival)',
+          data: ANALOGUE_YEARS['2018'].spi,
+          borderColor: '#C084FC',
+          borderWidth: 1.8,
+          borderDash: [5, 3],
+          pointRadius: 2,
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#C084FC',
+          tension: 0.2,
+          hidden: true
+        },
+        {
+          label: 'Análogo 2022–23 (Triple Niña / Bajante)',
+          data: ANALOGUE_YEARS['2022_23'].spi,
+          borderColor: '#FB7185',
+          borderWidth: 1.8,
+          borderDash: [5, 3],
+          pointRadius: 2,
+          pointHoverRadius: 4,
+          pointBackgroundColor: '#FB7185',
+          tension: 0.2,
+          hidden: true
         }
       ]
     },
@@ -4109,7 +4469,13 @@ function initProjectionChart() {
           bodyFont: { family: 'monospace', size: 10 },
           footerFont: { family: 'monospace', size: 9, style: 'italic' },
           footerColor: '#94A3B8',
-          filter: (tooltipItem) => tooltipItem.datasetIndex <= 1,
+          filter: (tooltipItem) => {
+            if (tooltipItem.datasetIndex <= 1) return true;
+            if (tooltipItem.datasetIndex >= 4) {
+              return projectionChart && projectionChart.isDatasetVisible(tooltipItem.datasetIndex);
+            }
+            return false;
+          },
           callbacks: {
             title: (items) => {
               const idx = items[0].dataIndex;
@@ -4158,6 +4524,31 @@ function initProjectionChart() {
                 }
                 return null;
               }
+
+              if (datasetIndex === 4) {
+                const val = Number((ANALOGUE_YEARS['2008_09'].spi[idx] * factor).toFixed(2));
+                return [
+                  `  ${ANALOGUE_YEARS['2008_09'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}`,
+                  `  Categoría SPI: ${getSpiCategoryName(val)}`
+                ];
+              }
+
+              if (datasetIndex === 5) {
+                const val = Number((ANALOGUE_YEARS['2018'].spi[idx] * factor).toFixed(2));
+                return [
+                  `  ${ANALOGUE_YEARS['2018'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}`,
+                  `  Categoría SPI: ${getSpiCategoryName(val)}`
+                ];
+              }
+
+              if (datasetIndex === 6) {
+                const val = Number((ANALOGUE_YEARS['2022_23'].spi[idx] * factor).toFixed(2));
+                return [
+                  `  ${ANALOGUE_YEARS['2022_23'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}`,
+                  `  Categoría SPI: ${getSpiCategoryName(val)}`
+                ];
+              }
+
               return null;
             },
             footer: (items) => {
@@ -4293,6 +4684,11 @@ function updateCharts() {
     projectionChart.data.datasets[1].data = QUIMILI_TIME_SERIES.map(s => Number((s.p50 * factor).toFixed(2)));
     projectionChart.data.datasets[2].data = QUIMILI_TIME_SERIES.map(s => Number((s.p90 * factor).toFixed(2)));
     projectionChart.data.datasets[3].data = QUIMILI_TIME_SERIES.map(s => Number((s.p10 * factor).toFixed(2)));
+    if (projectionChart.data.datasets.length >= 7) {
+      projectionChart.data.datasets[4].data = ANALOGUE_YEARS['2008_09'].spi.map(v => Number((v * factor).toFixed(2)));
+      projectionChart.data.datasets[5].data = ANALOGUE_YEARS['2018'].spi.map(v => Number((v * factor).toFixed(2)));
+      projectionChart.data.datasets[6].data = ANALOGUE_YEARS['2022_23'].spi.map(v => Number((v * factor).toFixed(2)));
+    }
     projectionChart.update('none');
   }
 }
@@ -4579,6 +4975,11 @@ function updateUI() {
   // 7. Actualizar Mapa y Gráficos
   updateMapData();
   updateCharts();
+
+  // 8. Actualizar Inspector Puntual si está activo
+  if (state.inspectedLngLat) {
+    handleMapPointClick(state.inspectedLngLat, false);
+  }
 }
 
 function renderActions(stepData, activeNode) {
@@ -4874,6 +5275,47 @@ function setupEventHandlers() {
   if (tabAll) tabAll.addEventListener('click', () => setSidebarTab('all'));
   if (tabSummary) tabSummary.addEventListener('click', () => setSidebarTab('summary'));
   if (tabModels) tabModels.addEventListener('click', () => setSidebarTab('models'));
+
+  // Selector de Curvas Análogas Históricas de Sequía
+  const yearDatasetMap = {
+    '2008_09': 4,
+    '2018': 5,
+    '2022_23': 6
+  };
+
+  document.querySelectorAll('.btn-analogue-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const yearKey = btn.getAttribute('data-year');
+      const dsIdx = yearDatasetMap[yearKey];
+      if (dsIdx == null || !projectionChart) return;
+
+      const isVisible = projectionChart.isDatasetVisible(dsIdx);
+      projectionChart.setDatasetVisibility(dsIdx, !isVisible);
+      projectionChart.update();
+
+      const dot = btn.querySelector('span:first-child');
+      if (!isVisible) {
+        btn.classList.add('bg-space-800', 'font-bold', 'border-opacity-100', 'shadow-md');
+        btn.classList.remove('text-opacity-80');
+        if (dot) {
+          dot.classList.remove('opacity-40');
+          dot.classList.add('opacity-100', 'animate-pulse');
+        }
+      } else {
+        btn.classList.remove('bg-space-800', 'font-bold', 'border-opacity-100', 'shadow-md');
+        if (dot) {
+          dot.classList.add('opacity-40');
+          dot.classList.remove('opacity-100', 'animate-pulse');
+        }
+      }
+    });
+  });
+
+  // Botón Cerrar Inspector de Punto en el Mapa
+  const btnCloseInspector = document.getElementById('btn-close-point-inspector');
+  if (btnCloseInspector) {
+    btnCloseInspector.addEventListener('click', closePointInspector);
+  }
 
   // Centrar en Gran Chaco
   const recenterBtn = document.getElementById('btn-recenter');
