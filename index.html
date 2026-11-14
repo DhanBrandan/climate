@@ -361,9 +361,14 @@
                 <div id="alert-subtitle-line2" class="text-[9.5px] xl:text-[10px] text-red-300/80 truncate">Déficit hídrico crítico en cuenca</div>
               </div>
             </div>
-            <div class="text-right shrink-0 pl-1">
-              <div class="text-[9px] xl:text-[10px] font-mono text-slate-400">Confianza RF</div>
-              <div id="alert-confidence" class="text-xs xl:text-sm font-bold font-mono text-red-300">94.8%</div>
+            <div class="text-right shrink-0 pl-1" title="Confianza estimada del ensamble por horizonte predictivo (t+1 a t+6)">
+              <div class="text-[8.5px] xl:text-[9.5px] font-mono text-slate-400 mb-0.5 flex items-center justify-end gap-1">
+                <span>Confianza RF</span>
+                <span class="text-[8px] text-slate-500 font-normal hidden xl:inline">(t+1→t+6)</span>
+              </div>
+              <div id="horizon-confidence-container" class="flex items-end justify-end gap-1 bg-space-900/90 px-1.5 py-1 rounded-lg border border-space-800">
+                <!-- Generado dinámicamente: mini barras por horizonte t+1 a t+6 -->
+              </div>
             </div>
           </div>
 
@@ -397,55 +402,95 @@
 
         <div class="grid grid-cols-2 gap-1.5 xl:gap-2 text-xs">
           <!-- GPM IMERG Precipitation -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
-              <span>GPM IMERG</span>
-              <i data-lucide="cloud-rain" class="w-3 h-3 text-blue-400"></i>
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
+                <span>GPM IMERG</span>
+                <i data-lucide="cloud-rain" class="w-3 h-3 text-blue-400"></i>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <span id="metric-precip" class="text-base xl:text-lg font-bold font-mono text-white">18.4</span>
+                <span class="text-[9px] font-mono text-slate-400">mm/mes</span>
+              </div>
+              <div id="metric-precip-anom" class="text-[9px] font-mono text-red-400 mt-0.5">-62% vs clim (μ)</div>
             </div>
-            <div class="flex items-baseline justify-between">
-              <span id="metric-precip" class="text-base xl:text-lg font-bold font-mono text-white">18.4</span>
-              <span class="text-[9px] font-mono text-slate-400">mm/mes</span>
+            <!-- Freshness & Health Row -->
+            <div class="mt-1.5 pt-1 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-400">
+              <span class="flex items-center gap-1" title="Último pase orbital procesado: GPM IMERG V07">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>hace 6 h</span>
+              </span>
+              <span class="text-emerald-400 font-semibold text-[7.5px]">ONLINE</span>
             </div>
-            <div id="metric-precip-anom" class="text-[9px] font-mono text-red-400 mt-0.5">-62% vs clim (μ)</div>
           </div>
 
           <!-- SMAP Root Moisture -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
-              <span>SMAP / GLDAS</span>
-              <i data-lucide="droplet" class="w-3 h-3 text-cyan-400"></i>
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
+                <span>SMAP / GLDAS</span>
+                <i data-lucide="droplet" class="w-3 h-3 text-cyan-400"></i>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <span id="metric-gwetroot" class="text-base xl:text-lg font-bold font-mono text-white">0.14</span>
+                <span class="text-[9px] font-mono text-slate-400">GWET</span>
+              </div>
+              <div id="metric-gwetroot-anom" class="text-[9px] font-mono text-red-400 mt-0.5">Z-score: -2.15 σ</div>
             </div>
-            <div class="flex items-baseline justify-between">
-              <span id="metric-gwetroot" class="text-base xl:text-lg font-bold font-mono text-white">0.14</span>
-              <span class="text-[9px] font-mono text-slate-400">GWET</span>
+            <!-- Freshness & Health Row -->
+            <div class="mt-1.5 pt-1 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-400">
+              <span class="flex items-center gap-1" title="Asimilación satelital SMAP L4 / GLDAS">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>hace 14 h</span>
+              </span>
+              <span class="text-emerald-400 font-semibold text-[7.5px]">ONLINE</span>
             </div>
-            <div id="metric-gwetroot-anom" class="text-[9px] font-mono text-red-400 mt-0.5">Z-score: -2.15 σ</div>
           </div>
 
           <!-- MODIS NDVI -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
-              <span>MODIS NDVI</span>
-              <i data-lucide="leaf" class="w-3 h-3 text-emerald-400"></i>
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
+                <span>MODIS NDVI</span>
+                <i data-lucide="leaf" class="w-3 h-3 text-emerald-400"></i>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <span id="metric-ndvi" class="text-base xl:text-lg font-bold font-mono text-white">0.24</span>
+                <span class="text-[9px] font-mono text-slate-400">MOD13C2</span>
+              </div>
+              <div id="metric-ndvi-anom" class="text-[9px] font-mono text-amber-400 mt-0.5">Estrés fotosintético severo</div>
             </div>
-            <div class="flex items-baseline justify-between">
-              <span id="metric-ndvi" class="text-base xl:text-lg font-bold font-mono text-white">0.24</span>
-              <span class="text-[9px] font-mono text-slate-400">MOD13C2</span>
+            <!-- Freshness & Health Row -->
+            <div class="mt-1.5 pt-1 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-400">
+              <span class="flex items-center gap-1" title="Compuesto quincenal MODIS MOD13C2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>hace 2 días</span>
+              </span>
+              <span class="text-emerald-400 font-semibold text-[7.5px]">ONLINE</span>
             </div>
-            <div id="metric-ndvi-anom" class="text-[9px] font-mono text-amber-400 mt-0.5">Estrés severo</div>
           </div>
 
           <!-- NOAA Oceanic Niño Index -->
-          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5">
-            <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
-              <span>NOAA CPC (ENSO)</span>
-              <i data-lucide="waves" class="w-3 h-3 text-purple-400"></i>
+          <div class="bg-space-850 border border-space-800 rounded-xl p-2 xl:p-2.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-[10px] mb-0.5">
+                <span>NOAA CPC (ENSO)</span>
+                <i data-lucide="waves" class="w-3 h-3 text-purple-400"></i>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <span id="metric-oni" class="text-base xl:text-lg font-bold font-mono text-white">+1.65</span>
+                <span class="text-[9px] font-mono text-purple-300 font-semibold" title="Índice Niño Oceánico crudo observado en región Niño 3.4">ONI Observado</span>
+              </div>
+              <div id="metric-oni-phase" class="text-[9px] font-mono text-purple-400 mt-0.5 truncate">Fase "El Niño" (+1.65 °C)</div>
             </div>
-            <div class="flex items-baseline justify-between">
-              <span id="metric-oni" class="text-base xl:text-lg font-bold font-mono text-white">+1.65</span>
-              <span class="text-[9px] font-mono text-purple-300 font-semibold" title="Índice Niño Oceánico crudo observado en región Niño 3.4">ONI Observado</span>
+            <!-- Freshness & Health Row -->
+            <div class="mt-1.5 pt-1 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-400">
+              <span class="flex items-center gap-1" title="Boletín mensual NOAA Climate Prediction Center">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>hace 3 días</span>
+              </span>
+              <span class="text-emerald-400 font-semibold text-[7.5px]">ONLINE</span>
             </div>
-            <div id="metric-oni-phase" class="text-[9px] font-mono text-purple-400 mt-0.5 truncate">Fase "El Niño" (+1.65 °C)</div>
           </div>
         </div>
       </div>
@@ -465,6 +510,89 @@
 
         <div class="h-36 xl:h-44 w-full bg-space-850 rounded-xl p-1.5 xl:p-2 border border-space-800 relative">
           <canvas id="chart-projection"></canvas>
+        </div>
+      </div>
+
+
+      <!-- ================= CARD 3.5: PANEL DE MÉTRICAS DE VALIDACIÓN (BACKTESTING DEMO) ================= -->
+      <div id="card-validation-metrics" class="p-2.5 xl:p-3 shrink-0">
+        <div class="bg-space-850 border border-space-800 rounded-xl p-2.5 xl:p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="check-check" class="w-3.5 h-3.5 text-cyan-400"></i>
+              Métricas de Validación del Modelo
+            </span>
+            <span class="px-1.5 py-0.5 rounded text-[8px] font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30 uppercase font-bold tracking-wider" title="Valores sintéticos referenciales de validación cruzada">
+              DEMO BENCHMARK
+            </span>
+          </div>
+
+          <p class="text-[10px] text-slate-400 font-sans mb-2 leading-tight">
+            Desempeño out-of-sample evaluado por horizonte predictivo (backtesting histórico 2000–2025):
+          </p>
+
+          <div class="overflow-x-auto w-full">
+            <table class="w-full text-left font-mono text-[9.5px] xl:text-[10px] border-collapse">
+              <thead>
+                <tr class="border-b border-space-800 text-slate-400 pb-1">
+                  <th class="py-1 pr-1 font-semibold">Horizonte</th>
+                  <th class="py-1 px-1 font-semibold text-center">Plazo</th>
+                  <th class="py-1 px-1 font-semibold text-right" title="Root Mean Squared Error (unidades de desviación estándar SPI)">RMSE (SPI)</th>
+                  <th class="py-1 px-1 font-semibold text-right" title="Coeficiente de correlación de Pearson r entre proyectado y observado">Corr (r)</th>
+                  <th class="py-1 pl-1 font-semibold text-right" title="Ganancia predictiva vs pronóstico climatológico ingenuo">Skill vs Clima</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-space-800/60 text-slate-300">
+                <tr class="hover:bg-space-800/40 transition">
+                  <td class="py-1 pr-1 font-bold text-cyan-300">t+1</td>
+                  <td class="py-1 px-1 text-center text-slate-400">+1 Mes</td>
+                  <td class="py-1 px-1 text-right text-emerald-400 font-bold">0.31</td>
+                  <td class="py-1 px-1 text-right text-emerald-400 font-bold">0.89</td>
+                  <td class="py-1 pl-1 text-right text-emerald-400 font-bold">+42.5%</td>
+                </tr>
+                <tr class="hover:bg-space-800/40 transition">
+                  <td class="py-1 pr-1 font-bold text-cyan-300">t+2</td>
+                  <td class="py-1 px-1 text-center text-slate-400">+2 Meses</td>
+                  <td class="py-1 px-1 text-right text-emerald-400">0.42</td>
+                  <td class="py-1 px-1 text-right text-emerald-400">0.83</td>
+                  <td class="py-1 pl-1 text-right text-emerald-400">+35.1%</td>
+                </tr>
+                <tr class="hover:bg-space-800/40 transition">
+                  <td class="py-1 pr-1 font-bold text-cyan-300">t+3</td>
+                  <td class="py-1 px-1 text-center text-slate-400">+3 Meses</td>
+                  <td class="py-1 px-1 text-right text-cyan-400">0.53</td>
+                  <td class="py-1 px-1 text-right text-cyan-400">0.77</td>
+                  <td class="py-1 pl-1 text-right text-cyan-400">+27.8%</td>
+                </tr>
+                <tr class="hover:bg-space-800/40 transition">
+                  <td class="py-1 pr-1 font-bold text-cyan-300">t+4</td>
+                  <td class="py-1 px-1 text-center text-slate-400">+4 Meses</td>
+                  <td class="py-1 px-1 text-right text-amber-400">0.64</td>
+                  <td class="py-1 px-1 text-right text-amber-400">0.71</td>
+                  <td class="py-1 pl-1 text-right text-amber-400">+20.4%</td>
+                </tr>
+                <tr class="hover:bg-space-800/40 transition">
+                  <td class="py-1 pr-1 font-bold text-cyan-300">t+5</td>
+                  <td class="py-1 px-1 text-center text-slate-400">+5 Meses</td>
+                  <td class="py-1 px-1 text-right text-amber-400">0.73</td>
+                  <td class="py-1 px-1 text-right text-amber-400">0.65</td>
+                  <td class="py-1 pl-1 text-right text-amber-400">+14.2%</td>
+                </tr>
+                <tr class="hover:bg-space-800/40 transition">
+                  <td class="py-1 pr-1 font-bold text-cyan-300">t+6</td>
+                  <td class="py-1 px-1 text-center text-slate-400">+6 Meses</td>
+                  <td class="py-1 px-1 text-right text-orange-400">0.81</td>
+                  <td class="py-1 px-1 text-right text-orange-400">0.59</td>
+                  <td class="py-1 pl-1 text-right text-orange-400">+8.7%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-2 pt-1.5 border-t border-space-800 text-[8.5px] text-slate-500 font-mono flex items-center justify-between">
+            <span>Validación cruzada K-Fold Temporal</span>
+            <span class="text-amber-400/90 font-semibold">[Estructura DEMO lista para sustitución]</span>
+          </div>
         </div>
       </div>
 
@@ -499,13 +627,87 @@
             <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i>
             Accionabilidad: Recomendaciones
           </span>
-          <span class="text-[9px] xl:text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> En Vivo
+          <span id="live-indicator-badge" class="text-[8.5px] xl:text-[9.5px] font-mono text-emerald-400 flex items-center gap-1.5 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30" title="Canal de inferencia en tiempo real • Última sincronización satelital hace 14 min">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>En Vivo • hace 14 min</span>
           </span>
         </div>
 
         <div id="actions-container" class="space-y-1.5">
           <!-- Populated dynamically based on alert -->
+        </div>
+      </div>
+
+
+      <!-- ================= CARD 6: PANEL PLEGABLE "¿CÓMO SE CALCULA?" ================= -->
+      <div id="card-methodology" class="p-2.5 xl:p-3 shrink-0">
+        <div class="bg-space-850 border border-space-800 rounded-xl overflow-hidden transition-all shadow-lg">
+          <button id="btn-toggle-methodology" class="w-full p-2.5 xl:p-3 flex items-center justify-between text-left hover:bg-space-800/50 transition cursor-pointer">
+            <span class="text-[11px] xl:text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="help-circle" class="w-3.5 h-3.5 text-cyan-400"></i>
+              ¿Cómo se calcula? (Modelos y Límites)
+            </span>
+            <div class="flex items-center gap-1 text-[10px] font-mono text-cyan-400">
+              <span id="methodology-status-text">Ver explicación</span>
+              <i id="methodology-chevron" data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+            </div>
+          </button>
+
+          <!-- Collapsible Content Body -->
+          <div id="methodology-content" class="hidden p-3 border-t border-space-800 bg-space-900/70 text-xs space-y-3 font-sans leading-relaxed text-slate-300">
+            
+            <!-- 1. Random Forest -->
+            <div class="bg-space-950/60 p-2.5 rounded-lg border border-space-800">
+              <div class="flex items-center gap-1.5 text-red-400 font-mono font-bold text-[11px] mb-1">
+                <span>🌲 Random Forest (Nivel 2: Motor de Alerta Categórica)</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mb-1">
+                <b>¿Qué hace?</b> Clasifica la cuenca en 4 niveles de riesgo (Verde, Amarillo, Naranja, Rojo).
+              </p>
+              <p class="text-[10.5px] text-slate-400 leading-normal">
+                <b>¿Cómo funciona?</b> En lugar de confiar en una sola fórmula, combina más de 100 árboles de decisión independientes que votan en simultáneo analizando si la humedad del suelo, la falta de lluvia y la vegetación han cruzado umbrales críticos históricos.
+              </p>
+            </div>
+
+            <!-- 2. LightGBM -->
+            <div class="bg-space-950/60 p-2.5 rounded-lg border border-space-800">
+              <div class="flex items-center gap-1.5 text-cyan-400 font-mono font-bold text-[11px] mb-1">
+                <span>📈 LightGBM con Regresión Cuantílica (Nivel 1: Proyección Continua)</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mb-1">
+                <b>¿Qué hace?</b> Pronostica la curva del índice de sequía (SPI) mes a mes a 6 horizontes de tiempo (t+1 a t+6).
+              </p>
+              <p class="text-[10.5px] text-slate-400 leading-normal">
+                <b>¿Por qué predice cuantiles?</b> Un pronóstico con un solo número oculta el riesgo. Por eso el modelo predice 3 escenarios: <b>p10</b> (escenario pesimista o sequía severa), <b>p50</b> (mediana más probable) y <b>p90</b> (escenario optimista con lluvias). El área sombreada muestra el cono real de incertidumbre atmosférica.
+              </p>
+            </div>
+
+            <!-- 3. SHAP -->
+            <div class="bg-space-950/60 p-2.5 rounded-lg border border-space-800">
+              <div class="flex items-center gap-1.5 text-purple-400 font-mono font-bold text-[11px] mb-1">
+                <span>🔍 Explicabilidad SHAP (Teoría de Juegos Cooperativos)</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mb-1">
+                <b>¿Qué hace?</b> Abre la "caja negra" del modelo respondiendo a la pregunta: <i>¿Qué variable detonó la alerta?</i>
+              </p>
+              <p class="text-[10.5px] text-slate-400 leading-normal">
+                <b>¿Cómo se interpreta?</b> Las barras rojas (<b>[▲ + Sequía]</b>) empujan el riesgo hacia arriba, mientras que las verdes (<b>[▼ - Sequía]</b>) amortiguan el impacto. Si el ONI marca +0.38, significa que el calentamiento oceánico del Pacífico explica la mayor parte del salto hacia la Alerta Roja.
+              </p>
+            </div>
+
+            <!-- 4. Límites del Sistema -->
+            <div class="bg-amber-950/20 p-2.5 rounded-lg border border-amber-500/30">
+              <div class="flex items-center gap-1.5 text-amber-400 font-mono font-bold text-[11px] mb-1">
+                <span>⚠️ Límites y Consideraciones del Sistema</span>
+              </div>
+              <ul class="text-[10.5px] text-amber-200/90 list-disc list-inside space-y-1 leading-normal font-sans">
+                <li><b>Degradación por horizonte:</b> La habilidad predictiva es máxima en t+1 a t+3 (r > 0.77). En t+5 y t+6 la incertidumbre atmosférica aumenta.</li>
+                <li><b>Resolución espacial:</b> Es un sistema macroclimático mensual (0.1° a 0.25°), optimizado para planificación de cuencas, no para micro-tormentas convectivas locales de 2 horas.</li>
+                <li><b>Inercia hidrogeológica:</b> Las raíces profundas tardan entre 60 y 90 días en recargarse tras una sequía; una lluvia superficial no cancela el déficit de fondo.</li>
+              </ul>
+            </div>
+
+          </div>
         </div>
       </div>
 

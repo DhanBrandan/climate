@@ -4323,6 +4323,59 @@ function selectNode(nodeId) {
 }
 
 // ================= ACTUALIZACIÓN DE TELEMETRÍA Y UI =================
+
+// Helper: Renderizar barras de confianza decreciente por horizonte predictivo (t+1 a t+6)
+function renderHorizonConfidenceBars(baseConfidence, currentStep) {
+  const container = document.getElementById('horizon-confidence-container');
+  if (!container) return;
+
+  // Multiplicadores de decaimiento por horizonte predictivo (t+1 a t+6)
+  const decayMultipliers = [1.0, 0.962, 0.912, 0.863, 0.806, 0.748];
+  const horizonMonths = ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'];
+
+  const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
+
+  const barsHtml = decayMultipliers.map((mult, idx) => {
+    const horizonNum = idx + 1; // 1 to 6
+    const confVal = Math.min(99.9, Math.max(50.0, baseConfidence * mult)).toFixed(1);
+    const month = horizonMonths[idx];
+    const isCurrentActiveHorizon = currentStep === (6 + horizonNum);
+    
+    // Altura visual proporcional
+    const barHeightPx = Math.max(6, Math.round((Number(confVal) / 100) * 18));
+
+    // Color condicionado al nivel de alerta actual y al porcentaje
+    let barColor = '#10B981'; // Verde por defecto
+    if (currentStepData.alert === 'ROJO') {
+      barColor = Number(confVal) >= 88 ? '#EF4444' : (Number(confVal) >= 80 ? '#F97316' : '#F59E0B');
+    } else if (currentStepData.alert === 'NARANJA') {
+      barColor = Number(confVal) >= 85 ? '#F97316' : '#FBBF24';
+    } else if (currentStepData.alert === 'AMARILLO') {
+      barColor = '#FBBF24';
+    } else {
+      barColor = '#10B981';
+    }
+
+    const activeClasses = isCurrentActiveHorizon 
+      ? 'border-cyan-400 bg-cyan-950/80 shadow-xs shadow-cyan-500/50' 
+      : 'border-space-700/60 hover:border-slate-500';
+
+    return `
+      <div class="flex flex-col items-center gap-0.5 group cursor-pointer transition"
+           onclick="selectStep(${6 + horizonNum})"
+           title="Horizonte t+${horizonNum} (${month} 202${horizonNum > 1 ? '7' : '6'}): ${confVal}% Confianza RF">
+        <span class="text-[7px] font-mono text-slate-400 group-hover:text-cyan-300 transition">${Math.round(confVal)}%</span>
+        <div class="w-2.5 xl:w-3 bg-space-850 rounded-xs h-[18px] flex items-end overflow-hidden p-[1px] border ${activeClasses}">
+          <div class="w-full rounded-xs transition-all duration-300" style="height: ${barHeightPx}px; background-color: ${barColor};"></div>
+        </div>
+        <span class="text-[7.5px] font-mono ${isCurrentActiveHorizon ? 'text-cyan-300 font-bold' : 'text-slate-400 group-hover:text-white'}">+${horizonNum}</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = barsHtml;
+}
+
 function updateUI() {
   const currentStepData = QUIMILI_TIME_SERIES[state.activeStep];
   const stepInfo = TIMELINE_STEPS[state.activeStep];
@@ -4385,6 +4438,7 @@ function updateUI() {
   const alertPersistenceBox = document.getElementById('alert-persistence-box');
 
   if (alertConf) alertConf.textContent = `${currentStepData.alertConfidence.toFixed(1)}%`;
+  renderHorizonConfidenceBars(currentStepData.alertConfidence, state.activeStep);
 
   const pills = {
     VERDE: document.getElementById('pill-verde'),
@@ -4751,8 +4805,32 @@ function setupEventHandlers() {
   const cardAlert = document.getElementById('card-alert');
   const cardTelemetry = document.getElementById('card-telemetry');
   const cardProj = document.getElementById('card-projection-container');
+  const cardValidation = document.getElementById('card-validation-metrics');
   const cardShap = document.getElementById('card-shap-container');
   const cardActions = document.getElementById('card-actions');
+  const cardMethodology = document.getElementById('card-methodology');
+
+  // Acordeón plegable "¿Cómo se calcula?"
+  const btnToggleMethodology = document.getElementById('btn-toggle-methodology');
+  const methodologyContent = document.getElementById('methodology-content');
+  const methodologyChevron = document.getElementById('methodology-chevron');
+  const methodologyStatusText = document.getElementById('methodology-status-text');
+
+  if (btnToggleMethodology && methodologyContent) {
+    btnToggleMethodology.addEventListener('click', () => {
+      const isExpanded = !methodologyContent.classList.contains('hidden');
+      if (isExpanded) {
+        methodologyContent.classList.add('hidden');
+        if (methodologyChevron) methodologyChevron.style.transform = 'rotate(0deg)';
+        if (methodologyStatusText) methodologyStatusText.textContent = 'Ver explicación';
+      } else {
+        methodologyContent.classList.remove('hidden');
+        if (methodologyChevron) methodologyChevron.style.transform = 'rotate(180deg)';
+        if (methodologyStatusText) methodologyStatusText.textContent = 'Ocultar';
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+  }
 
   function setSidebarTab(mode) {
     [tabAll, tabSummary, tabModels].forEach(t => {
@@ -4761,7 +4839,7 @@ function setupEventHandlers() {
 
     if (mode === 'all') {
       if (tabAll) tabAll.className = 'sidebar-tab-btn active py-1 rounded-md bg-cyan-600 text-white font-semibold transition';
-      [cardAlert, cardTelemetry, cardProj, cardShap, cardActions].forEach(c => {
+      [cardAlert, cardTelemetry, cardProj, cardValidation, cardShap, cardActions, cardMethodology].forEach(c => {
         if (c) c.classList.remove('hidden');
       });
       setTimeout(() => {
@@ -4773,15 +4851,19 @@ function setupEventHandlers() {
       if (cardAlert) cardAlert.classList.remove('hidden');
       if (cardTelemetry) cardTelemetry.classList.remove('hidden');
       if (cardProj) cardProj.classList.add('hidden');
+      if (cardValidation) cardValidation.classList.add('hidden');
       if (cardShap) cardShap.classList.add('hidden');
       if (cardActions) cardActions.classList.remove('hidden');
+      if (cardMethodology) cardMethodology.classList.remove('hidden');
     } else if (mode === 'models') {
       if (tabModels) tabModels.className = 'sidebar-tab-btn active py-1 rounded-md bg-cyan-600 text-white font-semibold transition';
       if (cardAlert) cardAlert.classList.remove('hidden');
       if (cardTelemetry) cardTelemetry.classList.add('hidden');
       if (cardProj) cardProj.classList.remove('hidden');
+      if (cardValidation) cardValidation.classList.remove('hidden');
       if (cardShap) cardShap.classList.remove('hidden');
       if (cardActions) cardActions.classList.add('hidden');
+      if (cardMethodology) cardMethodology.classList.remove('hidden');
       setTimeout(() => {
         if (projectionChart) projectionChart.resize();
         if (shapChart) shapChart.resize();
