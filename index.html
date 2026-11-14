@@ -622,6 +622,108 @@
         <div class="h-36 xl:h-44 w-full bg-space-850 rounded-xl p-1.5 xl:p-2 border border-space-800 relative">
           <canvas id="chart-projection"></canvas>
         </div>
+
+        <!-- ================= GUÍA DE REFERENCIAS Y GLOSARIO DE DATOS (PROYECCIÓN) ================= -->
+        <div class="mt-2 bg-space-900/90 border border-space-800 rounded-lg p-2 font-mono">
+          <div class="flex items-center justify-between cursor-pointer select-none" id="btn-toggle-projection-guide" title="Desplegar u ocultar la guía completa de referencias de datos">
+            <span class="text-[9.5px] xl:text-[10px] text-cyan-300 font-semibold flex items-center gap-1.5">
+              <i data-lucide="help-circle" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Guía de Referencias: <span class="text-slate-300 font-normal">p50, [p10-p90], SPI 3M</span></span>
+            </span>
+            <span class="text-[8.5px] text-slate-400 flex items-center gap-1">
+              <span id="label-projection-guide-status" class="text-cyan-400 underline">¿Qué significan?</span>
+              <i data-lucide="chevron-down" id="icon-projection-guide" class="w-3 h-3 text-cyan-400 transition-transform duration-200"></i>
+            </span>
+          </div>
+
+          <!-- Micro-resumen permanente -->
+          <div class="mt-1.5 flex flex-wrap items-center gap-1 text-[8px] xl:text-[8.5px] font-mono text-slate-400">
+            <span class="px-1.5 py-0.5 rounded bg-space-950 border border-space-800 text-slate-300"><b class="text-cyan-300">p50:</b> Mediana más probable</span>
+            <span class="px-1.5 py-0.5 rounded bg-space-950 border border-space-800 text-slate-300"><b class="text-cyan-300">[p10-p90]:</b> Incertidumbre 80%</span>
+            <span class="px-1.5 py-0.5 rounded bg-space-950 border border-space-800 text-slate-300"><b class="text-amber-400">HOY:</b> Límite Satélite / IA</span>
+          </div>
+
+          <!-- Detalle pedagógico desplegable -->
+          <div id="panel-projection-guide" class="hidden mt-2 pt-2 border-t border-space-800/80 space-y-2 text-[8.5px] xl:text-[9px] text-slate-300">
+            <!-- 1. SPI 3M -->
+            <div class="bg-space-950/70 p-2 rounded-lg border border-space-800">
+              <div class="flex items-center justify-between text-cyan-300 font-bold mb-1">
+                <span class="flex items-center gap-1">
+                  <i data-lucide="bar-chart-2" class="w-3 h-3 text-cyan-400"></i>
+                  ¿Qué es el SPI 3M (Índice Estandarizado de Precipitación)?
+                </span>
+                <span class="text-[7.5px] text-slate-400 font-normal">Estándar OMM</span>
+              </div>
+              <p class="text-slate-300 font-sans leading-tight mb-2">
+                Mide la anomalía de lluvia acumulada a 3 meses comparada con 30 años de climatología histórica regional:
+              </p>
+              <div class="grid grid-cols-5 gap-1 text-[8px] text-center font-mono">
+                <div class="bg-rose-950/60 border border-rose-500/40 text-rose-300 rounded p-1" title="SPI <= -2.0">
+                  <div class="font-bold text-[8.5px]">&le; -2.0</div>
+                  <div class="uppercase text-[7.5px] tracking-wider text-rose-400 font-bold">Extrema</div>
+                  <div class="text-[7px] text-slate-400 mt-0.5">Récord histórico</div>
+                </div>
+                <div class="bg-red-950/60 border border-red-500/40 text-red-300 rounded p-1" title="SPI -1.5 a -2.0">
+                  <div class="font-bold text-[8.5px]">-1.5 a -2.0</div>
+                  <div class="uppercase text-[7.5px] tracking-wider text-red-400 font-bold">Severa</div>
+                  <div class="text-[7px] text-slate-400 mt-0.5">Alerta Roja</div>
+                </div>
+                <div class="bg-amber-950/60 border border-amber-500/40 text-amber-300 rounded p-1" title="SPI -1.0 a -1.5">
+                  <div class="font-bold text-[8.5px]">-1.0 a -1.5</div>
+                  <div class="uppercase text-[7.5px] tracking-wider text-amber-400 font-bold">Moderada</div>
+                  <div class="text-[7px] text-slate-400 mt-0.5">Estrés hídrico</div>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-600/40 text-slate-300 rounded p-1" title="SPI -0.5 a +0.5">
+                  <div class="font-bold text-[8.5px]">-0.5 a +0.5</div>
+                  <div class="uppercase text-[7.5px] tracking-wider text-slate-300 font-bold">Normal</div>
+                  <div class="text-[7px] text-slate-400 mt-0.5">Equilibrio</div>
+                </div>
+                <div class="bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 rounded p-1" title="SPI >= +0.5">
+                  <div class="font-bold text-[8.5px]">&ge; +0.5</div>
+                  <div class="uppercase text-[7.5px] tracking-wider text-emerald-400 font-bold">Húmedo</div>
+                  <div class="text-[7px] text-slate-400 mt-0.5">Superávit</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Mediana p50 vs Intervalo [p10 - p90] -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <div class="bg-space-950/70 p-2 rounded-lg border border-cyan-800/40">
+                <div class="text-cyan-300 font-bold mb-1 flex items-center gap-1.5">
+                  <span class="w-2.5 h-0.5 bg-cyan-400 inline-block"></span>
+                  <span>¿Qué es la Mediana p50?</span>
+                </div>
+                <p class="text-slate-300 font-sans leading-tight text-[8.5px]">
+                  Es el <b class="text-cyan-300">escenario central más probable</b> proyectado por el modelo multivariable LightGBM. Existe exactamente un 50% de probabilidad de que el valor real sea mayor y un 50% de que sea menor.
+                </p>
+              </div>
+
+              <div class="bg-space-950/70 p-2 rounded-lg border border-cyan-800/40">
+                <div class="text-cyan-200 font-bold mb-1 flex items-center gap-1.5">
+                  <span class="w-3 h-2 bg-cyan-500/30 border border-cyan-400/60 inline-block rounded-xs"></span>
+                  <span>¿Qué es el Intervalo [p10 – p90]?</span>
+                </div>
+                <p class="text-slate-300 font-sans leading-tight text-[8.5px]">
+                  Rango de <b class="text-cyan-300">incertidumbre cuantílica del 80%</b>:
+                  <b class="text-rose-300">p10</b> es el escenario pesimista (solo 10% probabilidad de sequía más severa) y
+                  <b class="text-emerald-300">p90</b> el escenario optimista (solo 10% probabilidad de mayor lluvia).
+                </p>
+              </div>
+            </div>
+
+            <!-- 3. Línea HOY & Inercia Hídrica -->
+            <div class="bg-amber-950/30 border border-amber-500/30 p-2 rounded-lg text-[8.5px] font-sans text-amber-200/90 leading-tight">
+              <div class="font-bold font-mono text-amber-300 mb-0.5 flex items-center gap-1">
+                <i data-lucide="alert-triangle" class="w-3 h-3 text-amber-400"></i>
+                Línea "HOY" y Principio de Inercia Hídrica:
+              </div>
+              <p>
+                La línea vertical <b class="font-mono text-amber-300">HOY</b> separa las observaciones satelitales (GPM, SMAP, MODIS) de las proyecciones futuras de la IA.
+                Si la curva <b class="font-mono text-cyan-300">p50</b> sube a valores positivos en meses estivales, <b class="text-white">el déficit acumulado en el subsuelo y reservorios persiste</b> hasta que las lluvias superen sostenidamente la evapotranspiración regional.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
 

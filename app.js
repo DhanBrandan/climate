@@ -4512,15 +4512,15 @@ function initProjectionChart() {
               if (datasetIndex === 1) {
                 if (idx > 6) {
                   return [
-                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)}`,
-                    `  Intervalo Incertidumbre [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}]`,
+                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)} [Escenario más probable]`,
+                    `  Intervalo Incertidumbre [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}] [Confianza 80%]`,
                     `  Amplitud de Incertidumbre: ${(effP90 - effP10).toFixed(2)} σ`,
                     `  Categoría Mediana: ${getSpiCategoryName(effP50)}`
                   ];
                 } else if (idx === 6) {
                   return [
-                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)}`,
-                    `  Intervalo [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}]`
+                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)} [Escenario más probable]`,
+                    `  Intervalo [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}] [Confianza 80%]`
                   ];
                 }
                 return null;
@@ -4554,8 +4554,8 @@ function initProjectionChart() {
             },
             footer: (items) => {
               const idx = items[0].dataIndex;
-              if (idx === 6) return '📍 Línea de corte HOY: Inicia ventana de proyección LightGBM a 6 meses';
-              if (idx > 6) return 'Incertidumbre cuantílica p10-p90 ajustada por regresión LightGBM';
+              if (idx === 6) return '📍 Línea HOY: Fin de observación satelital / Inicio de proyección LightGBM a 6 meses';
+              if (idx > 6) return 'Incertidumbre cuantílica 80% (p10 pesimista vs p90 optimista)';
               return null;
             }
           }
@@ -5482,6 +5482,28 @@ function setupEventHandlers() {
     });
   }
 
+  // Toggle Guía de Referencias de Proyección (¿Qué significan estos datos?)
+  const btnToggleGuide = document.getElementById('btn-toggle-projection-guide');
+  const panelGuide = document.getElementById('panel-projection-guide');
+  const labelGuideStatus = document.getElementById('label-projection-guide-status');
+  const iconGuide = document.getElementById('icon-projection-guide');
+
+  if (btnToggleGuide && panelGuide) {
+    btnToggleGuide.addEventListener('click', () => {
+      const isHidden = panelGuide.classList.contains('hidden');
+      if (isHidden) {
+        panelGuide.classList.remove('hidden');
+        if (labelGuideStatus) labelGuideStatus.textContent = 'Ocultar';
+        if (iconGuide) iconGuide.classList.add('rotate-180');
+      } else {
+        panelGuide.classList.add('hidden');
+        if (labelGuideStatus) labelGuideStatus.textContent = '¿Qué significan?';
+        if (iconGuide) iconGuide.classList.remove('rotate-180');
+      }
+      if (window.lucide) lucide.createIcons();
+    });
+  }
+
   // Exportar Reporte de Crisis en PDF
   const btnExport = document.getElementById('btn-export-report');
   if (btnExport) {
@@ -5957,6 +5979,46 @@ async function exportCrisisReport() {
 
       curY += 19;
 
+      // Referencias de Sensores Satelitales (Page 1)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(15, 23, 42);
+      doc.text('REFERENCIAS DE TELEMETRÍA ESPACIAL MULTIMISIÓN:', margin, curY + 3);
+      curY += 5.5;
+
+      const satRefs = [
+        { name: 'GPM IMERG (NASA / JAXA)', desc: 'Radar y radiometría satelital para precipitación acumulada mensual y anomalía porcentual vs promedio climatológico regional.' },
+        { name: 'SMAP / GLDAS (NASA JPL)', desc: 'Microondas banda L para humedad del suelo en capa radicular (0–100 cm). Z-Score (σ) cuantifica la desviación estándar histórica.' },
+        { name: 'MODIS Terra (NASA GSFC)', desc: 'Índice de Vegetación Normalizado (NDVI) MOD13C2 a 0.05°. Evalúa estrés fotosintético y marchitamiento de biomasa.' },
+        { name: 'NOAA CPC (ENSO Niño 3.4)', desc: 'Índice Oceánico de El Niño (ONI). Forzante macroclimático global acoplado a severas sequías continentales en el Gran Chaco.' }
+      ];
+
+      const satColW = (contentW - 3) / 2;
+      satRefs.forEach((sr, sIdx) => {
+        const row = Math.floor(sIdx / 2);
+        const col = sIdx % 2;
+        const xPos = margin + col * (satColW + 3);
+        const yPos = curY + row * 15;
+
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(xPos, yPos, satColW, 13.5, 'FD');
+
+        doc.setFillColor(6, 182, 212);
+        doc.rect(xPos, yPos, 1.5, 13.5, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.8);
+        doc.setTextColor(2, 132, 199);
+        doc.text(sr.name, xPos + 3, yPos + 4);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.2);
+        doc.setTextColor(71, 85, 105);
+        const splitDesc = doc.splitTextToSize(sr.desc, satColW - 5);
+        doc.text(splitDesc, xPos + 3, yPos + 7.5);
+      });
+
       // Footer Página 1
       doc.setFont('courier', 'normal');
       doc.setFontSize(7);
@@ -5978,11 +6040,11 @@ async function exportCrisisReport() {
       doc.setTextColor(56, 189, 248);
       doc.text('PROYECCIÓN PREDICTIVA MULTIVARIABLE Y ACCIONABILIDAD', margin, 11.5);
 
-      curY = 24;
+      curY = 23;
 
       // 5. Captura del Gráfico de Proyección
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
+      doc.setFontSize(8.8);
       doc.setTextColor(15, 23, 42);
       doc.text('3. PROYECCIÓN CONTINUA A 6 MESES (LightGBM Incertidumbre Cuantílica p10 - p90 + Años Análogos):', margin, curY);
       curY += 3.5;
@@ -5990,9 +6052,9 @@ async function exportCrisisReport() {
       if (chartDataUrl) {
         doc.setDrawColor(203, 213, 225);
         doc.setLineWidth(0.3);
-        doc.rect(margin, curY, contentW, 72);
-        doc.addImage(chartDataUrl, 'PNG', margin + 0.5, curY + 0.5, contentW - 1, 71);
-        curY += 76;
+        doc.rect(margin, curY, contentW, 58);
+        doc.addImage(chartDataUrl, 'PNG', margin + 0.5, curY + 0.5, contentW - 1, 57);
+        curY += 61.5;
       }
 
       // 6. Horizontes Predictivos t+1 a t+6
@@ -6000,15 +6062,21 @@ async function exportCrisisReport() {
       doc.setFontSize(8.5);
       doc.setTextColor(15, 23, 42);
       doc.text('4. VALORES PROYECTADOS POR HORIZONTE PREDICTIVO (SPI 3M):', margin, curY);
-      curY += 3;
+
+      // Subtítulo pedagógico en la Sección 4
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(71, 85, 105);
+      doc.text('p50: Mediana más probable proyectada   |   [p10, p90]: Intervalo de incertidumbre cuantílica (80% de confianza estadística)', margin, curY + 3.5);
+      curY += 5.5;
 
       const fSteps = [
-        { h: 't+1', m: 'Dic 2026', p10: '-1.45', p50: '-1.15', p90: '-0.70' },
-        { h: 't+2', m: 'Ene 2027', p10: '-0.10', p50: '+0.58', p90: '+1.15' },
-        { h: 't+3', m: 'Feb 2027', p10: '+0.25', p50: '+0.82', p90: '+1.40' },
-        { h: 't+4', m: 'Mar 2027', p10: '-0.15', p50: '+0.45', p90: '+1.05' },
-        { h: 't+5', m: 'Abr 2027', p10: '-0.40', p50: '+0.15', p90: '+0.70' },
-        { h: 't+6', m: 'May 2027', p10: '-0.65', p50: '-0.08', p90: '+0.48' }
+        { h: 't+1', m: 'Dic 2026', p10: '-1.45', p50: '-1.15', p90: '-0.70', cat: 'MODERADA', catColor: [217, 119, 6] },
+        { h: 't+2', m: 'Ene 2027', p10: '-0.10', p50: '+0.58', p90: '+1.15', cat: 'HÚMEDO', catColor: [5, 150, 105] },
+        { h: 't+3', m: 'Feb 2027', p10: '+0.25', p50: '+0.82', p90: '+1.40', cat: 'HÚMEDO', catColor: [5, 150, 105] },
+        { h: 't+4', m: 'Mar 2027', p10: '-0.15', p50: '+0.45', p90: '+1.05', cat: 'NORMAL', catColor: [71, 85, 105] },
+        { h: 't+5', m: 'Abr 2027', p10: '-0.40', p50: '+0.15', p90: '+0.70', cat: 'NORMAL', catColor: [71, 85, 105] },
+        { h: 't+6', m: 'May 2027', p10: '-0.65', p50: '-0.08', p90: '+0.48', cat: 'NORMAL', catColor: [71, 85, 105] }
       ];
 
       const fColW = contentW / 6;
@@ -6016,32 +6084,48 @@ async function exportCrisisReport() {
         const xPos = margin + idx * fColW;
         doc.setFillColor(248, 250, 252);
         doc.setDrawColor(226, 232, 240);
-        doc.rect(xPos, curY, fColW - 1, 14, 'FD');
+        doc.rect(xPos, curY, fColW - 1, 15.5, 'FD');
 
+        // Header del horizonte
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
+        doc.setFontSize(6.8);
         doc.setTextColor(51, 65, 85);
-        doc.text(`${st.m} (${st.h})`, xPos + 1.5, curY + 4);
+        doc.text(`${st.m} (${st.h})`, xPos + 1.5, curY + 3.8);
+
+        // Badge de categoría
+        doc.setFillColor(...st.catColor);
+        doc.roundedRect(xPos + fColW - 13.5, curY + 1.2, 11.5, 3.2, 0.5, 0.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5);
+        doc.setTextColor(255, 255, 255);
+        doc.text(st.cat, xPos + fColW - 7.8, curY + 3.4, { align: 'center' });
+
+        // Mediana p50
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(100, 116, 139);
+        doc.text('p50 (Mediana):', xPos + 1.5, curY + 7.5);
 
         doc.setFont('courier', 'bold');
-        doc.setFontSize(8);
+        doc.setFontSize(7.8);
         doc.setTextColor(2, 132, 199);
-        doc.text(`p50: ${st.p50}`, xPos + 1.5, curY + 8);
+        doc.text(st.p50, xPos + 1.5, curY + 11);
 
+        // Banda 80% [p10, p90]
         doc.setFont('courier', 'normal');
-        doc.setFontSize(6.5);
+        doc.setFontSize(5.8);
         doc.setTextColor(100, 116, 139);
-        doc.text(`[${st.p10}, ${st.p90}]`, xPos + 1.5, curY + 11.5);
+        doc.text(`80%: [${st.p10}, ${st.p90}]`, xPos + 1.5, curY + 14);
       });
 
-      curY += 19;
+      curY += 19.5;
 
       // 7. Accionabilidad y Recomendaciones Estratégicas
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
+      doc.setFontSize(8.5);
       doc.setTextColor(15, 23, 42);
       doc.text('5. ACCIONABILIDAD Y MEDIDAS ESTRATÉGICAS COMPUTADAS:', margin, curY);
-      curY += 4;
+      curY += 3.5;
 
       const recBoxes = [
         {
@@ -6064,23 +6148,179 @@ async function exportCrisisReport() {
       recBoxes.forEach(rb => {
         doc.setFillColor(248, 250, 252);
         doc.setDrawColor(226, 232, 240);
-        doc.rect(margin, curY, contentW, 16.5, 'FD');
+        doc.rect(margin, curY, contentW, 12.5, 'FD');
 
         doc.setFillColor(...rb.color);
-        doc.rect(margin, curY, 2, 16.5, 'F');
+        doc.rect(margin, curY, 2, 12.5, 'F');
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(...rb.color);
-        doc.text(rb.title, margin + 4, curY + 4.5);
+        doc.text(rb.title, margin + 4, curY + 3.8);
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.2);
+        doc.setFontSize(6.6);
         doc.setTextColor(51, 65, 85);
         const splitRec = doc.splitTextToSize(rb.text, contentW - 7);
-        doc.text(splitRec, margin + 4, curY + 9);
+        doc.text(splitRec, margin + 4, curY + 7.5);
 
-        curY += 19;
+        curY += 14.5;
+      });
+
+      curY += 2;
+
+      // 8. Guía de Referencias y Glosario Técnico de Datos
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('6. GUÍA DE REFERENCIAS Y GLOSARIO TÉCNICO (INTERPRETACIÓN PARA TOMA DE DECISIONES):', margin, curY);
+      curY += 3.5;
+
+      const refCardW = (contentW - 3) / 2;
+      const refCardH = 44;
+
+      // Card 1 (Superior Izquierda): ¿Qué es el SPI 3M?
+      let cX = margin;
+      let cY = curY;
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(cX, cY, refCardW, refCardH, 'FD');
+
+      doc.setFillColor(2, 132, 199);
+      doc.rect(cX, cY, 1.8, refCardH, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(2, 132, 199);
+      doc.text('¿QUÉ ES EL ÍNDICE SPI 3M (PRECIPITACIÓN ESTANDARIZADA)?', cX + 3.5, cY + 4.2);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.2);
+      doc.setTextColor(51, 65, 85);
+      const spiDesc = "Mide la desviación de la lluvia acumulada a 3 meses respecto a la serie histórica climatológica regional (30 años, estándar OMM):";
+      doc.text(doc.splitTextToSize(spiDesc, refCardW - 6), cX + 3.5, cY + 8);
+
+      const spiCategories = [
+        { range: '<= -2.0', name: 'EXTREMA', note: 'Récord histórico de escasez', col: [225, 29, 72] },
+        { range: '-1.5 a -2.0', name: 'SEVERA', note: 'Alerta Roja, pérdidas severas', col: [220, 38, 38] },
+        { range: '-1.0 a -1.5', name: 'MODERADA', note: 'Estrés hídrico inicial', col: [217, 119, 6] },
+        { range: '-0.5 a +0.5', name: 'NORMAL', note: 'Equilibrio estacional', col: [71, 85, 105] },
+        { range: '>= +0.5', name: 'HÚMEDO', note: 'Superávit / posibles anegamientos', col: [5, 150, 105] }
+      ];
+
+      let spiRowY = cY + 15.5;
+      spiCategories.forEach(cat => {
+        doc.setFillColor(...cat.col);
+        doc.rect(cX + 3.5, spiRowY - 2.5, 1.8, 3.5, 'F');
+
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(5.8);
+        doc.setTextColor(...cat.col);
+        doc.text(cat.range, cX + 6.2, spiRowY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(5.8);
+        doc.text(cat.name, cX + 22, spiRowY);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(5.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`• ${cat.note}`, cX + 37, spiRowY);
+
+        spiRowY += 4.5;
+      });
+
+      // Card 2 (Superior Derecha): ¿Qué es la Mediana p50?
+      cX = margin + refCardW + 3;
+      cY = curY;
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(cX, cY, refCardW, refCardH, 'FD');
+
+      doc.setFillColor(6, 182, 212);
+      doc.rect(cX, cY, 1.8, refCardH, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(8, 145, 178);
+      doc.text('¿QUÉ ES LA MEDIANA p50 (PRONÓSTICO CENTRAL)?', cX + 3.5, cY + 4.2);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.1);
+      doc.setTextColor(51, 65, 85);
+      const p50Desc = [
+        "• Definición: Valor central proyectado por el ensamble multivariable LightGBM con regresión cuantílica.",
+        "• Probabilidad 50/50: Existe exactamente 50% de probabilidad de que la precipitación observada sea superior a este valor y 50% de que sea inferior.",
+        "• Escenario Más Probable: No es un pronóstico determinista rígido, sino el centro de gravedad de la distribución probabilística futura.",
+        "• Traza gráfica: Se visualiza como la línea discontinua cian con marcadores circulares mes a mes."
+      ];
+      let p50Y = cY + 8.5;
+      p50Desc.forEach(txt => {
+        const splitTxt = doc.splitTextToSize(txt, refCardW - 6);
+        doc.text(splitTxt, cX + 3.5, p50Y);
+        p50Y += splitTxt.length * 3.3 + 1.2;
+      });
+
+      // Card 3 (Inferior Izquierda): ¿Qué es el Intervalo [p10 - p90]?
+      cX = margin;
+      cY = curY + refCardH + 3;
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(cX, cY, refCardW, refCardH, 'FD');
+
+      doc.setFillColor(14, 165, 233);
+      doc.rect(cX, cY, 1.8, refCardH, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(2, 132, 199);
+      doc.text('¿QUÉ ES EL INTERVALO [p10 - p90] (INCERTIDUMBRE 80%)?', cX + 3.5, cY + 4.2);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.1);
+      doc.setTextColor(51, 65, 85);
+      const p10p90Desc = [
+        "• Cono de Incertidumbre: Franja sombreada azul/cian que ilustra el 80% de los escenarios climáticos posibles simulados.",
+        "• p10 (Escenario Pesimista): Piso inferior. Solo hay 10% de probabilidad de que la sequía resulte peor o más seca que este nivel.",
+        "• p90 (Escenario Optimista): Techo superior. Solo hay 10% de probabilidad de que las precipitaciones superen este valor.",
+        "• Dispersión temporal: A mayor plazo predictivo (t+1 a t+6), el cono se ensancha por la acumulación natural de incertidumbre caótica."
+      ];
+      let p10p90Y = cY + 8.5;
+      p10p90Desc.forEach(txt => {
+        const splitTxt = doc.splitTextToSize(txt, refCardW - 6);
+        doc.text(splitTxt, cX + 3.5, p10p90Y);
+        p10p90Y += splitTxt.length * 3.3 + 1.2;
+      });
+
+      // Card 4 (Inferior Derecha): Línea HOY y Persistencia del Déficit
+      cX = margin + refCardW + 3;
+      cY = curY + refCardH + 3;
+      doc.setFillColor(254, 252, 232);
+      doc.setDrawColor(254, 240, 138);
+      doc.rect(cX, cY, refCardW, refCardH, 'FD');
+
+      doc.setFillColor(217, 119, 6);
+      doc.rect(cX, cY, 1.8, refCardH, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.2);
+      doc.setTextColor(180, 83, 9);
+      doc.text("LÍNEA 'HOY' Y PERSISTENCIA DEL DÉFICIT ACUMULADO", cX + 3.5, cY + 4.2);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.1);
+      doc.setTextColor(69, 26, 3);
+      const hoyDesc = [
+        "• Corte Temporal 'HOY': Línea vertical naranja que separa tajantemente la telemetría satelital (GPM/SMAP) del pronóstico IA.",
+        "• Inercia Hídrica: Aunque la curva p50 suba a valores positivos en verano (+0.58 en Ene, +0.82 en Feb), la sequía NO finaliza de inmediato.",
+        "• Memoria del Suelo: El perfil profundo y tajamares conservan el déficit de los meses previos; se requieren 2 a 3 meses continuos de recarga.",
+        "• Regla Operativa: No levantar protocolos de contingencia ante lluvias aisladas; esperar confirmación en SMAP (GWET >= 0.28)."
+      ];
+      let hoyY = cY + 8.5;
+      hoyDesc.forEach(txt => {
+        const splitTxt = doc.splitTextToSize(txt, refCardW - 6);
+        doc.text(splitTxt, cX + 3.5, hoyY);
+        hoyY += splitTxt.length * 3.3 + 1.2;
       });
 
       // Footer Página 2
@@ -6129,6 +6369,15 @@ function openPrintableReportWindow(data) {
     return;
   }
 
+  const fSteps = [
+    { h: 't+1', m: 'Dic 2026', p10: '-1.45', p50: '-1.15', p90: '-0.70', cat: 'MODERADA', color: '#D97706' },
+    { h: 't+2', m: 'Ene 2027', p10: '-0.10', p50: '+0.58', p90: '+1.15', cat: 'HÚMEDO', color: '#059669' },
+    { h: 't+3', m: 'Feb 2027', p10: '+0.25', p50: '+0.82', p90: '+1.40', cat: 'HÚMEDO', color: '#059669' },
+    { h: 't+4', m: 'Mar 2027', p10: '-0.15', p50: '+0.45', p90: '+1.05', cat: 'NORMAL', color: '#475569' },
+    { h: 't+5', m: 'Abr 2027', p10: '-0.40', p50: '+0.15', p90: '+0.70', cat: 'NORMAL', color: '#475569' },
+    { h: 't+6', m: 'May 2027', p10: '-0.65', p50: '-0.08', p90: '+0.48', cat: 'NORMAL', color: '#475569' }
+  ];
+
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6153,15 +6402,25 @@ function openPrintableReportWindow(data) {
     .img-box img { max-width: 100%; height: auto; border-radius: 4px; max-height: 220px; object-fit: contain; }
     .img-label { font-size: 9px; font-weight: bold; color: #475569; margin-top: 4px; text-transform: uppercase; font-family: monospace; }
     .section-title { font-size: 11px; font-weight: bold; color: #0F172A; border-bottom: 1px solid #E2E8F0; padding-bottom: 3px; margin: 12px 0 6px 0; text-transform: uppercase; }
-    .telemetry-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+    .telemetry-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
     .tele-cell { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 4px; padding: 6px; }
     .tele-title { font-size: 8px; color: #64748B; text-transform: uppercase; }
     .tele-val { font-size: 12px; font-weight: bold; color: #0F172A; font-family: monospace; }
+    .forecast-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 12px; }
+    .forecast-cell { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 6px; font-family: monospace; }
+    .forecast-cat { display: inline-block; font-size: 7.5px; padding: 1px 4px; border-radius: 3px; color: #FFF; font-weight: bold; margin-bottom: 3px; }
     .recs-box { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
     .recs-box b { color: #0369A1; font-size: 10px; display: block; margin-bottom: 2px; }
+    .reference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .reference-cell { background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 3px solid #0284C7; border-radius: 6px; padding: 8px; font-size: 9.5px; }
+    .reference-cell h5 { margin: 0 0 4px 0; font-size: 10px; color: #0369A1; font-family: monospace; text-transform: uppercase; }
+    .reference-cell p { margin: 0 0 4px 0; font-size: 9.5px; color: #334155; line-height: 1.35; }
+    .spi-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-family: monospace; font-size: 8.5px; }
+    .spi-table td { padding: 2px 4px; border-bottom: 1px solid #E2E8F0; }
     .footer { border-top: 1px solid #E2E8F0; padding-top: 6px; font-size: 8px; color: #94A3B8; font-family: monospace; text-align: center; margin-top: 14px; }
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page-break { page-break-before: always; }
     }
   </style>
 </head>
@@ -6200,7 +6459,7 @@ function openPrintableReportWindow(data) {
     </div>
   </div>
 
-  <div class="section-title">Telemetría Satelital Acoplada Multimisión:</div>
+  <div class="section-title">2. Telemetría Satelital Acoplada Multimisión:</div>
   <div class="telemetry-grid">
     <div class="tele-cell">
       <div class="tele-title">GPM IMERG (Lluvia)</div>
@@ -6224,7 +6483,23 @@ function openPrintableReportWindow(data) {
     </div>
   </div>
 
-  <div class="section-title">Accionabilidad y Recomendaciones Estratégicas:</div>
+  <div class="section-title">4. Valores Proyectados por Horizonte Predictivo (SPI 3M):</div>
+  <div style="font-size: 8.5px; color: #64748B; font-family: monospace; margin-bottom: 6px;">
+    p50: Mediana más probable proyectada | [p10, p90]: Rango de incertidumbre cuantílica (80% de confianza estadística)
+  </div>
+  <div class="forecast-grid">
+    ${fSteps.map(st => `
+      <div class="forecast-cell">
+        <div style="font-size: 9px; font-weight: bold; color: #334155; margin-bottom: 3px;">${st.m} (${st.h})</div>
+        <span class="forecast-cat" style="background: ${st.color};">${st.cat}</span>
+        <div style="font-size: 8px; color: #64748B; margin-top: 2px;">p50 (Mediana):</div>
+        <div style="font-size: 11px; font-weight: bold; color: #0284C7;">${st.p50}</div>
+        <div style="font-size: 8px; color: #94A3B8; margin-top: 2px;">80%: [${st.p10}, ${st.p90}]</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="section-title">5. Accionabilidad y Recomendaciones Estratégicas:</div>
   <div class="recs-box">
     <b>🚨 Comisión Trinacional Ríos Pilcomayo y Bermejo (ARG • BOL • PRY):</b>
     ${data.recTrinacional}
@@ -6236,6 +6511,42 @@ function openPrintableReportWindow(data) {
   <div class="recs-box">
     <b>🚜 Sector Agropecuario y Productivo:</b>
     ${data.recAgro}
+  </div>
+
+  <div class="section-title">6. Guía de Referencias y Glosario Técnico (Interpretación de Datos):</div>
+  <div class="reference-grid">
+    <div class="reference-cell">
+      <h5>¿Qué es el Índice SPI 3M?</h5>
+      <p>Mide la anomalía de lluvia acumulada a 3 meses comparada con 30 años de climatología histórica (OMM):</p>
+      <table class="spi-table">
+        <tr><td style="color: #E11D48; font-weight: bold;">&le; -2.0</td><td><b>EXTREMA</b> (Récord histórico de escasez)</td></tr>
+        <tr><td style="color: #DC2626; font-weight: bold;">-1.5 a -2.0</td><td><b>SEVERA</b> (Alerta Roja, pérdidas agropecuarias)</td></tr>
+        <tr><td style="color: #D97706; font-weight: bold;">-1.0 a -1.5</td><td><b>MODERADA</b> (Estrés hídrico inicial)</td></tr>
+        <tr><td style="color: #475569; font-weight: bold;">-0.5 a +0.5</td><td><b>NORMAL</b> (Equilibrio estacional)</td></tr>
+        <tr><td style="color: #059669; font-weight: bold;">&ge; +0.5</td><td><b>HÚMEDO</b> (Superávit pluviométrico)</td></tr>
+      </table>
+    </div>
+
+    <div class="reference-cell" style="border-left-color: #06B6D4;">
+      <h5 style="color: #0891B2;">¿Qué es la Mediana p50?</h5>
+      <p>• <b>Pronóstico central más probable:</b> Calculado por el ensamble multivariable LightGBM con regresión cuantílica.</p>
+      <p>• <b>Probabilidad 50/50:</b> Existe exactamente un 50% de probabilidad de que la lluvia real sea superior y 50% de que sea inferior.</p>
+      <p>• <b>Centro de gravedad:</b> No es determinista, sino el punto medio de la distribución de escenarios futuros.</p>
+    </div>
+
+    <div class="reference-cell" style="border-left-color: #0284C7;">
+      <h5>¿Qué es el Intervalo [p10 – p90]?</h5>
+      <p>• <b>Incertidumbre Cuantílica 80%:</b> Rango sombreado azul/cian que contiene el 80% de los escenarios climáticos posibles.</p>
+      <p>• <b>p10 (Pesimista):</b> Solo 10% de probabilidad de que la sequía resulte peor o más seca que este piso.</p>
+      <p>• <b>p90 (Optimista):</b> Solo 10% de probabilidad de que las precipitaciones superen este techo.</p>
+    </div>
+
+    <div class="reference-cell" style="border-left-color: #D97706; background: #FEFCE8;">
+      <h5 style="color: #B45309;">Línea "HOY" y Persistencia del Déficit</h5>
+      <p>• <b>Corte Temporal:</b> Separa datos medidos por satélites a la izquierda de las proyecciones IA a la derecha.</p>
+      <p>• <b>Inercia del Suelo:</b> Si p50 sube a valores positivos en verano, <b>el déficit acumulado en el subsuelo y tajamares persiste</b> hasta consolidar recarga continua.</p>
+      <p>• <b>Regla:</b> Mantener protocolos hasta confirmar recarga en SMAP (&ge; 0.28 GWET).</p>
+    </div>
   </div>
 
   <div class="footer">
