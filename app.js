@@ -1060,35 +1060,37 @@ function updateUI() {
     if (pills[key]) pills[key].className = 'py-0.5 xl:py-1 rounded bg-space-800 text-slate-500';
   });
 
+  const nodeShortName = activeNode.name.split('(')[0].trim();
+
   if (currentStepData.alert === 'ROJO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-red-950/30 border-red-500/40 transition-all';
-    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
-    if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Humedad Radicular crítica`;
+    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide truncate'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
+    if (alertSubtitle) alertSubtitle.textContent = `${nodeShortName} • SPI 3M: ${currentSpi} • Déficit crítico`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '🚨'; }
     if (pills.ROJO) pills.ROJO.className = 'py-0.5 xl:py-1 rounded bg-red-500 text-white font-bold shadow-md shadow-red-950';
   } else if (currentStepData.alert === 'NARANJA') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-orange-950/30 border-orange-500/40 transition-all';
     if (alertTitle) {
-      alertTitle.className = 'font-bold text-orange-400 text-xs xl:text-sm tracking-wide';
+      alertTitle.className = 'font-bold text-orange-400 text-xs xl:text-sm tracking-wide truncate';
       alertTitle.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO' : 'ALERTA NARANJA: ESTRÉS HÍDRICO';
     }
     if (alertSubtitle) {
       alertSubtitle.textContent = currentFloodRisk > 0.6 
-        ? `${activeNode.name} • Lluvia torrencial sobre suelo sellado sin infiltración`
-        : `${activeNode.name} • SPI 3M: ${currentSpi} • Alerta preventiva regional`;
+        ? `${nodeShortName} • Lluvia torrencial y suelo saturado`
+        : `${nodeShortName} • SPI 3M: ${currentSpi} • Alerta preventiva`;
     }
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '⚠️'; }
     if (pills.NARANJA) pills.NARANJA.className = 'py-0.5 xl:py-1 rounded bg-orange-500 text-white font-bold shadow-md shadow-orange-950';
   } else if (currentStepData.alert === 'AMARILLO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-amber-950/30 border-amber-500/40 transition-all';
-    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
-    if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Déficit en cuencas`;
+    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide truncate'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
+    if (alertSubtitle) alertSubtitle.textContent = `${nodeShortName} • SPI 3M: ${currentSpi} • Vigilancia de cuencas`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '⚡'; }
     if (pills.AMARILLO) pills.AMARILLO.className = 'py-0.5 xl:py-1 rounded bg-amber-500 text-white font-bold shadow-md shadow-amber-950';
   } else {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-emerald-950/30 border-emerald-500/40 transition-all';
-    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
-    if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Índices biofísicos estables`;
+    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide truncate'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
+    if (alertSubtitle) alertSubtitle.textContent = `${nodeShortName} • SPI 3M: ${currentSpi} • Índices estables`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '✅'; }
     if (pills.VERDE) pills.VERDE.className = 'py-0.5 xl:py-1 rounded bg-emerald-500 text-white font-bold shadow-md shadow-emerald-950';
   }
