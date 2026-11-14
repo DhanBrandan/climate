@@ -522,8 +522,6 @@ const state = {
   activeMapStyle: 'dark',
   mapLoaded: false
 };
-  mapLoaded: false
-};
 
 let map = null;
 let projectionChart = null;
