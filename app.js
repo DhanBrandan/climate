@@ -1057,19 +1057,19 @@ function updateUI() {
   };
 
   Object.keys(pills).forEach(key => {
-    if (pills[key]) pills[key].className = 'py-1 rounded bg-space-800 text-slate-500';
+    if (pills[key]) pills[key].className = 'py-0.5 xl:py-1 rounded bg-space-800 text-slate-500';
   });
 
   if (currentStepData.alert === 'ROJO') {
-    if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-red-950/30 border-red-500/40 transition-all';
-    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-sm tracking-wide'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
+    if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-red-950/30 border-red-500/40 transition-all';
+    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
     if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Humedad Radicular crítica`;
-    if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '🚨'; }
-    if (pills.ROJO) pills.ROJO.className = 'py-1 rounded bg-red-500 text-white font-bold shadow-lg shadow-red-950';
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '🚨'; }
+    if (pills.ROJO) pills.ROJO.className = 'py-0.5 xl:py-1 rounded bg-red-500 text-white font-bold shadow-md shadow-red-950';
   } else if (currentStepData.alert === 'NARANJA') {
-    if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-orange-950/30 border-orange-500/40 transition-all';
+    if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-orange-950/30 border-orange-500/40 transition-all';
     if (alertTitle) {
-      alertTitle.className = 'font-bold text-orange-400 text-sm tracking-wide';
+      alertTitle.className = 'font-bold text-orange-400 text-xs xl:text-sm tracking-wide';
       alertTitle.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO' : 'ALERTA NARANJA: ESTRÉS HÍDRICO';
     }
     if (alertSubtitle) {
@@ -1077,25 +1077,25 @@ function updateUI() {
         ? `${activeNode.name} • Lluvia torrencial sobre suelo sellado sin infiltración`
         : `${activeNode.name} • SPI 3M: ${currentSpi} • Alerta preventiva regional`;
     }
-    if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '⚠️'; }
-    if (pills.NARANJA) pills.NARANJA.className = 'py-1 rounded bg-orange-500 text-white font-bold shadow-lg shadow-orange-950';
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '⚠️'; }
+    if (pills.NARANJA) pills.NARANJA.className = 'py-0.5 xl:py-1 rounded bg-orange-500 text-white font-bold shadow-md shadow-orange-950';
   } else if (currentStepData.alert === 'AMARILLO') {
-    if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-amber-950/30 border-amber-500/40 transition-all';
-    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-sm tracking-wide'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
+    if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-amber-950/30 border-amber-500/40 transition-all';
+    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
     if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Déficit en cuencas`;
-    if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '⚡'; }
-    if (pills.AMARILLO) pills.AMARILLO.className = 'py-1 rounded bg-amber-500 text-white font-bold shadow-lg shadow-amber-950';
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '⚡'; }
+    if (pills.AMARILLO) pills.AMARILLO.className = 'py-0.5 xl:py-1 rounded bg-amber-500 text-white font-bold shadow-md shadow-amber-950';
   } else {
-    if (alertCard) alertCard.className = 'rounded-xl border p-3.5 bg-emerald-950/30 border-emerald-500/40 transition-all';
-    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-sm tracking-wide'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
+    if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-emerald-950/30 border-emerald-500/40 transition-all';
+    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
     if (alertSubtitle) alertSubtitle.textContent = `${activeNode.name} • SPI 3M: ${currentSpi} • Índices biofísicos estables`;
-    if (alertIconBox) { alertIconBox.className = 'w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg'; alertIconBox.textContent = '✅'; }
-    if (pills.VERDE) pills.VERDE.className = 'py-1 rounded bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-950';
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '✅'; }
+    if (pills.VERDE) pills.VERDE.className = 'py-0.5 xl:py-1 rounded bg-emerald-500 text-white font-bold shadow-md shadow-emerald-950';
   }
 
   // 4. Métricas Satelitales Acopladas
   const siteLabel = document.getElementById('telemetry-site-label');
-  if (siteLabel) siteLabel.textContent = `${activeNode.name.split('(')[0].trim()} (${activeNode.country})`;
+  if (siteLabel) siteLabel.textContent = `${activeNode.name.split('(')[0].trim()} • ${activeNode.country.split('(')[0].trim()}`;
 
   const precEl = document.getElementById('metric-precip');
   if (precEl) precEl.textContent = (currentStepData.precip * (spiFactor > 1.1 ? 1.25 : 0.95)).toFixed(1);
@@ -1356,6 +1356,56 @@ function setupEventHandlers() {
       }, 250);
     }
   });
+
+  // Pestañas de Vista del Panel Lateral (Todo / Telemetría / Modelos IA)
+  const tabAll = document.getElementById('sidebar-tab-all');
+  const tabSummary = document.getElementById('sidebar-tab-summary');
+  const tabModels = document.getElementById('sidebar-tab-models');
+
+  const cardAlert = document.getElementById('card-alert');
+  const cardTelemetry = document.getElementById('card-telemetry');
+  const cardProj = document.getElementById('card-projection-container');
+  const cardShap = document.getElementById('card-shap-container');
+  const cardActions = document.getElementById('card-actions');
+
+  function setSidebarTab(mode) {
+    [tabAll, tabSummary, tabModels].forEach(t => {
+      if (t) t.className = 'sidebar-tab-btn py-1 rounded-md text-slate-400 hover:text-white transition';
+    });
+
+    if (mode === 'all') {
+      if (tabAll) tabAll.className = 'sidebar-tab-btn active py-1 rounded-md bg-cyan-600 text-white font-semibold transition';
+      [cardAlert, cardTelemetry, cardProj, cardShap, cardActions].forEach(c => {
+        if (c) c.classList.remove('hidden');
+      });
+      setTimeout(() => {
+        if (projectionChart) projectionChart.resize();
+        if (shapChart) shapChart.resize();
+      }, 60);
+    } else if (mode === 'summary') {
+      if (tabSummary) tabSummary.className = 'sidebar-tab-btn active py-1 rounded-md bg-cyan-600 text-white font-semibold transition';
+      if (cardAlert) cardAlert.classList.remove('hidden');
+      if (cardTelemetry) cardTelemetry.classList.remove('hidden');
+      if (cardProj) cardProj.classList.add('hidden');
+      if (cardShap) cardShap.classList.add('hidden');
+      if (cardActions) cardActions.classList.remove('hidden');
+    } else if (mode === 'models') {
+      if (tabModels) tabModels.className = 'sidebar-tab-btn active py-1 rounded-md bg-cyan-600 text-white font-semibold transition';
+      if (cardAlert) cardAlert.classList.remove('hidden');
+      if (cardTelemetry) cardTelemetry.classList.add('hidden');
+      if (cardProj) cardProj.classList.remove('hidden');
+      if (cardShap) cardShap.classList.remove('hidden');
+      if (cardActions) cardActions.classList.add('hidden');
+      setTimeout(() => {
+        if (projectionChart) projectionChart.resize();
+        if (shapChart) shapChart.resize();
+      }, 60);
+    }
+  }
+
+  if (tabAll) tabAll.addEventListener('click', () => setSidebarTab('all'));
+  if (tabSummary) tabSummary.addEventListener('click', () => setSidebarTab('summary'));
+  if (tabModels) tabModels.addEventListener('click', () => setSidebarTab('models'));
 
   // Centrar en Gran Chaco
   const recenterBtn = document.getElementById('btn-recenter');
