@@ -5966,14 +5966,17 @@ function updateSourceToggleUI() {
 
   const inactiveBtnClass = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
 
-  if (btnBaseline) btnBaseline.className = inactiveBtnClass;
+  if (btnBaseline) {
+    btnBaseline.className = inactiveBtnClass;
+    btnBaseline.innerHTML = '<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">Planilla</span>';
+  }
   if (btnGee) {
     btnGee.className = inactiveBtnClass.replace('text-slate-400', 'text-emerald-400');
     btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
   }
   if (btnLora) {
     btnLora.className = inactiveBtnClass.replace('text-slate-400', 'text-cyan-400');
-    btnLora.innerHTML = '<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">📡 LoRa (Campo)</span>';
+    btnLora.innerHTML = '<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>';
   }
 
   if (state.dataSource === 'gee') {
@@ -5992,8 +5995,8 @@ function updateSourceToggleUI() {
     if (btnLora) {
       btnLora.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
       btnLora.innerHTML = state.isLoraLoading
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando LoRa...</span>'
-        : '<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">📡 LoRa (Campo)</span>';
+        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
+        : '<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>';
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-400 animate-pulse whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.5)]';
@@ -6003,6 +6006,7 @@ function updateSourceToggleUI() {
   } else {
     if (btnBaseline) {
       btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
+      btnBaseline.innerHTML = '<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">Planilla</span>';
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
@@ -6216,25 +6220,25 @@ function updateUI() {
 
   if (headerBadge) {
     if (currentStepData.alert === 'ROJO') {
-      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0';
+      headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0 flex items-center gap-1';
       headerBadge.textContent = 'ALERTA ROJA: SEQUÍA SEVERA';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-red-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
     } else if (currentStepData.alert === 'NARANJA') {
-      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/40 whitespace-nowrap shrink-0';
+      headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/40 whitespace-nowrap shrink-0 flex items-center gap-1';
       headerBadge.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: ANEGAMIENTO' : 'ALERTA NARANJA: DÉFICIT';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-orange-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75';
     } else if (currentStepData.alert === 'AMARILLO') {
-      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/40 whitespace-nowrap shrink-0';
+      headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/40 whitespace-nowrap shrink-0 flex items-center gap-1';
       headerBadge.textContent = 'ALERTA AMARILLA: VIGILANCIA';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-amber-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
     } else {
-      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 whitespace-nowrap shrink-0';
+      headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 whitespace-nowrap shrink-0 flex items-center gap-1';
       headerBadge.textContent = 'CONDICIONES NORMALES';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
-      if (headerPulseBeacon) headerPulseBeacon.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
+      if (headerPulseBeacon) headerPulseBeacon.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-400';
     }
   }
 
@@ -6266,38 +6270,38 @@ function updateUI() {
 
   if (currentStepData.alert === 'ROJO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-red-950/30 border-red-500/40 transition-all w-full overflow-hidden';
-    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide truncate'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
-    if (subLine1) subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`;
-    if (subLine2) subLine2.textContent = 'Déficit hídrico crítico en cuenca';
+    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
+    if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-red-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-red-300/80 leading-tight break-words'; subLine2.textContent = 'Déficit hídrico crítico en cuenca'; }
     if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • Déficit hídrico crítico en cuenca`;
-    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '🚨'; }
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '🚨'; }
     if (pills.ROJO) pills.ROJO.className = 'py-0.5 xl:py-1 rounded bg-red-500 text-white font-bold shadow-md shadow-red-950';
   } else if (currentStepData.alert === 'NARANJA') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-orange-950/30 border-orange-500/40 transition-all w-full overflow-hidden';
     if (alertTitle) {
-      alertTitle.className = 'font-bold text-orange-400 text-xs xl:text-sm tracking-wide truncate';
+      alertTitle.className = 'font-bold text-orange-400 text-xs xl:text-sm tracking-wide leading-tight break-words';
       alertTitle.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO' : 'ALERTA NARANJA: ESTRÉS HÍDRICO';
     }
-    if (subLine1) subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`;
-    if (subLine2) subLine2.textContent = currentFloodRisk > 0.6 ? 'Lluvia torrencial y suelo saturado' : 'Alerta preventiva hidroclimática';
+    if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-orange-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-orange-300/80 leading-tight break-words'; subLine2.textContent = currentFloodRisk > 0.6 ? 'Lluvia torrencial y suelo saturado' : 'Alerta preventiva hidroclimática'; }
     if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • ${subLine2 ? subLine2.textContent : ''}`;
-    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '⚠️'; }
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '⚠️'; }
     if (pills.NARANJA) pills.NARANJA.className = 'py-0.5 xl:py-1 rounded bg-orange-500 text-white font-bold shadow-md shadow-orange-950';
   } else if (currentStepData.alert === 'AMARILLO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-amber-950/30 border-amber-500/40 transition-all w-full overflow-hidden';
-    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide truncate'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
-    if (subLine1) subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`;
-    if (subLine2) subLine2.textContent = 'Vigilancia continua de cuencas';
+    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
+    if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-amber-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-amber-300/80 leading-tight break-words'; subLine2.textContent = 'Vigilancia continua de cuencas'; }
     if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • Vigilancia continua`;
-    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '⚡'; }
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '⚡'; }
     if (pills.AMARILLO) pills.AMARILLO.className = 'py-0.5 xl:py-1 rounded bg-amber-500 text-white font-bold shadow-md shadow-amber-950';
   } else {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-emerald-950/30 border-emerald-500/40 transition-all w-full overflow-hidden';
-    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide truncate'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
-    if (subLine1) subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`;
-    if (subLine2) subLine2.textContent = 'Parámetros hidroclimáticos estables';
+    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
+    if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-emerald-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-emerald-300/80 leading-tight break-words'; subLine2.textContent = 'Parámetros hidroclimáticos estables'; }
     if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • Índices estables`;
-    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0'; alertIconBox.textContent = '✅'; }
+    if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '✅'; }
     if (pills.VERDE) pills.VERDE.className = 'py-0.5 xl:py-1 rounded bg-emerald-500 text-white font-bold shadow-md shadow-emerald-950';
   }
 

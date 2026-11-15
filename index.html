@@ -309,17 +309,17 @@
 <body class="bg-space-950 text-slate-100 h-full h-[100dvh] max-h-screen flex flex-col font-sans select-none antialiased overflow-hidden">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="h-14 xl:h-16 border-b border-space-800 bg-space-900/95 backdrop-blur-md px-2.5 sm:px-3 xl:px-4 flex items-center justify-between gap-1.5 sm:gap-2 xl:gap-3 shrink-0 z-30 overflow-hidden select-none">
+  <header class="h-14 lg:h-15 border-b border-space-800 bg-space-950/95 backdrop-blur-md px-2.5 sm:px-3 lg:px-4 flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 z-30 select-none overflow-x-auto sm:overflow-x-visible custom-scrollbar">
     
     <!-- Left: Brand / Title -->
-    <div class="flex items-center space-x-2 xl:space-x-2.5 shrink-0">
+    <div class="flex items-center space-x-2 shrink-0">
       <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-950/50 shrink-0">
         <i data-lucide="satellite" class="w-4 h-4 text-white"></i>
       </div>
       <div>
         <div class="flex items-center space-x-1.5">
-          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-xs sm:text-sm xl:text-base whitespace-nowrap">PROYECTO CLIMATE</span>
-          <span class="hidden xl:inline text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 whitespace-nowrap">NASA Space Apps</span>
+          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-xs sm:text-sm lg:text-base whitespace-nowrap">PROYECTO CLIMATE</span>
+          <span class="hidden 2xl:inline text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 whitespace-nowrap">NASA Space Apps</span>
         </div>
         <p class="hidden 2xl:flex text-[10px] text-slate-400 font-mono items-center gap-1 whitespace-nowrap">
           <span>Sistema Híbrido de Proyección & Alerta</span>
@@ -330,7 +330,7 @@
     </div>
 
     <!-- Center: Gran Chaco Regional Selector & Status Pill -->
-    <div class="hidden md:flex items-center space-x-1.5 bg-space-950/80 border border-space-800 rounded-xl px-2 py-1 shrink-0">
+    <div class="hidden md:flex items-center space-x-1.5 bg-space-900/90 border border-space-800 rounded-xl px-2 py-1 shrink-0">
       <div class="flex items-center space-x-1.5 shrink-0">
         <span class="relative flex h-2 w-2 shrink-0">
           <span id="header-pulse-beacon" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -338,7 +338,7 @@
         </span>
         <div class="text-[11px] flex items-center gap-1 shrink-0">
           <span class="text-slate-400 font-mono hidden 2xl:inline whitespace-nowrap">Monitoreo:</span>
-          <select id="select-active-node" class="bg-space-900 border border-space-700/80 hover:border-cyan-500 rounded-md text-[10.5px] sm:text-[11px] font-semibold text-slate-200 px-1.5 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition w-32 sm:w-38 lg:w-44 xl:w-52 truncate">
+          <select id="select-active-node" class="bg-space-950 border border-space-700/80 hover:border-cyan-500 rounded-md text-[10.5px] sm:text-[11px] font-semibold text-slate-200 px-1.5 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition w-28 sm:w-34 lg:w-44 truncate">
             <option value="gran_chaco" selected>🌎 Gran Chaco</option>
             <option value="quimili">🇦🇷 Quimilí (Hub Sgo. del Estero)</option>
             <option value="anatuya">🇦🇷 Añatuya (Hub Sgo. del Estero)</option>
@@ -352,69 +352,69 @@
         </div>
       </div>
       <div class="h-3.5 w-px bg-space-800 shrink-0"></div>
-      <div id="header-alert-badge" class="px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0 flex items-center">
+      <div id="header-alert-badge" class="px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0 flex items-center gap-1">
         ALERTA ROJA: SEQUÍA SEVERA
       </div>
     </div>
 
     <!-- Right: Actions Toolbar -->
-    <div class="flex items-center space-x-1 sm:space-x-1.5 xl:space-x-2 shrink-0">
+    <div class="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
 
       <!-- Conmutador de Fuente de Datos: Planilla Calibrada vs Google Earth Engine en Vivo vs LoRa (Campo) -->
-      <div class="flex items-center bg-space-950/90 border border-space-700/80 rounded-lg p-0.5 shadow-sm shrink-0">
-        <button id="btn-source-baseline" class="h-7 px-1.5 sm:px-2 xl:px-2.5 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0" title="Modo Planilla Demo: Serie temporal calibrada con benchmark NASA (13 pasos)">
+      <div class="flex items-center bg-space-900/90 border border-space-700/80 rounded-lg p-0.5 shadow-sm shrink-0">
+        <button id="btn-source-baseline" class="h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0" title="Modo Planilla Demo: Serie temporal calibrada con benchmark NASA (13 pasos)">
           <i data-lucide="table" class="w-3 h-3 shrink-0"></i>
-          <span>Planilla</span>
+          <span class="whitespace-nowrap">Planilla</span>
         </button>
-        <button id="btn-source-gee" class="h-7 px-1.5 sm:px-2 xl:px-2.5 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo Google Earth Engine: Telemetría satelital en tiempo real (GPM, SMAP, MODIS)">
+        <button id="btn-source-gee" class="h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo Google Earth Engine: Telemetría satelital en tiempo real (GPM, SMAP, MODIS)">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-          <span>GEE Vivo</span>
+          <span class="whitespace-nowrap">GEE Vivo</span>
         </button>
-        <button id="btn-source-lora" class="h-7 px-1.5 sm:px-2 xl:px-2.5 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-cyan-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo LoRa Campo: Telemetría in-situ de Nodos Centinela LoRa (ESP32-C3 + Ra-02 / SX1262)">
+        <button id="btn-source-lora" class="h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-cyan-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo LoRa Campo: Telemetría in-situ de Nodos Centinela LoRa (ESP32-C3 + Ra-02 / SX1262)">
           <i data-lucide="radio" class="w-3 h-3 shrink-0"></i>
-          <span>📡 LoRa (Campo)</span>
+          <span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>
         </button>
       </div>
 
       <!-- Botón Comparativa Planilla vs GEE -->
-      <button id="btn-modal-compare-data" class="h-7 sm:h-7.5 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-cyan-800/60 shadow-sm transition whitespace-nowrap shrink-0" title="Ver tabla comparativa: Planilla Demo vs Google Earth Engine en Vivo">
+      <button id="btn-modal-compare-data" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-cyan-800/60 shadow-sm transition whitespace-nowrap shrink-0" title="Ver tabla comparativa: Planilla Demo vs Google Earth Engine en Vivo">
         <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
-        <span class="hidden xl:inline font-mono text-[10.5px]">Comparar</span>
+        <span class="hidden xl:inline font-mono text-[10.5px] whitespace-nowrap">Comparar</span>
       </button>
 
       <!-- Divisor -->
       <div class="h-3.5 w-px bg-space-800 shrink-0 hidden sm:block"></div>
 
       <!-- Map Style Selector -->
-      <div class="flex items-center bg-space-950/90 border border-space-700/80 rounded-lg p-0.5 shrink-0">
-        <button id="btn-style-dark" class="h-6.5 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0">Oscuro</button>
-        <button id="btn-style-sat" class="h-6.5 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">Satélite</button>
-        <button id="btn-style-osm" class="hidden 2xl:block h-6.5 px-1.5 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">OSM</button>
+      <div class="flex items-center bg-space-900/90 border border-space-700/80 rounded-lg p-0.5 shrink-0">
+        <button id="btn-style-dark" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0">Oscuro</button>
+        <button id="btn-style-sat" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">Satélite</button>
+        <button id="btn-style-osm" class="hidden 2xl:block h-6 px-1.5 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">OSM</button>
       </div>
 
       <!-- Ficha Técnica & Ecuaciones Modal Trigger -->
-      <button id="btn-modal-docs" class="h-7 sm:h-7.5 hidden md:flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-purple-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Ver Ficha Técnica y Ecuaciones Matemáticas">
+      <button id="btn-modal-docs" class="h-7 hidden sm:flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700 text-purple-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Ver Ficha Técnica y Ecuaciones Matemáticas">
         <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400 shrink-0"></i>
-        <span class="hidden 2xl:inline text-[10.5px] font-semibold">Ficha</span>
+        <span class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Ficha</span>
       </button>
 
       <!-- Suscripción a Alertas Tempranas Modal Trigger -->
-      <button id="btn-modal-alerts" class="h-7 sm:h-7.5 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-amber-300 border border-space-700 hover:border-amber-500/50 transition shadow-sm whitespace-nowrap shrink-0" title="Suscribirse a alertas automáticas por Email o Telegram">
+      <button id="btn-modal-alerts" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700 text-amber-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Suscribirse a alertas automáticas por Email o Telegram">
         <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-        <span class="hidden 2xl:inline text-[10.5px] font-semibold">Alertas</span>
+        <span class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Alertas</span>
         <span id="alerts-sub-badge-count" class="hidden px-1 rounded-full text-[8px] bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-500/40">0</span>
       </button>
 
       <!-- Export Report (Generar PDF) -->
-      <button id="btn-export-report" class="h-7 sm:h-7.5 flex items-center space-x-1 px-2 sm:px-2.5 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-950 transition whitespace-nowrap shrink-0" title="Generar Informe Oficial en PDF">
+      <button id="btn-export-report" class="h-7 flex items-center space-x-1 px-2 sm:px-2.5 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-950 transition whitespace-nowrap shrink-0" title="Generar Informe Oficial en PDF">
         <i data-lucide="file-down" class="w-3.5 h-3.5 shrink-0"></i>
-        <span>Reporte<span class="hidden sm:inline"> PDF</span></span>
+        <span class="whitespace-nowrap">Reporte<span class="hidden sm:inline"> PDF</span></span>
       </button>
 
       <!-- Toggle Sidebar Button in Header -->
-      <button id="btn-toggle-sidebar" class="h-7 sm:h-7.5 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-space-700 shadow-sm transition whitespace-nowrap shrink-0" title="Mostrar/Ocultar Panel Lateral">
+      <button id="btn-toggle-sidebar" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-space-700 shadow-sm transition whitespace-nowrap shrink-0" title="Mostrar/Ocultar Panel Lateral">
         <i data-lucide="panel-right" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
-        <span class="hidden lg:inline">Panel</span>
+        <span class="hidden lg:inline whitespace-nowrap">Panel</span>
       </button>
 
     </div>
@@ -618,7 +618,7 @@
     </div>
 
     <!-- RIGHT SIDEBAR: NASA TELEMETRY, ML HYBRID ENGINE, SHAP & CRISIS ACTIONS -->
-    <aside id="sidebar-panel" class="w-full md:w-[340px] lg:w-[370px] xl:w-[420px] 2xl:w-[460px] h-full max-h-full min-h-0 bg-space-900 flex flex-col shrink-0 overflow-y-auto overflow-x-hidden border-l border-space-800 divide-y divide-space-800 transition-[width,margin] duration-300">
+    <aside id="sidebar-panel" class="w-full md:w-[350px] lg:w-[380px] xl:w-[420px] 2xl:w-[460px] h-full max-h-full min-h-0 bg-space-900 flex flex-col shrink-0 overflow-y-auto overflow-x-hidden border-l border-space-800 divide-y divide-space-800 transition-[width,margin] duration-300">
       
       <!-- Sticky Sidebar Tab Bar (Resumen / Modelos IA / Todo) -->
       <div class="p-2 bg-space-950/95 backdrop-blur-md border-b border-space-800 sticky top-0 z-20 shrink-0 w-full overflow-hidden">
@@ -646,15 +646,15 @@
         </div>
 
         <div id="alert-card" class="rounded-xl border p-2.5 xl:p-3 bg-red-950/30 border-red-500/40 transition-all w-full overflow-hidden">
-          <div class="flex items-center justify-between gap-2 min-w-0 w-full">
-            <div class="flex items-center space-x-2 min-w-0 flex-1 overflow-hidden">
-              <span id="alert-icon-box" class="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0">
+          <div class="flex items-start justify-between gap-2 min-w-0 w-full">
+            <div class="flex items-start space-x-2 min-w-0 flex-1">
+              <span id="alert-icon-box" class="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5">
                 🚨
               </span>
-              <div id="alert-subtitle-container" class="min-w-0 flex-1 overflow-hidden cursor-help" title="Gran Chaco Americano • SPI 3M: -1.62 • Déficit hídrico crítico en cuenca">
-                <h3 id="alert-title" class="font-bold text-red-400 text-xs xl:text-sm tracking-wide truncate">ALERTA ROJA: SEQUÍA SEVERA</h3>
-                <div id="alert-subtitle-line1" class="text-[10px] xl:text-[11px] font-semibold text-red-300 truncate">Gran Chaco • SPI 3M: -1.62</div>
-                <div id="alert-subtitle-line2" class="text-[9.5px] xl:text-[10px] text-red-300/80 truncate">Déficit hídrico crítico en cuenca</div>
+              <div id="alert-subtitle-container" class="min-w-0 flex-1 cursor-help" title="Gran Chaco Americano • SPI 3M: -1.62 • Déficit hídrico crítico en cuenca">
+                <h3 id="alert-title" class="font-bold text-red-400 text-xs xl:text-sm tracking-wide leading-tight break-words">ALERTA ROJA: SEQUÍA SEVERA</h3>
+                <div id="alert-subtitle-line1" class="text-[10px] xl:text-[11px] font-semibold text-red-300 leading-tight mt-0.5 break-words">Gran Chaco Americano • SPI 3M: -1.62</div>
+                <div id="alert-subtitle-line2" class="text-[9.5px] xl:text-[10px] text-red-300/80 leading-tight break-words">Déficit hídrico crítico en cuenca</div>
               </div>
             </div>
             <div class="text-right shrink-0 pl-1" title="Confianza estimada del ensamble por horizonte predictivo (t+1 a t+6)">
@@ -662,7 +662,7 @@
                 <span>Confianza RF</span>
                 <span class="text-[8px] text-slate-500 font-normal hidden xl:inline">(t+1→t+6)</span>
               </div>
-              <div id="horizon-confidence-container" class="flex items-end justify-end gap-1 bg-space-900/90 px-1.5 py-1 rounded-lg border border-space-800">
+              <div id="horizon-confidence-container" class="flex items-end justify-end gap-0.5 bg-space-900/90 px-1 py-0.5 rounded-lg border border-space-800">
                 <!-- Generado dinámicamente: mini barras por horizonte t+1 a t+6 -->
               </div>
             </div>
@@ -977,14 +977,14 @@
 
         <!-- ================= GUÍA DE REFERENCIAS Y GLOSARIO DE DATOS (PROYECCIÓN) ================= -->
         <div class="mt-2 bg-space-900/90 border border-space-800 rounded-lg p-2 font-mono">
-          <div class="flex items-center justify-between cursor-pointer select-none" id="btn-toggle-projection-guide" title="Desplegar u ocultar la guía completa de referencias de datos">
-            <span class="text-[9.5px] xl:text-[10px] text-cyan-300 font-semibold flex items-center gap-1.5">
-              <i data-lucide="help-circle" class="w-3.5 h-3.5 text-cyan-400"></i>
-              <span>Guía de Referencias: <span class="text-slate-300 font-normal">p50, [p10-p90], SPI 3M</span></span>
+          <div class="flex items-center justify-between gap-2 cursor-pointer select-none" id="btn-toggle-projection-guide" title="Desplegar u ocultar la guía completa de referencias de datos">
+            <span class="text-[9.5px] xl:text-[10px] text-cyan-300 font-semibold flex items-center gap-1.5 min-w-0">
+              <i data-lucide="help-circle" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+              <span class="truncate">Guía: <span class="text-slate-300 font-normal">p50, [p10-p90], SPI 3M</span></span>
             </span>
-            <span class="text-[8.5px] text-slate-400 flex items-center gap-1">
-              <span id="label-projection-guide-status" class="text-cyan-400 underline">¿Qué significan?</span>
-              <i data-lucide="chevron-down" id="icon-projection-guide" class="w-3 h-3 text-cyan-400 transition-transform duration-200"></i>
+            <span class="text-[8.5px] text-slate-400 flex items-center gap-1 shrink-0 pl-1">
+              <span id="label-projection-guide-status" class="text-cyan-400 underline whitespace-nowrap">¿Qué significan?</span>
+              <i data-lucide="chevron-down" id="icon-projection-guide" class="w-3 h-3 text-cyan-400 transition-transform duration-200 shrink-0"></i>
             </span>
           </div>
 

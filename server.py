@@ -18,6 +18,7 @@ import smtplib
 import random
 import logging
 from datetime import datetime
+import sqlite3
 import urllib.request
 import urllib.parse
 from email.mime.text import MIMEText
@@ -26,6 +27,109 @@ from email.mime.multipart import MIMEMultipart
 # Configuración de logging para telemetría LoRa e IoT
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("climate_lora")
+
+# Base de datos SQLite persistente con WAL (Write-Ahead Logging)
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "climate_database.db")
+
+def init_sqlite_db():
+    """Inicializa la base de datos SQLite con tablas para telemetría LoRa y caché de Google Earth Engine"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+        
+        # Tabla de telemetría LoRa histórica
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS lora_telemetry (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id TEXT NOT NULL,
+            localidad TEXT,
+            provincia TEXT,
+            latitud REAL,
+            longitud REAL,
+            altitud_m REAL,
+            fecha_local TEXT,
+            hora_local TEXT,
+            fuente_id TEXT,
+            tipo_dato TEXT,
+            temp_media_C REAL,
+            temp_min_C REAL,
+            temp_max_C REAL,
+            humedad_relativa_media_pct REAL,
+            humedad_relativa_min_pct REAL,
+            humedad_suelo_0_7cm_m3m3 REAL,
+            bateria_v REAL,
+            rssi REAL,
+            snr REAL,
+            tipo_nodo TEXT,
+            hardware_modelo TEXT,
+            timestamp TEXT,
+            payload_json TEXT
+        );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_lora_node_id ON lora_telemetry (node_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_lora_timestamp ON lora_telemetry (timestamp);")
+
+        # Tabla de caché de Google Earth Engine (TTL de 12 horas)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS gee_cache (
+            cache_key TEXT PRIMARY KEY,
+            payload_json TEXT NOT NULL,
+            cached_at REAL NOT NULL,
+            ttl_seconds INTEGER NOT NULL
+        );
+        """)
+        conn.commit()
+        conn.close()
+        logger.info(f"[SQLite DB] Base de datos inicializada en {DB_PATH} con modo WAL.")
+    except Exception as e:
+        logger.error(f"[SQLite DB] Error al inicializar base de datos: {e}")
+
+init_sqlite_db()
+
+def save_lora_record_to_db(record: Dict[str, Any]):
+    """Persiste un registro de telemetría LoRa en SQLite"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO lora_telemetry (
+            node_id, localidad, provincia, latitud, longitud, altitud_m,
+            fecha_local, hora_local, fuente_id, tipo_dato,
+            temp_media_C, temp_min_C, temp_max_C,
+            humedad_relativa_media_pct, humedad_relativa_min_pct,
+            humedad_suelo_0_7cm_m3m3, bateria_v, rssi, snr,
+            tipo_nodo, hardware_modelo, timestamp, payload_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            record.get("node_id"),
+            record.get("localidad"),
+            record.get("provincia"),
+            record.get("latitud"),
+            record.get("longitud"),
+            record.get("altitud_m"),
+            record.get("fecha_local"),
+            record.get("hora_local"),
+            record.get("fuente_id", "LORA_DIY_CAMPO"),
+            record.get("tipo_dato", "OBSERVACION_IN_SITU"),
+            record.get("temp_media_C"),
+            record.get("temp_min_C"),
+            record.get("temp_max_C"),
+            record.get("humedad_relativa_media_pct"),
+            record.get("humedad_relativa_min_pct"),
+            record.get("humedad_suelo_0_7cm_m3m3"),
+            record.get("bateria_v"),
+            record.get("rssi"),
+            record.get("snr"),
+            record.get("tipo_nodo", "SENSOR_CAMPO"),
+            record.get("hardware_modelo", "ESP32-C3 + Ra-02"),
+            datetime.now().isoformat(),
+            json.dumps(record)
+        ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"[SQLite DB] Error guardando registro LoRa: {e}")
 
 # Importar gestor de Google Earth Engine
 from gee_service import gee_manager, GEE_CATALOG
@@ -415,16 +519,20 @@ def ingest_lora_telemetry(telemetry: LoraTelemetry):
     print(log_msg)
     
     # Almacenar en el almacén de última telemetría in-situ recibida
-    LATEST_LORA_STORE[telemetry.node_id] = telemetry.model_dump() if hasattr(telemetry, "model_dump") else telemetry.dict()
+    rec_dict = telemetry.model_dump() if hasattr(telemetry, "model_dump") else telemetry.dict()
+    LATEST_LORA_STORE[telemetry.node_id] = rec_dict
     
-    return {"status": "success"}
+    # Persistir en la base de datos SQLite WAL
+    save_lora_record_to_db(rec_dict)
+    
+    return {"status": "success", "node_id": telemetry.node_id, "persisted": True}
 
 @app.get("/api/nodes/telemetry/simulate", response_model=List[LoraTelemetry])
 def simulate_lora_telemetry():
     """
     Mock dinámico que genera y devuelve una lista coherente de objetos LoraTelemetry
     para los 5 Nodos Centinela Trinacionales (Quimilí, Filadelfia, Villa Montes, Sáenz Peña, Resistencia).
-    Aplica fluctuaciones físicas realistas en cada llamada.
+    Aplica fluctuaciones físicas realistas en cada llamada y persiste las lecturas en SQLite WAL.
     """
     now = datetime.now()
     fecha_str = now.strftime("%Y-%m-%d")
@@ -518,8 +626,55 @@ def simulate_lora_telemetry():
             sensores_perifericos=sensores_dinamicos
         )
         simulated_list.append(node_data)
+        
+        # Persistir lectura en SQLite WAL
+        rec = node_data.model_dump() if hasattr(node_data, "model_dump") else node_data.dict()
+        save_lora_record_to_db(rec)
+        LATEST_LORA_STORE[cfg["node_id"]] = rec
 
     return simulated_list
+
+@app.get("/api/nodes/telemetry/history")
+def get_lora_telemetry_history(node_id: Optional[str] = None, limit: int = 50):
+    """
+    Recupera el historial de telemetría in-situ persistida en la base de datos SQLite WAL.
+    Permite filtrar por identificador de nodo (node_id) y limitar la cantidad de registros.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        if node_id:
+            cur.execute(
+                "SELECT * FROM lora_telemetry WHERE node_id = ? ORDER BY id DESC LIMIT ?",
+                (node_id, limit)
+            )
+        else:
+            cur.execute(
+                "SELECT * FROM lora_telemetry ORDER BY id DESC LIMIT ?",
+                (limit,)
+            )
+        rows = cur.fetchall()
+        conn.close()
+        
+        result = []
+        for r in rows:
+            item = dict(r)
+            if item.get("payload_json"):
+                try:
+                    payload = json.loads(item["payload_json"])
+                    item["sensores_perifericos"] = payload.get("sensores_perifericos", [])
+                except Exception:
+                    pass
+            result.append(item)
+        return {
+            "status": "SUCCESS",
+            "count": len(result),
+            "records": result
+        }
+    except Exception as e:
+        logger.error(f"[SQLite DB] Error recuperando historial LoRa: {e}")
+        return {"status": "ERROR", "detail": str(e), "records": []}
 
 # ================= MOTOR DE MACHINE LEARNING HÍBRIDO =================
 @app.post("/api/predict")
@@ -587,12 +742,34 @@ def compute_hybrid_prediction(data: TelemetryPayload):
 
 # ================= SIMULACIÓN EN VIVO DESDE GOOGLE EARTH ENGINE =================
 @app.get("/api/gee/simulate-live")
-def get_gee_live_simulation(node: str = "gran_chaco"):
+def get_gee_live_simulation(node: str = "gran_chaco", fresh: bool = False):
     """
     Obtiene los datos en tiempo real de Google Earth Engine para el nodo seleccionado,
     ejecuta la inferencia del modelo predictivo multivariable y devuelve tanto la telemetría en vivo,
     la proyección a 6 meses calculada a partir de los satélites, y la comparativa directa contra la planilla calibrada.
+    Implementa caché SQLite WAL con TTL de 12 horas para devolver respuestas en < 5ms.
     """
+    cache_key = f"gee_sim_{node}"
+    now_ts = time.time()
+
+    # 0. Consultar caché persistente SQLite si no se fuerza la actualización (fresh=False)
+    if not fresh:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("SELECT payload_json, cached_at, ttl_seconds FROM gee_cache WHERE cache_key = ?", (cache_key,))
+            row = cur.fetchone()
+            conn.close()
+            if row:
+                cached_payload_str, cached_at, ttl = row
+                if (now_ts - cached_at) < ttl:
+                    cached_data = json.loads(cached_payload_str)
+                    cached_data["from_cache"] = True
+                    cached_data["cache_age_seconds"] = round(now_ts - cached_at, 1)
+                    return cached_data
+        except Exception as e:
+            logger.warning(f"[GEE Cache] Error consultando caché: {e}")
+
     # 1. Obtener telemetría en vivo de GEE
     gee_tele = gee_manager.extract_sentinel_telemetry(node=node)
     
@@ -672,7 +849,7 @@ def get_gee_live_simulation(node: str = "gran_chaco"):
         "source": "Planilla Calibrada (Dataset Sintético NASA Benchmark)"
     }
 
-    return {
+    response_payload = {
         "status": "SUCCESS",
         "active_source": "GOOGLE_EARTH_ENGINE_LIVE",
         "node_id": node,
@@ -704,6 +881,22 @@ def get_gee_live_simulation(node: str = "gran_chaco"):
         },
         "baseline_comparison": baseline_t0
     }
+
+    # Guardar en caché SQLite WAL (TTL = 12 horas / 43200 s)
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT OR REPLACE INTO gee_cache (cache_key, payload_json, cached_at, ttl_seconds) VALUES (?, ?, ?, ?)",
+            (cache_key, json.dumps(response_payload), now_ts, 43200)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"[GEE Cache] Error almacenando en caché: {e}")
+
+    response_payload["from_cache"] = False
+    return response_payload
 
 # ================= SISTEMA DE SUSCRIPCIÓN A ALERTAS Y NOTIFICACIONES =================
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")

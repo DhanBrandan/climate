@@ -55,16 +55,19 @@
       visibility: visible;
     }
 
-    .member-spotlight.member-enter { animation: memberEnter 620ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .member-spotlight { transform-origin: center; will-change: transform, opacity, filter; }
+    .member-spotlight.member-exit { animation: memberExit 220ms ease-in both; pointer-events: none; }
+    .member-spotlight.member-enter { animation: memberEnter 520ms cubic-bezier(.2,.75,.25,1) both; }
     .fade-step.active-step { transition: opacity 0.72s cubic-bezier(.2,.75,.25,1), transform 0.78s cubic-bezier(.2,.75,.25,1), filter 0.72s ease, visibility 0s; }
     .scene-zoom-in { animation: sceneZoomIn 760ms cubic-bezier(.16,1,.3,1) both; }
     @keyframes sceneZoomIn { from { opacity: 0; transform: scale(.86) translateY(18px); filter: blur(10px); } 72% { opacity: 1; transform: scale(1.015) translateY(0); filter: blur(0); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
     .member-dot { width: 8px; height: 8px; border-radius: 999px; background: #334155; transition: width .25s ease, background-color .25s ease; }
     .member-dot[aria-current="true"] { width: 24px; background: #22d3ee; box-shadow: 0 0 14px rgba(34,211,238,.45); }
+    @keyframes memberExit { to { opacity: 0; transform: scale(.975) translateY(-8px); filter: blur(3px); } }
     @keyframes memberEnter {
-      from { opacity: 0; transform: perspective(900px) translateX(18px) scale(.86) rotateY(-5deg); filter: blur(8px); }
-      72% { opacity: 1; transform: perspective(900px) translateX(0) scale(1.015) rotateY(0); filter: blur(0); }
-      to { opacity: 1; transform: perspective(900px) translateX(0) scale(1) rotateY(0); filter: blur(0); }
+      from { opacity: 0; transform: scale(1.025) translateY(10px); filter: blur(3px); }
+      75% { opacity: 1; transform: scale(.995) translateY(0); filter: blur(0); }
+      to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
     }
     .intro-atmosphere { background: radial-gradient(circle at 14% 20%, rgba(6,182,212,.2), transparent 30%), radial-gradient(circle at 84% 78%, rgba(139,92,246,.2), transparent 34%), radial-gradient(circle at 60% 8%, rgba(59,130,246,.13), transparent 28%); animation: atmosphereZoom 18s ease-in-out infinite alternate; }
     @keyframes atmosphereZoom { from { transform: scale(.92) rotate(-1deg); opacity: .65; } to { transform: scale(1.12) rotate(1deg); opacity: 1; } }
@@ -370,6 +373,7 @@
     const totalMembers = 6;
     let currentMemberIndex = 0;
     let teamOverviewShown = false;
+    let memberTransitionToken = 0;
 
     const view1 = document.getElementById('view-step-1');
     const view2 = document.getElementById('view-step-2');
@@ -391,27 +395,41 @@
     const memberDots = Array.from(document.querySelectorAll('[data-member-index]'));
 
     function showMember(index) {
-      currentMemberIndex = Math.max(0, Math.min(totalMembers - 1, index));
+      const targetIndex = Math.max(0, Math.min(totalMembers - 1, index));
+      const transitionToken = ++memberTransitionToken;
+      currentMemberIndex = targetIndex;
       teamOverviewShown = false;
       memberCarousel.classList.remove('hidden');
       memberCaption.classList.remove('hidden');
       teamOverview.classList.add('hidden');
-      const number = String(currentMemberIndex + 1).padStart(2, '0');
-      document.getElementById('member-initials').textContent = number;
-      document.getElementById('member-number').textContent = `INTEGRANTE ${number} / 06`;
-      document.getElementById('member-name').textContent = `Integrante ${currentMemberIndex + 1}`;
-      document.getElementById('member-role').textContent = 'Rol por definir';
-      document.getElementById('member-bio').textContent = 'Este espacio queda listo para sumar una presentación breve del integrante.';
-      document.getElementById('member-caption-number').textContent = `${currentMemberIndex + 1} de ${totalMembers}`;
-      memberDots.forEach((dot, dotIndex) => dot.setAttribute('aria-current', String(dotIndex === currentMemberIndex)));
-      const nextLabel = btnNext.querySelector('span');
-      if (nextLabel) nextLabel.textContent = currentMemberIndex === totalMembers - 1 ? 'Ver equipo completo' : 'Siguiente integrante';
       stepStartedAt = Date.now();
       elapsedBeforePause = 0;
-      memberSpotlight.classList.remove('member-enter');
-      void memberSpotlight.offsetWidth;
-      memberSpotlight.classList.add('member-enter');
-      if (window.lucide) window.lucide.createIcons();
+
+      const renderMember = () => {
+        if (transitionToken !== memberTransitionToken) return;
+        const number = String(currentMemberIndex + 1).padStart(2, '0');
+        document.getElementById('member-initials').textContent = number;
+        document.getElementById('member-number').textContent = `INTEGRANTE ${number} / 06`;
+        document.getElementById('member-name').textContent = `Integrante ${currentMemberIndex + 1}`;
+        document.getElementById('member-role').textContent = 'Rol por definir';
+        document.getElementById('member-bio').textContent = 'Este espacio queda listo para sumar una presentación breve del integrante.';
+        document.getElementById('member-caption-number').textContent = `${currentMemberIndex + 1} de ${totalMembers}`;
+        memberDots.forEach((dot, dotIndex) => dot.setAttribute('aria-current', String(dotIndex === currentMemberIndex)));
+        const nextLabel = btnNext.querySelector('span');
+        if (nextLabel) nextLabel.textContent = currentMemberIndex === totalMembers - 1 ? 'Ver equipo completo' : 'Siguiente integrante';
+        memberSpotlight.classList.remove('member-exit');
+        void memberSpotlight.offsetWidth;
+        memberSpotlight.classList.add('member-enter');
+        if (window.lucide) window.lucide.createIcons();
+      };
+
+      memberSpotlight.classList.remove('member-enter', 'member-exit');
+      if (prefersReducedMotion.matches) {
+        renderMember();
+      } else {
+        memberSpotlight.classList.add('member-exit');
+        window.setTimeout(renderMember, 220);
+      }
     }
 
     function showTeamOverview() {
