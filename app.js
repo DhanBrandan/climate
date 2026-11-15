@@ -3686,15 +3686,17 @@ const DEPT_VARIATIONS = {
 const TRANSLATIONS = {
   es: {
     // Marca & Cabecera
-    brand_title: 'PROYECTO CLIMATE',
+    brand_title: 'CLIMATE',
     brand_sub: 'Sistema Híbrido de Proyección & Alerta',
     brand_region: 'Gran Chaco',
     monitoring_label: 'Monitoreo:',
+    source_label: 'Fuente:',
     source_baseline: 'Planilla',
     source_gee: 'GEE Vivo',
     source_lora: 'LoRa',
     source_lora_full: 'LoRa (Campo)',
     btn_compare: 'Comparar',
+    style_label: 'Mapa:',
     btn_style_dark: 'Oscuro',
     btn_style_light: 'Claro',
     btn_style_sat: 'Satélite',
@@ -3822,15 +3824,17 @@ const TRANSLATIONS = {
   },
   en: {
     // Brand & Header
-    brand_title: 'CLIMATE PROJECT',
+    brand_title: 'CLIMATE',
     brand_sub: 'Hybrid Projection & Early Warning System',
     brand_region: 'Gran Chaco',
     monitoring_label: 'Monitoring:',
+    source_label: 'Source:',
     source_baseline: 'Spreadsheet',
     source_gee: 'Live GEE',
     source_lora: 'LoRa',
     source_lora_full: 'LoRa (Field)',
     btn_compare: 'Compare',
+    style_label: 'Map:',
     btn_style_dark: 'Dark',
     btn_style_light: 'Light',
     btn_style_sat: 'Satellite',
@@ -4084,6 +4088,28 @@ function applyTheme(theme) {
     window.lucide.createIcons();
   }
 
+  if (typeof map !== 'undefined' && map && state.mapLoaded) {
+    if (theme === 'light' && state.activeMapStyle === 'dark') {
+      state.activeMapStyle = 'light';
+      map.setStyle(TILE_STYLES.light);
+      map.once('style.load', () => {
+        setupMapLayers();
+        updateMapData();
+      });
+      const btnDark = document.getElementById('btn-style-dark');
+      if (btnDark) btnDark.textContent = t('btn_style_light', 'Claro');
+    } else if (theme === 'dark' && state.activeMapStyle === 'light') {
+      state.activeMapStyle = 'dark';
+      map.setStyle(TILE_STYLES.dark);
+      map.once('style.load', () => {
+        setupMapLayers();
+        updateMapData();
+      });
+      const btnDark = document.getElementById('btn-style-dark');
+      if (btnDark) btnDark.textContent = t('btn_style_dark', 'Oscuro');
+    }
+  }
+
   updateChartsTheme(theme);
 }
 
@@ -4098,8 +4124,10 @@ function initTheme() {
 function updateChartsTheme(theme) {
   const isLight = theme === 'light';
   const gridColor = isLight ? 'rgba(100, 116, 139, 0.12)' : 'rgba(51, 65, 85, 0.25)';
-  const tickColor = isLight ? '#475569' : '#94A3B8';
+  const tickColor = isLight ? '#334155' : '#94A3B8';
   const observedColor = isLight ? '#0F172A' : '#F8FAFC';
+  const p50Color = isLight ? '#0284C7' : '#06B6D4';
+  const p90Fill = isLight ? 'rgba(2, 132, 199, 0.16)' : 'rgba(6, 182, 212, 0.20)';
 
   if (projectionChart) {
     if (projectionChart.options.scales.x) {
@@ -4114,6 +4142,13 @@ function updateChartsTheme(theme) {
       projectionChart.data.datasets[0].borderColor = observedColor;
       projectionChart.data.datasets[0].pointBackgroundColor = observedColor;
     }
+    if (projectionChart.data.datasets && projectionChart.data.datasets[1]) {
+      projectionChart.data.datasets[1].borderColor = p50Color;
+      projectionChart.data.datasets[1].pointBackgroundColor = p50Color;
+    }
+    if (projectionChart.data.datasets && projectionChart.data.datasets[2]) {
+      projectionChart.data.datasets[2].backgroundColor = p90Fill;
+    }
     projectionChart.update();
   }
 
@@ -4123,7 +4158,7 @@ function updateChartsTheme(theme) {
       shapChart.options.scales.x.ticks.color = tickColor;
     }
     if (shapChart.options.scales.y) {
-      shapChart.options.scales.y.ticks.color = isLight ? '#1E293B' : '#E2E8F0';
+      shapChart.options.scales.y.ticks.color = isLight ? '#0F172A' : '#E2E8F0';
     }
     shapChart.update();
   }
@@ -5997,6 +6032,8 @@ function initProjectionChart() {
       }
     }
   });
+
+  updateChartsTheme(state.currentTheme);
 }
 
 // Helper: Generar y ordenar variables SHAP por magnitud absoluta
@@ -6079,13 +6116,15 @@ function initShapChart() {
           grid: { display: false },
           ticks: {
             autoSkip: false,
-            color: '#E2E8F0',
+            color: state.currentTheme === 'light' ? '#0F172A' : '#E2E8F0',
             font: { family: 'monospace', size: 9.5 }
           }
         }
       }
     }
   });
+
+  updateChartsTheme(state.currentTheme);
 }
 
 function updateCharts() {
@@ -6490,27 +6529,27 @@ function updateSourceToggleUI() {
   const btnLora = document.getElementById('btn-source-lora');
   const badge = document.getElementById('telemetry-source-badge');
 
-  const inactiveBtnClass = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
+  const inactiveBtnClass = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
 
   if (btnBaseline) {
     btnBaseline.className = inactiveBtnClass;
-    btnBaseline.innerHTML = '<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">Planilla</span>';
+    btnBaseline.innerHTML = `<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">${t('source_baseline', 'Planilla')}</span>`;
   }
   if (btnGee) {
     btnGee.className = inactiveBtnClass.replace('text-slate-400', 'text-emerald-400');
-    btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
+    btnGee.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">${t('source_gee', 'GEE Vivo')}</span>`;
   }
   if (btnLora) {
     btnLora.className = inactiveBtnClass.replace('text-slate-400', 'text-cyan-400');
-    btnLora.innerHTML = '<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>';
+    btnLora.innerHTML = `<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">${t('source_lora', 'LoRa')}<span class="hidden xl:inline"> (${state.language === 'en' ? 'Field' : 'Campo'})</span></span>`;
   }
 
   if (state.dataSource === 'gee') {
     if (btnGee) {
-      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0 border border-emerald-400/50';
+      btnGee.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 border border-emerald-400/50';
       btnGee.innerHTML = state.isGeeLoading 
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
-        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
+        ? `<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">${state.language === 'en' ? 'Loading...' : 'Cargando...'}</span>`
+        : `<span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">${t('source_gee', 'GEE Vivo')}</span>`;
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 animate-pulse whitespace-nowrap shrink-0';
@@ -6519,10 +6558,10 @@ function updateSourceToggleUI() {
     }
   } else if (state.dataSource === 'lora') {
     if (btnLora) {
-      btnLora.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
+      btnLora.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
       btnLora.innerHTML = state.isLoraLoading
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
-        : '<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>';
+        ? `<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">${state.language === 'en' ? 'Loading...' : 'Cargando...'}</span>`
+        : `<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">${t('source_lora', 'LoRa')}<span class="hidden xl:inline"> (${state.language === 'en' ? 'Field' : 'Campo'})</span></span>`;
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-400 animate-pulse whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.5)]';
@@ -6531,8 +6570,8 @@ function updateSourceToggleUI() {
     }
   } else {
     if (btnBaseline) {
-      btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
-      btnBaseline.innerHTML = '<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">Planilla</span>';
+      btnBaseline.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0';
+      btnBaseline.innerHTML = `<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">${t('source_baseline', 'Planilla')}</span>`;
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
@@ -7439,9 +7478,9 @@ function setupEventHandlers() {
 
   function setActiveStyleBtn(activeBtn) {
     [btnDark, btnSat, btnOsm].forEach(b => {
-      if (b) b.className = 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition';
+      if (b) b.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0';
     });
-    if (activeBtn) activeBtn.className = 'px-2.5 py-1 rounded-md text-xs font-medium bg-space-800 text-cyan-300 transition';
+    if (activeBtn) activeBtn.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0';
   }
 
   if (btnDark) {
