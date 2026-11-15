@@ -7077,6 +7077,14 @@ function setupEventHandlers() {
   if (btnExport) {
     btnExport.addEventListener('click', exportCrisisReport);
   }
+
+  // Módulo de Análisis de Planillas Excel / In-Situ (Abre ventana nueva)
+  const btnAbrirExcel = document.getElementById('btn-abrir-excel-view');
+  if (btnAbrirExcel) {
+    btnAbrirExcel.addEventListener('click', () => {
+      window.open('/excel-analysis.html', '_blank');
+    });
+  }
 }
 
 // ================= GESTIÓN DE SUSCRIPCIÓN A ALERTAS TEMPRANAS =================

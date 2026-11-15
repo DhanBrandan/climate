@@ -4,15 +4,19 @@ NASA Space Apps Challenge 2026
 API Backend FastAPI: Integración Google Earth Engine (GEE), LightGBM y Random Forest con SHAP
 """
 
-from fastapi import FastAPI, Query, HTTPException, status
+from fastapi import FastAPI, Query, HTTPException, status, UploadFile, File, APIRouter
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import math
 import numpy as np
 import os
+import io
 import json
 import time
+import traceback
+import pandas as pd
 import uuid
 import smtplib
 import random
@@ -930,6 +934,473 @@ def trigger_alert_notification(req: AlertNotifyRequest):
                 results.append(res)
 
     return {"status": "PROCESSED", "dispatched_count": len(results), "deliveries": results}
+
+# ================= MÓDULO ANALÍTICO DE CARGA DE ARCHIVOS EXCEL / CSV =================
+
+SAMPLE_TEMPLATE_DATA = [
+    {"fecha": "2026-10-01", "localidad": "Quimilí", "latitud": -27.6460, "longitud": -62.4160, "humedad_suelo_m3m3": 0.14, "spi_3m": -1.82, "precipitacion_mm": 12.5, "temp_media_c": 32.1, "observaciones": "Gateway Central - Déficit hídrico severo"},
+    {"fecha": "2026-10-02", "localidad": "Añatuya", "latitud": -28.4600, "longitud": -62.8340, "humedad_suelo_m3m3": 0.18, "spi_3m": -1.35, "precipitacion_mm": 21.0, "temp_media_c": 30.5, "observaciones": "Gateway Central - Sequía moderada"},
+    {"fecha": "2026-10-03", "localidad": "Bandera", "latitud": -28.8870, "longitud": -62.2660, "humedad_suelo_m3m3": 0.22, "spi_3m": -0.75, "precipitacion_mm": 34.0, "temp_media_c": 28.9, "observaciones": "Bajos Submeridionales - Vigilancia"},
+    {"fecha": "2026-10-04", "localidad": "Termas de Río Hondo", "latitud": -27.4930, "longitud": -64.8590, "humedad_suelo_m3m3": 0.28, "spi_3m": 0.35, "precipitacion_mm": 55.4, "temp_media_c": 27.2, "observaciones": "Cuenca Río Dulce - Normal"},
+    {"fecha": "2026-10-05", "localidad": "Sacháyoj", "latitud": -26.6800, "longitud": -61.8200, "humedad_suelo_m3m3": 0.13, "spi_3m": -1.95, "precipitacion_mm": 9.2, "temp_media_c": 33.4, "observaciones": "Sensor Periférico - Sequía extrema"},
+    {"fecha": "2026-10-06", "localidad": "Otumpa", "latitud": -27.7500, "longitud": -62.2300, "humedad_suelo_m3m3": 0.19, "spi_3m": -1.15, "precipitacion_mm": 23.5, "temp_media_c": 30.1, "observaciones": "Sensor Periférico - Sequía moderada"},
+    {"fecha": "2026-10-07", "localidad": "Tintina", "latitud": -27.0300, "longitud": -62.7100, "humedad_suelo_m3m3": 0.16, "spi_3m": -1.55, "precipitacion_mm": 15.0, "temp_media_c": 31.8, "observaciones": "Sensor Periférico - Déficit hídrico"},
+    {"fecha": "2026-10-08", "localidad": "Los Juríes", "latitud": -28.3800, "longitud": -62.1100, "humedad_suelo_m3m3": 0.17, "spi_3m": -1.40, "precipitacion_mm": 18.2, "temp_media_c": 31.0, "observaciones": "Sensor Periférico - Alerta preventiva"},
+    {"fecha": "2026-10-09", "localidad": "Herrera", "latitud": -28.4300, "longitud": -63.0500, "humedad_suelo_m3m3": 0.20, "spi_3m": -1.05, "precipitacion_mm": 26.0, "temp_media_c": 29.8, "observaciones": "Sensor Periférico - Alerta moderada"},
+    {"fecha": "2026-10-10", "localidad": "Colonia Dora", "latitud": -28.6000, "longitud": -62.9500, "humedad_suelo_m3m3": 0.15, "spi_3m": -1.70, "precipitacion_mm": 13.8, "temp_media_c": 32.5, "observaciones": "Sensor Periférico - Sequía severa"},
+    {"fecha": "2026-10-11", "localidad": "Cuatro Bocas", "latitud": -28.9800, "longitud": -61.9800, "humedad_suelo_m3m3": 0.21, "spi_3m": -0.80, "precipitacion_mm": 31.2, "temp_media_c": 29.1, "observaciones": "Sensor Periférico - Vigilancia"},
+    {"fecha": "2026-10-12", "localidad": "Fortín Inca", "latitud": -29.0700, "longitud": -62.3800, "humedad_suelo_m3m3": 0.23, "spi_3m": -0.60, "precipitacion_mm": 38.0, "temp_media_c": 28.4, "observaciones": "Sensor Periférico - Vigilancia leve"},
+    {"fecha": "2026-10-13", "localidad": "Villa Balnearia", "latitud": -27.5200, "longitud": -64.8900, "humedad_suelo_m3m3": 0.27, "spi_3m": 0.20, "precipitacion_mm": 49.0, "temp_media_c": 27.5, "observaciones": "Sensor Periférico - Normal"},
+    {"fecha": "2026-10-14", "localidad": "El Charco", "latitud": -27.3500, "longitud": -64.6700, "humedad_suelo_m3m3": 0.29, "spi_3m": 0.50, "precipitacion_mm": 58.5, "temp_media_c": 26.9, "observaciones": "Sensor Periférico - Normal/Óptimo"},
+    {"fecha": "2026-10-15", "localidad": "Filadelfia", "latitud": -22.3500, "longitud": -60.0300, "humedad_suelo_m3m3": 0.15, "spi_3m": -1.65, "precipitacion_mm": 11.4, "temp_media_c": 34.0, "observaciones": "Chaco Boreal (Paraguay) - Sequía severa"},
+    {"fecha": "2026-10-16", "localidad": "Villa Montes", "latitud": -21.2600, "longitud": -63.4600, "humedad_suelo_m3m3": 0.20, "spi_3m": -0.90, "precipitacion_mm": 28.0, "temp_media_c": 29.5, "observaciones": "Chaco Subandino (Bolivia) - Vigilancia"},
+    {"fecha": "2026-10-17", "localidad": "Sáenz Peña", "latitud": -26.7900, "longitud": -60.4400, "humedad_suelo_m3m3": 0.25, "spi_3m": -0.30, "precipitacion_mm": 42.0, "temp_media_c": 28.5, "observaciones": "Chaco Central - Normal/Leve"},
+    {"fecha": "2026-10-18", "localidad": "Resistencia", "latitud": -27.4500, "longitud": -58.9800, "humedad_suelo_m3m3": 0.32, "spi_3m": 1.15, "precipitacion_mm": 85.0, "temp_media_c": 26.8, "observaciones": "Chaco Oriental - Superávit hídrico"}
+]
+
+def generate_excel_template_bytes() -> bytes:
+    """Genera el contenido binario del archivo Excel modelo con formato."""
+    df = pd.DataFrame(SAMPLE_TEMPLATE_DATA)
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Telemetria_InSitu")
+    buf.seek(0)
+    return buf.getvalue()
+
+# Guardar la plantilla en disco si no existe
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.xlsx")
+if not os.path.exists(TEMPLATE_PATH):
+    try:
+        with open(TEMPLATE_PATH, "wb") as f:
+            f.write(generate_excel_template_bytes())
+    except Exception as e:
+        logger.warning(f"No se pudo guardar template.xlsx en disco: {e}")
+
+router = APIRouter()
+
+@router.get("/api/v1/descargar-plantilla")
+@app.get("/api/v1/descargar-plantilla")
+@app.get("/template.xlsx")
+async def descargar_plantilla():
+    """
+    Sirve el archivo Excel modelo oficial con sus solapas y parametrizaciones calibradas.
+    Permite a los usuarios descargar la estructura requerida para evitar errores de formato.
+    """
+    ruta_plantilla = "CLIMATE_Planilla_Maestra_30Y_SARIMAX_MK_Alerta.xlsx"
+    
+    # Verificar ruta relativa directa o relativa al directorio del archivo
+    if not os.path.exists(ruta_plantilla):
+        ruta_absoluta = os.path.join(os.path.dirname(__file__), ruta_plantilla)
+        if os.path.exists(ruta_absoluta):
+            ruta_plantilla = ruta_absoluta
+            
+    # Fallback si por alguna razón no se encontrara la maestra
+    if not os.path.exists(ruta_plantilla):
+        ruta_alt = os.path.join(os.path.dirname(__file__), "template.xlsx")
+        if os.path.exists(ruta_alt):
+            ruta_plantilla = ruta_alt
+        else:
+            raise HTTPException(status_code=404, detail="La plantilla modelo no se encuentra disponible en el servidor.")
+    
+    return FileResponse(
+        path=ruta_plantilla,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="CLIMATE_Planilla_Modelo_Oficial.xlsx"
+    )
+
+@router.post("/api/v1/analizar-excel")
+@app.post("/api/v1/analizar-excel")
+async def analizar_excel(file: UploadFile = File(...)):
+    """
+    Recibe un archivo Excel (.xlsx, .xls) o CSV con datos hidroclimáticos in-situ o de la Planilla Maestra.
+    Lee solapas específicas con sus encabezados configurados:
+      - DATOS_DIARIOS: header=2
+      - SARIMAX_PROYECCION: header=3
+      - TENDENCIAS_MK_SEN: header=3
+      - ALERTA_TEMPRANA: header=3
+    Valida columnas obligatorias ('fecha_local', 'latitud', 'longitud'), limpia datos y ejecuta inferencia analítica.
+    """
+    filename = file.filename or "archivo.xlsx"
+    ext = os.path.splitext(filename)[1].lower()
+    
+    if ext not in [".xlsx", ".xls", ".csv"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Formato no compatible ({ext}). Por favor cargue un archivo con extensión .xlsx, .xls o .csv"
+        )
+    
+    try:
+        contents = await file.read()
+        if not contents or len(contents) == 0:
+            raise HTTPException(status_code=400, detail="El archivo enviado está vacío.")
+
+        extra_sheets_metadata = {}
+        detected_sheet = "DATOS_DIARIOS"
+        is_master_workbook = False
+
+        # ================= 1. LECTURA ESPECÍFICA POR SOLAPAS Y ENCABEZADOS =================
+        if ext in [".xlsx", ".xls"]:
+            try:
+                xl = pd.ExcelFile(io.BytesIO(contents))
+                sheet_names = xl.sheet_names
+                sheet_lookup = {s.upper(): s for s in sheet_names}
+
+                # Si es la planilla maestra o contiene la solapa DATOS_DIARIOS:
+                if "DATOS_DIARIOS" in sheet_lookup:
+                    is_master_workbook = True
+                    datos_sheet_name = sheet_lookup["DATOS_DIARIOS"]
+                    detected_sheet = datos_sheet_name
+                    
+                    # Requerimiento: DATOS_DIARIOS usa header=2 (las variables reales empiezan en fila 3)
+                    df = pd.read_excel(xl, sheet_name=datos_sheet_name, header=2)
+
+                    # Requerimiento: SARIMAX_PROYECCION (Modelos de Rendimiento y Proyecciones Futuras t+1..t+24)
+                    if "SARIMAX_PROYECCION" in sheet_lookup:
+                        try:
+                            sarimax_sheet_name = sheet_lookup["SARIMAX_PROYECCION"]
+                            df_sarimax_raw = pd.read_excel(xl, sheet_name=sarimax_sheet_name, header=None)
+                            
+                            # a) Modelos de Rendimiento (Filas 3 a 6)
+                            df_perf = df_sarimax_raw.iloc[3:7, :8].copy()
+                            df_perf.columns = [str(c).strip() for c in df_perf.iloc[0]]
+                            df_perf = df_perf.iloc[1:].dropna(how="all")
+                            models_list = df_perf.fillna("").to_dict(orient="records")
+
+                            # b) Proyecciones Futuras (Filas 8 a 32)
+                            df_proj = df_sarimax_raw.iloc[8:33].dropna(how="all", axis=1).copy()
+                            df_proj.columns = [str(c).strip() for c in df_proj.iloc[0]]
+                            df_proj = df_proj.iloc[1:].dropna(how="all")
+                            proj_list = df_proj.fillna("").to_dict(orient="records")
+
+                            extra_sheets_metadata["sarimax_proyeccion"] = {
+                                "solapa": sarimax_sheet_name,
+                                "total_modelos": len(models_list),
+                                "modelos": models_list,
+                                "total_proyecciones": len(proj_list),
+                                "proyecciones": proj_list
+                            }
+                        except Exception as sarimax_err:
+                            logger.warning(f"Aviso al leer solapa SARIMAX_PROYECCION: {sarimax_err}")
+
+                    # Requerimiento: TENDENCIAS_MK_SEN usa header=3
+                    if "TENDENCIAS_MK_SEN" in sheet_lookup:
+                        try:
+                            mk_sheet_name = sheet_lookup["TENDENCIAS_MK_SEN"]
+                            df_mk = pd.read_excel(xl, sheet_name=mk_sheet_name, header=3)
+                            df_mk = df_mk.dropna(how="all")
+                            extra_sheets_metadata["tendencias_mk_sen"] = {
+                                "solapa": mk_sheet_name,
+                                "total_variables": len(df_mk),
+                                "variables": df_mk.fillna("").to_dict(orient="records")
+                            }
+                        except Exception as mk_err:
+                            logger.warning(f"Aviso al leer solapa TENDENCIAS_MK_SEN: {mk_err}")
+
+                    # Requerimiento: ALERTA_TEMPRANA usa header=3
+                    if "ALERTA_TEMPRANA" in sheet_lookup:
+                        try:
+                            alert_sheet_name = sheet_lookup["ALERTA_TEMPRANA"]
+                            df_alert = pd.read_excel(xl, sheet_name=alert_sheet_name, header=3)
+                            df_alert = df_alert.dropna(how="all")
+                            extra_sheets_metadata["alerta_temprana"] = {
+                                "solapa": alert_sheet_name,
+                                "total_reglas": len(df_alert),
+                                "reglas": df_alert.fillna("").to_dict(orient="records")
+                            }
+                        except Exception as alert_err:
+                            logger.warning(f"Aviso al leer solapa ALERTA_TEMPRANA: {alert_err}")
+
+                else:
+                    # Planilla estándar o de una sola solapa (ej. template.xlsx)
+                    detected_sheet = sheet_names[0]
+                    # Probar header=0 por defecto
+                    df = pd.read_excel(xl, sheet_name=detected_sheet, header=0)
+                    
+            except Exception as excel_read_err:
+                print(traceback.format_exc())
+                logger.error(f"Error al abrir estructura del libro Excel {filename}:\n{traceback.format_exc()}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No se pudo estructurar el libro Excel. Error: {str(excel_read_err)}"
+                )
+
+        else:
+            # Archivo CSV
+            try:
+                df = pd.read_csv(io.BytesIO(contents), sep=None, engine="python")
+            except Exception:
+                df = pd.read_csv(io.BytesIO(contents))
+            detected_sheet = "CSV"
+
+        if df.empty or len(df) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"La solapa '{detected_sheet}' no contiene filas de datos para analizar."
+            )
+
+        # ================= 2. VALIDACIONES Y LIMPIEZA DE DATOS =================
+        # Normalización de nombres de columnas a minúsculas y sin espacios conflictivos
+        col_mapping = {}
+        for col in df.columns:
+            c_clean = str(col).strip().lower().replace(" ", "_").replace(".", "").replace("-", "_")
+            col_mapping[col] = c_clean
+        df = df.rename(columns=col_mapping)
+
+        # Soportar variantes comunes antes de validar
+        if "fecha_local" not in df.columns and "fecha" in df.columns:
+            df["fecha_local"] = df["fecha"]
+        if "latitud" not in df.columns and "lat" in df.columns:
+            df["latitud"] = df["lat"]
+        if "longitud" not in df.columns and "lon" in df.columns:
+            df["longitud"] = df["lon"]
+        elif "longitud" not in df.columns and "lng" in df.columns:
+            df["longitud"] = df["lng"]
+
+        # Requerimiento Técnico 2.4: Validar columnas obligatorias mínimas ('fecha_local', 'latitud', 'longitud')
+        columnas_requeridas = ["fecha_local", "latitud", "longitud"]
+        for col in columnas_requeridas:
+            if col not in df.columns:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Falta la columna obligatoria '{col}' en la solapa de datos ('{detected_sheet}')."
+                )
+
+        # Requerimiento Técnico 2.5: Limpieza básica obligatoria
+        # a) Convertir fechas con pd.to_datetime(..., errors='coerce')
+        df["fecha_local"] = pd.to_datetime(df["fecha_local"], errors="coerce")
+        df["fecha_dt"] = df["fecha_local"]
+        df["fecha_clean"] = df["fecha_dt"].dt.strftime("%Y-%m-%d")
+        df["fecha_clean"] = df["fecha_clean"].fillna(df["fecha_local"].astype(str))
+        df["fecha"] = df["fecha_clean"]
+
+        # b) Descartar registros con coordenadas nulas
+        df["latitud"] = pd.to_numeric(df["latitud"], errors="coerce")
+        df["longitud"] = pd.to_numeric(df["longitud"], errors="coerce")
+        df = df.dropna(subset=["latitud", "longitud"])
+
+        if df.empty or len(df) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Todos los registros de la solapa '{detected_sheet}' tenían coordenadas nulas o inválidas."
+            )
+
+        # ================= 3. MAPEO Y NORMALIZACIÓN DE VARIABLES HIDROLÓGICAS =================
+        # Localidad
+        if "localidad" not in df.columns:
+            for c in ["estacion_o_pixel_id", "estacion", "nodo", "sitio", "ciudad"]:
+                if c in df.columns:
+                    df["localidad"] = df[c]
+                    break
+            if "localidad" not in df.columns:
+                df["localidad"] = "Gran Chaco"
+        df["localidad"] = df["localidad"].fillna("Gran Chaco").astype(str)
+
+        # Humedad de Suelo (FDR 0-7 cm)
+        if "humedad_suelo" not in df.columns:
+            for c in ["humedad_suelo_0_7cm_m3m3", "humedad_suelo_0_7cm", "humedad_suelo_m3m3", "gwetroot", "sm"]:
+                if c in df.columns:
+                    df["humedad_suelo"] = pd.to_numeric(df[c], errors="coerce")
+                    break
+
+        if "humedad_suelo" not in df.columns or df["humedad_suelo"].isna().all():
+            df["humedad_suelo"] = 0.22
+        else:
+            # Si vino en porcentaje (>1.0), normalizar a fracción
+            med_sm = df["humedad_suelo"].dropna().median()
+            if med_sm is not None and med_sm > 1.0:
+                df["humedad_suelo"] = df["humedad_suelo"] / 100.0
+            df["humedad_suelo"] = df["humedad_suelo"].fillna(0.22).clip(0.02, 0.60)
+
+        # Precipitación
+        if "precipitacion_mm" not in df.columns:
+            for c in ["precip_mm", "precip", "lluvia", "prectot"]:
+                if c in df.columns:
+                    df["precipitacion_mm"] = pd.to_numeric(df[c], errors="coerce")
+                    break
+
+        # Temperatura Media
+        if "temp_media_c" not in df.columns:
+            for c in ["temp_media", "temperatura", "temp", "t2m"]:
+                if c in df.columns:
+                    df["temp_media_c"] = pd.to_numeric(df[c], errors="coerce")
+                    break
+
+        # SPI 3-Meses (Standardized Precipitation Index)
+        if "spi_3m" not in df.columns or df["spi_3m"].isna().all():
+            # Inferencia automática consistente con el motor del proyecto
+            if "precipitacion_mm" in df.columns and not df["precipitacion_mm"].isna().all():
+                mu_p = 55.0
+                sigma_p = 28.0
+                p_vals = pd.to_numeric(df["precipitacion_mm"], errors="coerce").fillna(mu_p)
+                df["spi_3m"] = ((p_vals - mu_p) / sigma_p).clip(-4.0, 4.0)
+            else:
+                mu_gwet = 0.28
+                sigma_gwet = 0.08
+                sm_vals = pd.to_numeric(df["humedad_suelo"], errors="coerce").fillna(mu_gwet)
+                df["spi_3m"] = (((sm_vals - mu_gwet) / sigma_gwet) * 1.5).clip(-4.0, 4.0)
+        else:
+            df["spi_3m"] = pd.to_numeric(df["spi_3m"], errors="coerce").fillna(0.0).clip(-4.0, 4.0)
+
+        # ================= 4. INFERENCIA ANALÍTICA Y CLASIFICACIÓN DE ALERTAS =================
+        processed_records = []
+        alert_counts = {"ROJO": 0, "NARANJA": 0, "AMARILLO": 0, "VERDE": 0, "CIAN": 0}
+
+        for idx, row in df.iterrows():
+            spi = float(row["spi_3m"]) if not pd.isna(row["spi_3m"]) else 0.0
+            sm = float(row["humedad_suelo"]) if not pd.isna(row["humedad_suelo"]) else 0.22
+            precip = float(row["precipitacion_mm"]) if ("precipitacion_mm" in row and not pd.isna(row["precipitacion_mm"])) else None
+            temp = float(row["temp_media_c"]) if ("temp_media_c" in row and not pd.isna(row["temp_media_c"])) else None
+            
+            # Clasificación SPI OMM / WMO
+            if spi <= -1.5:
+                spi_cat = "Sequía Severa a Extrema"
+            elif spi <= -1.0:
+                spi_cat = "Sequía Moderada"
+            elif spi < -0.5:
+                spi_cat = "Sequía Leve (Vigilancia)"
+            elif spi <= 1.0:
+                spi_cat = "Normal"
+            elif spi <= 1.5:
+                spi_cat = "Moderadamente Húmedo"
+            else:
+                spi_cat = "Muy Húmedo / Superávit"
+
+            # Estado Humedad de Suelo FDR
+            if sm < 0.16:
+                sm_status = "Crítica (Déficit Extremo)"
+                sm_color = "#EF4444"
+            elif sm < 0.22:
+                sm_status = "Baja (Estrés Hídrico)"
+                sm_color = "#F59E0B"
+            elif sm < 0.27:
+                sm_status = "Moderada (Vigilancia)"
+                sm_color = "#FBBF24"
+            elif sm <= 0.38:
+                sm_status = "Óptima (Capacidad de Campo)"
+                sm_color = "#10B981"
+            else:
+                sm_status = "Saturación / Anegamiento"
+                sm_color = "#06B6D4"
+
+            # Inferencia de Alerta Categórica Proyecto CLIMATE
+            if spi <= -1.5 or sm < 0.16:
+                alert = "ROJO"
+                conf = round(0.92 + (min(2.0, abs(spi)) * 0.02), 3)
+                rec = "EMERGENCIA: Activar bombeo en reservorios y postergar ventana de siembra."
+            elif spi <= -1.0 or sm < 0.22:
+                alert = "NARANJA"
+                conf = round(0.86 + (min(2.0, abs(spi)) * 0.015), 3)
+                rec = "ALERTA PREVENTIVA: Monitoreo diario de napas y preparación de canales de riego."
+            elif spi < -0.5 or sm < 0.26:
+                alert = "AMARILLO"
+                conf = 0.825
+                rec = "VIGILANCIA: Seguimiento agroclimático semanal y ajuste de densidad de siembra."
+            elif spi > 1.2 or sm > 0.38:
+                alert = "CIAN"
+                conf = 0.880
+                rec = "SUPERÁVIT: Riesgo de anegamiento en bajos. Verificar drenajes y escorrentía."
+            else:
+                alert = "VERDE"
+                conf = 0.940
+                rec = "CONDICIÓN ÓPTIMA: Parámetros hídricos estables y reservas de suelo adecuadas."
+
+            conf = min(0.985, max(0.75, conf))
+            alert_counts[alert] += 1
+
+            processed_records.append({
+                "id": idx + 1,
+                "fecha": str(row["fecha"]),
+                "localidad": str(row["localidad"]),
+                "latitud": round(float(row["latitud"]), 4),
+                "longitud": round(float(row["longitud"]), 4),
+                "humedad_suelo": round(sm, 3),
+                "humedad_suelo_estado": sm_status,
+                "humedad_suelo_color": sm_color,
+                "spi_3m": round(spi, 2),
+                "spi_categoria": spi_cat,
+                "precipitacion_mm": round(precip, 1) if precip is not None else None,
+                "temp_media_c": round(temp, 1) if temp is not None else None,
+                "nivel_alerta": alert,
+                "confianza_pct": round(conf * 100, 1),
+                "recomendacion": rec,
+                "observaciones": str(row.get("observaciones", "")) if "observaciones" in row and not pd.isna(row["observaciones"]) else ""
+            })
+
+        # ================= 5. RESUMEN GLOBAL =================
+        total_reg = len(processed_records)
+        mean_spi = round(float(df["spi_3m"].mean()), 2)
+        min_spi = round(float(df["spi_3m"].min()), 2)
+        max_spi = round(float(df["spi_3m"].max()), 2)
+        mean_sm = round(float(df["humedad_suelo"].mean()), 3)
+        min_sm = round(float(df["humedad_suelo"].min()), 3)
+        max_sm = round(float(df["humedad_suelo"].max()), 3)
+        
+        mean_temp = round(float(df["temp_media_c"].dropna().mean()), 1) if "temp_media_c" in df.columns and not df["temp_media_c"].dropna().empty else None
+        total_precip = round(float(df["precipitacion_mm"].dropna().sum()), 1) if "precipitacion_mm" in df.columns and not df["precipitacion_mm"].dropna().empty else None
+
+        severity_order = ["ROJO", "NARANJA", "AMARILLO", "CIAN", "VERDE"]
+        predominant_alert = max(alert_counts, key=alert_counts.get)
+        max_risk_alert = next((a for a in severity_order if alert_counts[a] > 0), "VERDE")
+
+        dates = sorted([r["fecha"] for r in processed_records])
+        unique_localities = sorted(list(set(r["localidad"] for r in processed_records)))
+
+        return {
+            "status": "success",
+            "mensaje": "Planilla Maestra procesada con éxito en el motor CLIMATE",
+            "filename": filename,
+            "solapa_procesada": detected_sheet,
+            "es_planilla_maestra": is_master_workbook,
+            "metadatos_solapas_adicionales": extra_sheets_metadata,
+            "modelos_predictivos": {
+                "sarimax": extra_sheets_metadata.get("sarimax_proyeccion", {}),
+                "tendencias_mk": extra_sheets_metadata.get("tendencias_mk_sen", {}),
+                "alerta_temprana": extra_sheets_metadata.get("alerta_temprana", {})
+            },
+            "total_registros": total_reg,
+            "resumen": {
+                "spi_promedio": mean_spi,
+                "spi_min": min_spi,
+                "spi_max": max_spi,
+                "humedad_suelo_promedio": mean_sm,
+                "humedad_suelo_min": min_sm,
+                "humedad_suelo_max": max_sm,
+                "temp_promedio": mean_temp,
+                "precipitacion_acumulada_mm": total_precip,
+                "alerta_predominante": predominant_alert,
+                "alerta_maxima_riesgo": max_risk_alert,
+                "distribucion_alertas": alert_counts,
+                "distribucion_porcentual": {k: round((v / total_reg) * 100, 1) for k, v in alert_counts.items()},
+                "rango_fechas": {
+                    "inicio": dates[0] if dates else None,
+                    "fin": dates[-1] if dates else None
+                },
+                "localidades_analizadas": unique_localities
+            },
+            "registros": processed_records
+        }
+
+    # Requerimiento 3: Manejo Robusto de Excepciones y Debugging
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        print(traceback.format_exc())
+        logger.error(f"Error procesando archivo Excel {filename}:\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno al procesar el archivo: {str(e)}"
+        )
+
+@app.get("/excel-analysis.html")
+def serve_excel_analysis_page():
+    """Sirve la página de análisis de Excel cuando se accede directamente a través del puerto de FastAPI."""
+    file_path = os.path.join(os.path.dirname(__file__), "excel-analysis.html")
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="text/html")
+    raise HTTPException(status_code=404, detail="Página excel-analysis.html no encontrada")
+
+# Incluir router en la aplicación principal FastAPI
+app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn
