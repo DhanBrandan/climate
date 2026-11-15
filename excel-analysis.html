@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyecto CLIMATE — Módulo Analítico de Planillas Excel & In-Situ</title>
+  
+  <!-- Tailwind CSS via CDN with customized space palette -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            space: {
+              950: '#060913',
+              900: '#0B0F19',
+              850: '#0F172A',
+              800: '#1E293B',
+              750: '#283548',
+              700: '#334155'
+            },
+            climate: {
+              green: '#10B981',
+              yellow: '#F59E0B',
+              orange: '#F97316',
+              red: '#EF4444',
+              cyan: '#06B6D4',
+              blue: '#3B82F6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Chart.js for summary analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06B6D4;
+    }
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(6, 182, 212, 0.4) #0B0F19;
+    }
+
+    /* Glow utilities */
+    .glow-cyan {
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.25);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+    }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.04); }
+    }
+    .pulse-subtle {
+      animation: pulse-subtle 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-[#060913] text-slate-100 min-h-screen w-full overflow-x-hidden flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- ================= HEADER SUPERIOR ================= -->
+  <header class="border-b border-space-800 bg-space-900/95 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3 shadow-md w-full">
+    
+    <!-- Left: Brand / Title -->
+    <div class="flex items-center space-x-3 shrink-0">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-950/60 shrink-0">
+        <i data-lucide="file-spreadsheet" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-sm sm:text-base lg:text-lg">PROYECTO CLIMATE</span>
+          <span class="text-[9px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold">Módulo Analítico Excel</span>
+        </div>
+        <p class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+          <span>Inferencia Predictiva Multivariable</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-300">Gran Chaco Americano</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Center: Backend API Status Indicator -->
+    <div class="hidden md:flex items-center space-x-2 bg-space-950/90 border border-space-800 rounded-full px-3 py-1 shadow-inner text-xs font-mono">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="text-slate-400">Motor FastAPI:</span>
+      <span id="api-status-label" class="text-emerald-400 font-semibold">Conectado (v1.1.0)</span>
+    </div>
+
+    <!-- Right: Actions Toolbar -->
+    <div class="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
+      <!-- Descargar Plantilla Modelo -->
+      <a href="/api/v1/descargar-plantilla" download="CLIMATE_Planilla_Modelo_Oficial.xlsx" id="btn-header-download-template" class="h-8 px-3 rounded-lg text-xs font-semibold bg-space-800 hover:bg-space-750 text-cyan-300 hover:text-white border border-cyan-800/60 transition flex items-center gap-1.5 shadow-sm" title="Descargar archivo Excel oficial con el esquema de columnas y modelos">
+        <i data-lucide="download" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+        <span class="hidden sm:inline">Descargar</span>
+        <span>Plantilla (.xlsx)</span>
+      </a>
+
+      <!-- Volver al Dashboard Principal -->
+      <a href="/index.html" class="h-8 px-3 rounded-lg text-xs font-semibold bg-space-850 hover:bg-space-800 text-slate-300 hover:text-white border border-space-700 transition flex items-center gap-1.5 shadow-sm" title="Volver al mapa y dashboard cartográfico principal">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+        <span class="hidden sm:inline">Volver al</span>
+        <span>Dashboard</span>
+      </a>
+
+      <!-- Cerrar Ventana -->
+      <button onclick="window.close()" class="h-8 w-8 rounded-lg bg-space-900 hover:bg-red-500/20 text-slate-400 hover:text-red-300 border border-space-800 hover:border-red-500/40 transition flex items-center justify-center text-xs font-bold shrink-0" title="Cerrar esta pestaña">
+        ✕
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= CONTENIDO PRINCIPAL ================= -->
+  <main class="w-full min-h-screen bg-[#060913] text-slate-100 px-3 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+
+    <!-- Tarjeta de Bienvenida y Explicación -->
+    <div class="bg-gradient-to-r from-space-900 via-space-850 to-space-900 border border-space-800 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+        <div class="flex-1">
+          <h1 class="text-lg sm:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+            <span>Diagnóstico Hídrico Automatizado mediante Planillas Excel / CSV</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">ML + GIS</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
+            Sube registros de sensores de campo (LoRa/IoT) o compendios satelitales para calcular instantáneamente el 
+            <b class="text-cyan-300 font-mono">Índice Estandarizado de Precipitación (SPI-3M)</b>, anomalías de humedad de suelo a <b class="text-white">0-7 cm (FDR)</b>, 
+            y categorizar los niveles de alerta climática con recomendaciones agronómicas automáticas.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="btn-quick-sample-load" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/50 hover:border-cyan-400 transition flex items-center gap-2 shadow-sm cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+            <span>Cargar Ejemplo de Demostración</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SECCIÓN DE CARGA (DRAG & DROP) ================= -->
+    <section class="bg-space-900/90 border border-space-800 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-space-800/70">
+        <div>
+          <h2 class="text-xs sm:text-sm font-mono uppercase tracking-wider text-slate-200 font-bold flex items-center gap-2">
+            <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-400"></i>
+            <span>Carga de Archivo Hidroclimático</span>
+          </h2>
+          <span class="text-[11px] font-mono text-slate-400">Formatos compatibles: <b class="text-slate-200">.XLSX, .XLS, .CSV</b> (Hasta 25 MB)</span>
+        </div>
+        
+        <!-- Botón Destacado: Descargar Modelo de Planilla -->
+        <a href="/api/v1/descargar-plantilla" download="CLIMATE_Planilla_Modelo_Oficial.xlsx" id="btn-download-template-card" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-emerald-100 border border-emerald-500/40 hover:border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all group shrink-0" title="Descargar libro Excel oficial calibrado con 12 solapas y metadatos del proyecto">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform"></i>
+          <span>Descargar Modelo de Planilla</span>
+          <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400 opacity-70 group-hover:opacity-100 transition-opacity"></i>
+        </a>
+      </div>
+
+      <!-- Dropzone Container -->
+      <div id="dropzone" class="border-2 border-dashed border-space-700/80 hover:border-cyan-500/70 bg-space-950/70 hover:bg-space-950 rounded-2xl p-8 sm:p-10 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-3 relative group">
+        <input type="file" id="file-input" accept=".xlsx, .xls, .csv" class="hidden">
+        
+        <div class="w-16 h-16 rounded-2xl bg-space-900 border border-cyan-500/30 group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center transition-all">
+          <i data-lucide="file-up" class="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform"></i>
+        </div>
+
+        <div>
+          <p class="text-sm sm:text-base font-bold text-white group-hover:text-cyan-300 transition-colors">
+            Arrastra y suelta tu archivo Excel o CSV aquí
+          </p>
+          <p class="text-xs text-slate-400 mt-1">
+            o haz clic para explorar en tu computadora
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-space-900 border border-space-750 text-slate-300">fecha</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-space-900 border border-space-750 text-slate-300">localidad</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-space-900 border border-space-750 text-slate-300">latitud / longitud</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-space-900 border border-space-750 text-cyan-300">humedad_suelo</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-space-900 border border-space-750 text-blue-300">spi_3m</span>
+        </div>
+      </div>
+
+      <!-- Barra de Asistencia: Acceso Directo a Plantilla Oficial -->
+      <div class="p-3.5 rounded-xl bg-space-950/70 border border-space-800/80 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-emerald-950/70 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <i data-lucide="sheet" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="text-xs min-w-0">
+            <span class="font-bold text-slate-200">¿No tienes el formato requerido?</span>
+            <span class="text-slate-400 block sm:inline sm:ml-1">Descarga el libro modelo oficial con las solapas preconfiguradas (<code class="text-cyan-400 font-mono text-[10px]">DATOS_DIARIOS</code>, <code class="text-cyan-400 font-mono text-[10px]">SARIMAX</code>, <code class="text-cyan-400 font-mono text-[10px]">TENDENCIAS</code> y <code class="text-cyan-400 font-mono text-[10px]">ALERTAS</code>).</span>
+          </div>
+        </div>
+        <a href="/api/v1/descargar-plantilla" download="CLIMATE_Planilla_Modelo_Oficial.xlsx" class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-space-850 hover:bg-space-800 text-emerald-300 hover:text-emerald-100 border border-emerald-500/30 hover:border-emerald-400 transition-all shrink-0">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Descargar .XLSX Oficial</span>
+        </a>
+      </div>
+
+      <!-- File Details Card (Selected State) -->
+      <div id="file-selected-card" class="hidden p-4 rounded-xl bg-space-850 border border-cyan-500/40 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-lg bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center shrink-0">
+            <i data-lucide="file-check-2" class="w-5 h-5 text-cyan-300"></i>
+          </div>
+          <div class="min-w-0">
+            <div id="file-name-label" class="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">nombre_archivo.xlsx</div>
+            <div id="file-size-label" class="text-[11px] font-mono text-cyan-400 mt-0.5">24.5 KB • Formato Excel</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-cancel-file" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-space-900 hover:bg-space-800 text-slate-400 hover:text-white border border-space-750 transition">
+            Cambiar
+          </button>
+          <button type="button" id="btn-process-file" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/80 hover:shadow-cyan-500/30 transition flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="play" class="w-3.5 h-3.5 shrink-0 fill-current"></i>
+            <span>Iniciar Análisis Predictivo</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Spinner Indicator -->
+      <div id="loading-indicator" class="hidden p-8 rounded-xl bg-space-950/90 border border-cyan-500/30 flex flex-col items-center justify-center gap-3 text-center">
+        <div class="w-10 h-10 border-3 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin"></div>
+        <div>
+          <div id="loading-step-text" class="text-sm font-bold text-white">Procesando archivo con Pandas...</div>
+          <p class="text-xs text-slate-400 mt-0.5">Ejecutando inferencia de niveles de alerta y diagnóstico agronómico</p>
+        </div>
+      </div>
+
+      <!-- Error Alert Banner -->
+      <div id="error-alert-banner" class="hidden p-4 rounded-xl bg-red-950/50 border border-red-500/50 text-red-200 text-xs flex items-start justify-between gap-3">
+        <div class="flex items-start gap-2.5">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-red-400 shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold block text-red-300">Error durante el análisis:</span>
+            <span id="error-message-text">Verifique que el archivo tenga formato válido y columnas numéricas legibles.</span>
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('error-alert-banner').classList.add('hidden')" class="text-red-400 hover:text-white text-xs font-bold">
+          ✕
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= PANEL DE RESULTADOS (OCULTO INICIALMENTE) ================= -->
+    <section id="results-section" class="hidden flex flex-col gap-6">
+
+      <!-- Encabezado de Resultados y Resumen -->
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-space-800 pb-3">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 text-cyan-400"></i>
+            <span>Resultados del Diagnóstico Hidroclimático</span>
+            <span id="badge-master-workbook" class="hidden px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+              Planilla Maestra 30Y (SARIMAX + MK)
+            </span>
+          </h2>
+          <p id="results-filename-subtitle" class="text-xs font-mono text-cyan-400 mt-0.5">
+            Archivo: <span id="results-filename">ejemplo.xlsx</span> • Solapa: <span id="results-sheet-name" class="text-white font-bold">DATOS_DIARIOS</span> • <span id="results-records-count">18</span> registros procesados
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-export-csv" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-space-850 hover:bg-space-800 text-cyan-300 hover:text-white border border-cyan-800/60 transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="file-output" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Exportar CSV</span>
+          </button>
+          <button type="button" onclick="window.print()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-space-850 hover:bg-space-800 text-slate-300 hover:text-white border border-space-700 transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span>Imprimir</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. Tarjetas KPI de Resumen Ejecutivo (Grid 4) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        
+        <!-- KPI 1: Total Registros y Localidades -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span class="font-medium text-slate-300">Registros Procesados</span>
+            <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+          </div>
+          <div class="flex items-baseline justify-between mt-2">
+            <span id="kpi-total-records" class="text-2xl font-bold font-mono text-white">18</span>
+            <span class="text-xs font-mono text-slate-400">observaciones</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-space-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Localidades:</span>
+            <span id="kpi-unique-localities" class="text-cyan-300 font-bold">12 sitios</span>
+          </div>
+        </div>
+
+        <!-- KPI 2: SPI-3M Promedio -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span class="font-medium text-slate-300">SPI 3-Meses Promedio</span>
+            <i data-lucide="trending-down" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div class="flex items-baseline justify-between mt-2">
+            <span id="kpi-mean-spi" class="text-2xl font-bold font-mono text-amber-400">-0.89</span>
+            <span id="kpi-spi-range" class="text-xs font-mono text-slate-400">[-1.95 a +1.15]</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-space-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Condición:</span>
+            <span id="kpi-spi-category" class="text-amber-300 font-bold">Sequía Leve / Vigilancia</span>
+          </div>
+        </div>
+
+        <!-- KPI 3: Humedad de Suelo Promedio -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span class="font-medium text-slate-300">Humedad Suelo (0-7 cm)</span>
+            <i data-lucide="droplets" class="w-4 h-4 text-cyan-400"></i>
+          </div>
+          <div class="flex items-baseline justify-between mt-2">
+            <span id="kpi-mean-soil" class="text-2xl font-bold font-mono text-white">0.208</span>
+            <span class="text-xs font-mono text-slate-300 font-semibold">m³/m³</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-space-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>vs Capacidad Óptima:</span>
+            <span id="kpi-soil-anomaly" class="text-amber-400 font-bold">-25.7% (Déficit)</span>
+          </div>
+        </div>
+
+        <!-- KPI 4: Nivel de Alerta Predominante -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span class="font-medium text-slate-300">Alerta Predominante</span>
+            <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
+          </div>
+          <div class="flex items-baseline justify-between mt-2">
+            <span id="kpi-predominant-badge" class="px-2.5 py-1 rounded-lg text-sm font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/50 shadow-md">
+              ALERTA ROJA
+            </span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-space-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Máximo Riesgo:</span>
+            <span id="kpi-max-risk" class="text-red-400 font-bold">Emergencia Severa</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 2. Gráficos Analíticos Visuales (Grid 2) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- Gráfico 1: Distribución de Alertas Categóricas (Doughnut) -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-lg">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-cyan-400"></i>
+                <span>Distribución de Alertas</span>
+              </span>
+              <span class="text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded bg-space-950 border border-space-800">5 Categorías</span>
+            </div>
+            <div class="h-52 relative flex items-center justify-center">
+              <canvas id="chart-alerts-distribution"></canvas>
+            </div>
+            <div id="alerts-legend-container" class="flex flex-col gap-1.5 text-xs font-mono pt-3 border-t border-space-800/80 mt-3">
+              <!-- Rellenado dinámicamente con conteos y porcentajes -->
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-space-800/80 flex items-start gap-1.5 text-xs text-slate-400">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5"></i>
+            <span><strong class="text-slate-300 font-medium">Lectura:</strong> Proporción de observaciones clasificadas según el nivel de severidad hídrica calculada por el motor analítico CLIMATE.</span>
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Evolución de SPI-3M y Humedad de Suelo (Line) -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-lg lg:col-span-2">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+                <i data-lucide="line-chart" class="w-4 h-4 text-purple-400"></i>
+                <span>Trayectoria de Sequía: SPI-3M & Humedad de Suelo</span>
+              </span>
+              <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] font-mono">
+                <span class="flex items-center gap-1.5 text-cyan-400 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50"></span>SPI-3M</span>
+                <span class="flex items-center gap-1.5 text-emerald-400 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>Humedad m³/m³</span>
+                <span id="legend-item-sarimax-proj" class="hidden flex items-center gap-1.5 text-purple-400 font-semibold"><span class="w-2.5 h-0.5 border-t-2 border-dashed border-purple-400"></span>Proy. SARIMAX 24M</span>
+                <span class="flex items-center gap-1.5 text-cyan-300"><span class="w-2.5 h-0.5 border-t-2 border-dashed border-cyan-400"></span>+1.5 Superávit</span>
+                <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-0.5 border-t-2 border-dashed border-slate-500"></span>0.0 Neutro</span>
+                <span class="flex items-center gap-1.5 text-red-400"><span class="w-2.5 h-0.5 border-t-2 border-dashed border-red-400"></span>-1.5 Sequía</span>
+              </div>
+            </div>
+            <div class="h-64 relative">
+              <canvas id="chart-timeline-evolution"></canvas>
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-space-800/80 flex items-start gap-1.5 text-xs text-slate-400">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5"></i>
+            <span><strong class="text-slate-300 font-medium">Lectura:</strong> Valores de SPI-3M superiores a <strong class="text-cyan-400 font-mono">+1.50</strong> indican riesgo de anegamiento en bajos; valores por debajo de <strong class="text-red-400 font-mono">-1.50</strong> señalan sequía severa/crítica para el perfil edáfico según el motor analítico.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 3. MODELOS PREDICTIVOS & TENDENCIAS CLIMÁTICAS (SARIMAX / MANN-KENDALL) ================= -->
+      <section id="section-predictive-models" class="hidden flex flex-col gap-5">
+        
+        <!-- Encabezado de la Sección -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-space-900 via-space-850 to-space-900 border border-purple-900/40 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shadow-sm shadow-purple-950 shrink-0">
+              <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-white tracking-wide flex items-center gap-2">
+                <span>Modelos Predictivos & Tendencias Climáticas (SARIMAX / Mann-Kendall)</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-950 text-purple-300 border border-purple-800">30 AÑOS CALIBRADOS</span>
+              </h2>
+              <p class="text-xs text-slate-400 font-mono mt-0.5">
+                Inferencia econométrica estacional multivariable, pruebas no paramétricas de tendencia climática y proyección a 24 meses
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <span class="px-2.5 py-1 rounded-lg bg-space-950 border border-space-800 text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+              <span id="badge-count-sarimax-models">3 Modelos SARIMAX</span>
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-space-950 border border-space-800 text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span id="badge-count-mk-variables">8 Variables M-K</span>
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-space-950 border border-space-800 text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+              <span>24 Meses Proyección</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Tarjetas de Rendimiento SARIMAX (Grid 3 columnas) -->
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <h3 class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+              <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
+              <span>Especificación & Rendimiento de Modelos SARIMAX</span>
+            </h3>
+            <span class="text-[11px] font-mono text-slate-500">Criterios de Selección AIC / BIC & Validación Cruzada</span>
+          </div>
+          <div id="container-sarimax-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Rellenado dinámicamente con las 3 tarjetas de modelo -->
+          </div>
+        </div>
+
+        <!-- Tabla de Diagnóstico Mann-Kendall & Pendiente de Sen -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 sm:p-5 flex flex-col shadow-lg gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+              <h3 class="text-xs font-mono uppercase tracking-wider text-slate-200 font-bold">
+                Test de Tendencia No Paramétrica Mann-Kendall & Pendiente de Sen (30 Años)
+              </h3>
+            </div>
+            <span class="text-[11px] font-mono text-slate-400">
+              Evaluación de significancia bilateral (α = 0.05) sobre serie Nov 1996 – Oct 2026
+            </span>
+          </div>
+
+          <div class="overflow-x-auto custom-scrollbar border border-space-800 rounded-xl">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-space-950/90 text-slate-400 font-mono text-[11px] border-b border-space-800 uppercase tracking-wider">
+                  <th class="py-2.5 px-3 font-semibold">Variable</th>
+                  <th class="py-2.5 px-3 font-semibold">Descripción & Unidad</th>
+                  <th class="py-2.5 px-3 font-semibold">Tendencia 30A</th>
+                  <th class="py-2.5 px-3 font-semibold">Estadístico Z (MK)</th>
+                  <th class="py-2.5 px-3 font-semibold">Valor-p</th>
+                  <th class="py-2.5 px-3 font-semibold">Pendiente Sen (Q/año)</th>
+                  <th class="py-2.5 px-3 font-semibold">Cambio 30A</th>
+                  <th class="py-2.5 px-3 font-semibold min-w-[240px]">Diagnóstico Climático</th>
+                </tr>
+              </thead>
+              <tbody id="table-mann-kendall-body" class="divide-y divide-space-800/60 font-mono text-slate-200">
+                <!-- Rellenado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Proyección Futura SARIMAX a 24 Meses (Horizonte t+1 a t+24) -->
+        <div class="bg-space-900 border border-space-800 rounded-2xl p-4 sm:p-5 flex flex-col shadow-lg gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="calendar" class="w-4 h-4 text-cyan-400"></i>
+              <h3 class="text-xs font-mono uppercase tracking-wider text-slate-200 font-bold">
+                Horizonte de Pronóstico Futuro SARIMAX (24 Meses: Nov 2026 – Oct 2028)
+              </h3>
+            </div>
+            <span class="text-[11px] font-mono text-slate-400">
+              Forzamiento con ciclo ENSO ONI proyectado e Intervalos de Confianza al 95%
+            </span>
+          </div>
+
+          <div class="overflow-x-auto custom-scrollbar border border-space-800 rounded-xl max-h-80">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="sticky top-0 z-10">
+                <tr class="bg-space-950 text-slate-400 font-mono text-[11px] border-b border-space-800 uppercase tracking-wider">
+                  <th class="py-2.5 px-3 font-semibold">Horizonte</th>
+                  <th class="py-2.5 px-3 font-semibold">Fecha</th>
+                  <th class="py-2.5 px-3 font-semibold">Escenario ENSO ONI</th>
+                  <th class="py-2.5 px-3 font-semibold">Temp. Media Proy. (°C)</th>
+                  <th class="py-2.5 px-3 font-semibold">Precip. Proy. (mm)</th>
+                  <th class="py-2.5 px-3 font-semibold">Anomalía Térmica</th>
+                  <th class="py-2.5 px-3 font-semibold">Anomalía Lluvia</th>
+                  <th class="py-2.5 px-3 font-semibold">Alerta Temprana</th>
+                  <th class="py-2.5 px-3 font-semibold min-w-[260px]">Protocolo / Acción Recomendada</th>
+                </tr>
+              </thead>
+              <tbody id="table-sarimax-projections-body" class="divide-y divide-space-800/60 font-mono text-slate-200">
+                <!-- Rellenado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 4. Tabla Dinámica Detallada de Registros Procesados -->
+      <div class="bg-space-900 border border-space-800 rounded-2xl p-4 sm:p-5 flex flex-col shadow-lg gap-4">
+        
+        <!-- Controles de Filtro y Búsqueda en Vivo -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+            <div class="relative w-full max-w-sm">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+              <input type="text" id="table-search-input" placeholder="Buscar por localidad, fecha o recomendación..." class="w-full bg-space-950 border border-space-750 focus:border-cyan-500 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none transition font-sans">
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="table-filter-alert" class="bg-space-950 border border-space-750 focus:border-cyan-500 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none font-mono cursor-pointer transition">
+              <option value="ALL">Todas las Alertas</option>
+              <option value="ROJO">🔴 Solo Alerta Roja</option>
+              <option value="NARANJA">🟠 Solo Alerta Naranja</option>
+              <option value="AMARILLO">🟡 Solo Alerta Amarilla</option>
+              <option value="VERDE">🟢 Solo Condición Normal</option>
+              <option value="CIAN">🔵 Solo Superávit</option>
+            </select>
+
+            <span id="table-showing-count" class="text-xs font-mono text-slate-400 px-2">
+              Total filtrados: <b id="count-visible-rows" class="text-cyan-300">0</b> registros
+            </span>
+          </div>
+        </div>
+
+        <!-- Tabla con Scroll Horizontal Responsivo -->
+        <div class="overflow-x-auto custom-scrollbar border border-space-800 rounded-xl">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-space-950/90 text-slate-400 font-mono text-[11px] border-b border-space-800 uppercase tracking-wider">
+                <th class="py-2.5 px-3 font-semibold">#</th>
+                <th class="py-2.5 px-3 font-semibold">Fecha</th>
+                <th class="py-2.5 px-3 font-semibold">Localidad</th>
+                <th class="py-2.5 px-3 font-semibold">Coordenadas</th>
+                <th class="py-2.5 px-3 font-semibold">Humedad Suelo</th>
+                <th class="py-2.5 px-3 font-semibold">SPI 3-Meses</th>
+                <th class="py-2.5 px-3 font-semibold">Nivel Alerta</th>
+                <th class="py-2.5 px-3 font-semibold">Confianza</th>
+                <th class="py-2.5 px-3 font-semibold min-w-[260px]">Diagnóstico & Recomendación</th>
+              </tr>
+            </thead>
+            <tbody id="table-records-body" class="divide-y divide-space-800/60 font-mono text-slate-200">
+              <!-- Filas generadas dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Barra de Paginación y Control de Filas por Página -->
+        <div id="table-pagination-container" class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-space-800/80 text-xs font-mono">
+          
+          <!-- Izquierda: Selector de Registros por Página e Indicador Dinámico -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2 text-slate-400">
+              <span>Registros por página:</span>
+              <select id="select-registros-pagina" class="bg-space-950 border border-space-750 focus:border-cyan-500 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none font-mono cursor-pointer transition">
+                <option value="10">10 por página</option>
+                <option value="25" selected>25 por página</option>
+                <option value="50">50 por página</option>
+                <option value="100">100 por página</option>
+              </select>
+            </div>
+            
+            <span class="text-slate-700 hidden sm:inline">|</span>
+            
+            <span id="pagination-status-text" class="text-slate-400">
+              Mostrando registros <b class="text-white">1</b> a <b class="text-white">25</b> de <b class="text-cyan-300 font-bold">360</b>
+            </span>
+          </div>
+
+          <!-- Derecha: Navegación de Páginas (Anterior, Números, Siguiente) -->
+          <div class="flex items-center gap-1.5 ml-auto">
+            <button id="btn-page-prev" class="h-8 px-2.5 rounded-lg bg-space-950 hover:bg-space-850 text-slate-300 hover:text-white border border-space-800 hover:border-space-700 transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium cursor-pointer" title="Página anterior">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              <span>Anterior</span>
+            </button>
+            
+            <div id="pagination-pages-list" class="flex items-center gap-1">
+              <!-- Botones numéricos de página generados dinámicamente -->
+            </div>
+
+            <button id="btn-page-next" class="h-8 px-2.5 rounded-lg bg-space-950 hover:bg-space-850 text-slate-300 hover:text-white border border-space-800 hover:border-space-700 transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium cursor-pointer" title="Página siguiente">
+              <span>Siguiente</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER INFERIOR ================= -->
+  <footer class="border-t border-space-800/80 bg-space-900/90 py-4 px-3 sm:px-6 lg:px-8 text-center text-xs text-slate-500 font-mono mt-auto w-full">
+    <div class="flex flex-wrap items-center justify-between w-full gap-2">
+      <div>PROYECTO CLIMATE • NASA Space Apps Challenge 2026 • Gran Chaco Americano</div>
+      <div class="flex items-center gap-3">
+        <a href="/index.html" class="hover:text-cyan-400 transition">Dashboard Cartográfico</a>
+        <span>•</span>
+        <a href="/api/v1/descargar-plantilla" class="hover:text-cyan-400 transition">Descargar Plantilla</a>
+        <span>•</span>
+        <span class="text-emerald-400">FastAPI + Pandas Engine</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= CLIENT JAVASCRIPT LOGIC ================= -->
+  <script>
+    // Variables de Estado
+    let currentData = null;
+    let selectedFile = null;
+    let alertDoughnutChart = null;
+    let evolutionLineChart = null;
+
+    // Elementos DOM
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const fileSelectedCard = document.getElementById('file-selected-card');
+    const fileNameLabel = document.getElementById('file-name-label');
+    const fileSizeLabel = document.getElementById('file-size-label');
+    const btnCancelFile = document.getElementById('btn-cancel-file');
+    const btnProcessFile = document.getElementById('btn-process-file');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const loadingStepText = document.getElementById('loading-step-text');
+    const errorAlertBanner = document.getElementById('error-alert-banner');
+    const errorMessageText = document.getElementById('error-message-text');
+    const resultsSection = document.getElementById('results-section');
+    const btnQuickSample = document.getElementById('btn-quick-sample-load');
+    const tableSearchInput = document.getElementById('table-search-input');
+    const tableFilterAlert = document.getElementById('table-filter-alert');
+    const tableRecordsBody = document.getElementById('table-records-body');
+    const countVisibleRows = document.getElementById('count-visible-rows');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    const selectRegistrosPagina = document.getElementById('select-registros-pagina');
+    const paginationStatusText = document.getElementById('pagination-status-text');
+    const btnPagePrev = document.getElementById('btn-page-prev');
+    const btnPageNext = document.getElementById('btn-page-next');
+    const paginationPagesList = document.getElementById('pagination-pages-list');
+
+    // Variables de Estado de Paginación
+    let paginaActual = 1;
+    let registrosPorPagina = 25; // Valor por defecto
+    let datosCompletos = []; // Array con todos los registros procesados
+
+    // Conexión con el Backend FastAPI
+    const API_BASE_URL = (window.location.port !== '8000') ? 'http://localhost:8000' : '';
+
+    // Actualizar enlaces de descarga de plantilla al backend FastAPI
+    document.querySelectorAll('a[href^="/api/v1/"]').forEach(a => {
+      a.href = `${API_BASE_URL}${a.getAttribute('href')}`;
+    });
+
+    // Inicializar Iconos Lucide
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+    // Configurar Eventos Drag & Drop
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('border-cyan-400', 'bg-space-900', 'glow-cyan');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('border-cyan-400', 'bg-space-900', 'glow-cyan');
+      });
+    });
+
+    // Ocultar bloque de resultados previos
+    function ocultarResultadosPrevios() {
+      if (resultsSection) {
+        resultsSection.classList.add('hidden');
+      }
+      const sectionPredictiveModels = document.getElementById('section-predictive-models');
+      if (sectionPredictiveModels) {
+        sectionPredictiveModels.classList.add('hidden');
+      }
+      currentData = null;
+    }
+
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        ocultarResultadosPrevios();
+        handleFileSelection(files[0]);
+      }
+    });
+
+    dropzone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        ocultarResultadosPrevios();
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+
+    btnCancelFile.addEventListener('click', () => {
+      ocultarResultadosPrevios();
+      selectedFile = null;
+      fileInput.value = '';
+      fileSelectedCard.classList.add('hidden');
+      dropzone.classList.remove('hidden');
+    });
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' bytes';
+      else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function handleFileSelection(file) {
+      const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      if (!['.xlsx', '.xls', '.csv'].includes(ext)) {
+        showError('Formato no válido (' + ext + '). Por favor suba un archivo .xlsx, .xls o .csv');
+        return;
+      }
+
+      ocultarResultadosPrevios();
+
+      selectedFile = file;
+      fileNameLabel.textContent = file.name;
+      fileSizeLabel.textContent = formatFileSize(file.size) + ' • ' + ext.toUpperCase().replace('.', '') + ' Data';
+      dropzone.classList.add('hidden');
+      fileSelectedCard.classList.remove('hidden');
+      errorAlertBanner.classList.add('hidden');
+    }
+
+    // Ejecución de Análisis vía Endpoint FastAPI
+    btnProcessFile.addEventListener('click', () => {
+      if (!selectedFile) return;
+      uploadAndAnalyzeFile(selectedFile);
+    });
+
+    // Carga Rápida de Demostración (Usa la plantilla pregenerada)
+    btnQuickSample.addEventListener('click', async () => {
+      try {
+        setLoading(true, 'Descargando plantilla modelo de demostración...');
+        const resp = await fetch(`${API_BASE_URL}/api/v1/descargar-plantilla`);
+        if (!resp.ok) throw new Error('No se pudo obtener la plantilla de prueba');
+        const blob = await resp.blob();
+        const demoFile = new File([blob], 'plantilla_climate_gran_chaco.xlsx', { type: blob.type });
+        uploadAndAnalyzeFile(demoFile);
+      } catch (err) {
+        setLoading(false);
+        showError('Error al cargar la demostración: ' + err.message);
+      }
+    });
+
+    async function uploadAndAnalyzeFile(file) {
+      ocultarResultadosPrevios();
+      setLoading(true, 'Leyendo archivo con Pandas e inferiendo métricas...');
+      errorAlertBanner.classList.add('hidden');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/analizar-excel`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Error en el servidor al procesar el archivo');
+        }
+
+        const data = await response.json();
+        currentData = data;
+        setLoading(false);
+        renderResults(data);
+      } catch (err) {
+        setLoading(false);
+        showError(err.message || 'Error de conexión con el motor FastAPI');
+      }
+    }
+
+    function setLoading(isLoading, message = '') {
+      if (isLoading) {
+        loadingIndicator.classList.remove('hidden');
+        dropzone.classList.add('hidden');
+        fileSelectedCard.classList.add('hidden');
+        loadingStepText.textContent = message;
+      } else {
+        loadingIndicator.classList.add('hidden');
+        if (selectedFile) {
+          fileSelectedCard.classList.remove('hidden');
+        } else {
+          dropzone.classList.remove('hidden');
+        }
+      }
+    }
+
+    function showError(msg) {
+      errorMessageText.textContent = msg;
+      errorAlertBanner.classList.remove('hidden');
+    }
+
+    // ================= RENDERIZADO DE RESULTADOS =================
+    function renderResults(data) {
+      if (!data || !data.resumen) return;
+
+      const res = data.resumen;
+      resultsSection.classList.remove('hidden');
+
+      // 1. Encabezado de Resultados
+      document.getElementById('results-filename').textContent = data.filename || 'archivo_procesado.xlsx';
+      document.getElementById('results-records-count').textContent = data.total_registros || 0;
+      const sheetNameEl = document.getElementById('results-sheet-name');
+      if (sheetNameEl) {
+        sheetNameEl.textContent = data.solapa_procesada || 'DATOS_DIARIOS';
+      }
+      const masterBadge = document.getElementById('badge-master-workbook');
+      if (masterBadge) {
+        if (data.es_planilla_maestra) {
+          masterBadge.classList.remove('hidden');
+        } else {
+          masterBadge.classList.add('hidden');
+        }
+      }
+
+      // 2. Tarjetas KPI
+      document.getElementById('kpi-total-records').textContent = data.total_registros || 0;
+      document.getElementById('kpi-unique-localities').textContent = (res.localidades_analizadas?.length || 0) + ' sitios';
+      
+      const spiEl = document.getElementById('kpi-mean-spi');
+      spiEl.textContent = res.spi_promedio !== undefined ? res.spi_promedio.toFixed(2) : '0.00';
+      if (res.spi_promedio <= -1.5) {
+        spiEl.className = 'text-2xl font-bold font-mono text-red-400';
+        document.getElementById('kpi-spi-category').textContent = 'Sequía Severa a Extrema';
+        document.getElementById('kpi-spi-category').className = 'text-red-400 font-bold';
+      } else if (res.spi_promedio <= -1.0) {
+        spiEl.className = 'text-2xl font-bold font-mono text-orange-400';
+        document.getElementById('kpi-spi-category').textContent = 'Sequía Moderada';
+        document.getElementById('kpi-spi-category').className = 'text-orange-400 font-bold';
+      } else if (res.spi_promedio < -0.5) {
+        spiEl.className = 'text-2xl font-bold font-mono text-amber-400';
+        document.getElementById('kpi-spi-category').textContent = 'Sequía Leve / Vigilancia';
+        document.getElementById('kpi-spi-category').className = 'text-amber-400 font-bold';
+      } else {
+        spiEl.className = 'text-2xl font-bold font-mono text-emerald-400';
+        document.getElementById('kpi-spi-category').textContent = 'Condiciones Normales';
+        document.getElementById('kpi-spi-category').className = 'text-emerald-400 font-bold';
+      }
+      document.getElementById('kpi-spi-range').textContent = `[${res.spi_min} a ${res.spi_max >= 0 ? '+' : ''}${res.spi_max}]`;
+
+      document.getElementById('kpi-mean-soil').textContent = res.humedad_suelo_promedio !== undefined ? res.humedad_suelo_promedio.toFixed(3) : '0.220';
+      const anomalyPct = ((res.humedad_suelo_promedio - 0.28) / 0.28) * 100;
+      const anomEl = document.getElementById('kpi-soil-anomaly');
+      anomEl.textContent = (anomalyPct >= 0 ? '+' : '') + anomalyPct.toFixed(1) + '% ' + (anomalyPct >= 0 ? '(Óptimo)' : '(Déficit)');
+      anomEl.className = anomalyPct >= 0 ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold';
+
+      const alertBadge = document.getElementById('kpi-predominant-badge');
+      const pred = res.alerta_predominante || 'VERDE';
+      const badgeStyles = {
+        ROJO: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50', label: 'ALERTA ROJA' },
+        NARANJA: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/50', label: 'ALERTA NARANJA' },
+        AMARILLO: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/50', label: 'VIGILANCIA AMARILLA' },
+        VERDE: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/50', label: 'CONDICIÓN VERDE' },
+        CIAN: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/50', label: 'SUPERÁVIT CIAN' }
+      };
+      const st = badgeStyles[pred] || badgeStyles.VERDE;
+      alertBadge.className = `px-2.5 py-1 rounded-lg text-sm font-bold font-mono ${st.bg} ${st.text} border ${st.border} shadow-md`;
+      alertBadge.textContent = st.label;
+
+      document.getElementById('kpi-max-risk').textContent = res.alerta_maxima_riesgo === 'ROJO' ? 'Emergencia Crítica' : (res.alerta_maxima_riesgo === 'NARANJA' ? 'Alerta Preventiva' : 'Bajo Riesgo');
+
+      // 3. Renderizar Gráficos (con Proyecciones Futuras SARIMAX si aplican)
+      renderCharts(data);
+
+      // 4. Renderizar Modelos Predictivos & Tendencias (SARIMAX / Mann-Kendall)
+      renderPredictiveModels(data);
+
+      // 5. Renderizar Tabla Paginada
+      datosCompletos = data.registros || [];
+      paginaActual = 1;
+      renderizarTablaPaginada();
+
+      // Scroll suave a la sección de resultados
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Gráficos Chart.js
+    function renderCharts(data) {
+      const counts = data.resumen.distribucion_alertas || { ROJO: 0, NARANJA: 0, AMARILLO: 0, VERDE: 0, CIAN: 0 };
+      const totalRecs = data.total_registros || (counts.ROJO + counts.NARANJA + counts.AMARILLO + counts.VERDE + counts.CIAN) || 1;
+      
+      // ================= GRÁFICO 1: DOUGHNUT DE DISTRIBUCIÓN DE ALERTAS =================
+      const ctxDoughnut = document.getElementById('chart-alerts-distribution').getContext('2d');
+      if (alertDoughnutChart) alertDoughnutChart.destroy();
+
+      // Plugin personalizado para texto central en el anillo (Total de Registros)
+      const doughnutCenterPlugin = {
+        id: 'doughnutCenterText',
+        beforeDraw(chart) {
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return;
+          const centerX = (chartArea.left + chartArea.right) / 2;
+          const centerY = (chartArea.top + chartArea.bottom) / 2;
+          
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Conteo total
+          ctx.font = '700 22px "JetBrains Mono", monospace';
+          ctx.fillStyle = '#F8FAFC';
+          ctx.fillText(totalRecs.toString(), centerX, centerY - 7);
+          
+          // Subtítulo
+          ctx.font = '600 8.5px "JetBrains Mono", monospace';
+          ctx.fillStyle = '#94A3B8';
+          ctx.fillText('REGISTROS', centerX, centerY + 13);
+          
+          ctx.restore();
+        }
+      };
+
+      alertDoughnutChart = new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Emergencia Roja', 'Alerta Naranja', 'Vigilancia Amarilla', 'Condición Verde', 'Superávit Cian'],
+          datasets: [{
+            data: [counts.ROJO, counts.NARANJA, counts.AMARILLO, counts.VERDE, counts.CIAN],
+            backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#10B981', '#06B6D4'],
+            hoverBackgroundColor: ['#DC2626', '#EA580C', '#CA8A04', '#059669', '#0891B2'],
+            borderColor: '#0B0F19',
+            borderWidth: 2.5,
+            hoverOffset: 4
+          }]
+        },
+        plugins: [doughnutCenterPlugin],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(6, 9, 19, 0.95)',
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              borderWidth: 1.5,
+              cornerRadius: 8,
+              padding: 10,
+              titleColor: '#F8FAFC',
+              titleFont: { family: 'JetBrains Mono', size: 11, weight: 'bold' },
+              bodyFont: { family: 'Inter', size: 11 },
+              bodyColor: '#CBD5E1',
+              callbacks: {
+                label: function(context) {
+                  const val = context.parsed;
+                  const pct = totalRecs > 0 ? ((val / totalRecs) * 100).toFixed(1) : '0.0';
+                  return ` ${context.label}: ${val} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Leyenda Detallada Lateral del Doughnut con Conteo Absoluto y Porcentaje
+      const legContainer = document.getElementById('alerts-legend-container');
+      const items = [
+        { label: 'Emergencia Roja', count: counts.ROJO, color: '#EF4444' },
+        { label: 'Alerta Naranja', count: counts.NARANJA, color: '#F97316' },
+        { label: 'Vigilancia Amarilla', count: counts.AMARILLO, color: '#EAB308' },
+        { label: 'Condición Verde', count: counts.VERDE, color: '#10B981' },
+        { label: 'Superávit Cian', count: counts.CIAN, color: '#06B6D4' }
+      ];
+
+      legContainer.innerHTML = items.map(it => {
+        const pct = totalRecs > 0 ? ((it.count / totalRecs) * 100).toFixed(1) : '0.0';
+        return `
+          <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-space-950/70 border border-space-800 hover:border-space-700 transition">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${it.color}; box-shadow: 0 0 6px ${it.color}88"></span>
+              <span class="text-slate-300 font-medium truncate text-xs">${it.label}</span>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0 font-mono text-xs">
+              <span class="font-bold text-white">${it.count}</span>
+              <span class="text-slate-400 text-[11px]">(${pct}%)</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // ================= GRÁFICO 2: TRAYECTORIA TEMPORAL (SPI-3M, HUMEDAD Y PROYECCIÓN FUTURA) =================
+      const ctxLine = document.getElementById('chart-timeline-evolution').getContext('2d');
+      if (evolutionLineChart) evolutionLineChart.destroy();
+
+      const sarimaxInfo = data.modelos_predictivos?.sarimax || data.metadatos_solapas_adicionales?.sarimax_proyeccion;
+      const projs = (sarimaxInfo && Array.isArray(sarimaxInfo.proyecciones)) ? sarimaxInfo.proyecciones : [];
+      const hasProjections = projs.length > 0;
+
+      const legendSarimaxEl = document.getElementById('legend-item-sarimax-proj');
+      if (legendSarimaxEl) {
+        if (hasProjections) legendSarimaxEl.classList.remove('hidden');
+        else legendSarimaxEl.classList.add('hidden');
+      }
+
+      const sortedRecs = [...(data.registros || [])].sort((a, b) => a.fecha.localeCompare(b.fecha));
+      let labels = sortedRecs.map(r => r.fecha + (r.localidad ? ` (${r.localidad.split(' ')[0]})` : ''));
+      let spiVals = sortedRecs.map(r => r.spi_3m);
+      let soilVals = sortedRecs.map(r => r.humedad_suelo);
+      let projSpiVals = [];
+
+      if (hasProjections) {
+        const projLabels = projs.map(p => (p['Fecha Proyectada'] || p.fecha || p.Horizonte) + ' (Proy.)');
+        labels = [...labels, ...projLabels];
+
+        // Rellenar series históricas con nulls en el horizonte futuro
+        spiVals = [...spiVals, ...projs.map(() => null)];
+        soilVals = [...soilVals, ...projs.map(() => null)];
+
+        // Conectar curva de proyección desde el último dato histórico (punto de anclaje)
+        projSpiVals = sortedRecs.map(() => null);
+        if (sortedRecs.length > 0) {
+          projSpiVals[sortedRecs.length - 1] = sortedRecs[sortedRecs.length - 1].spi_3m;
+        }
+
+        projs.forEach(p => {
+          const pVal = parseFloat(p['Precip. Proy. (mm)']) || 55.0;
+          const sVal = Math.max(-3.5, Math.min(3.5, (pVal - 55.0) / 28.0));
+          projSpiVals.push(Math.round(sVal * 100) / 100);
+        });
+      }
+
+      // Plugin Personalizado de Líneas de Umbral y Anotaciones Flotantes
+      const spiThresholdPlugin = {
+        id: 'spiThresholdPlugin',
+        afterDraw(chart) {
+          const { ctx, chartArea, scales: { y } } = chart;
+          if (!chartArea || !y) return;
+          const { left, right, top, bottom } = chartArea;
+
+          const thresholds = [
+            {
+              value: 1.5,
+              color: '#06B6D4',
+              label: 'Umbral Superávit (+1.5)',
+              align: 'right',
+              dash: [5, 4],
+              badgeBg: 'rgba(6, 9, 19, 0.92)',
+              border: 'rgba(6, 182, 212, 0.65)'
+            },
+            {
+              value: 0.0,
+              color: 'rgba(148, 163, 184, 0.60)',
+              label: 'Línea Neutral (0.0)',
+              align: 'left',
+              dash: [4, 4],
+              badgeBg: 'rgba(6, 9, 19, 0.92)',
+              border: 'rgba(148, 163, 184, 0.40)'
+            },
+            {
+              value: -1.5,
+              color: '#EF4444',
+              label: 'Umbral Sequía Severa (-1.5)',
+              align: 'right',
+              dash: [5, 4],
+              badgeBg: 'rgba(6, 9, 19, 0.92)',
+              border: 'rgba(239, 68, 68, 0.65)'
+            }
+          ];
+
+          ctx.save();
+          thresholds.forEach(th => {
+            const yPix = y.getPixelForValue(th.value);
+            if (yPix < top - 2 || yPix > bottom + 2) return;
+
+            // Línea punteada horizontal
+            ctx.beginPath();
+            ctx.setLineDash(th.dash);
+            ctx.strokeStyle = th.color;
+            ctx.lineWidth = 1.4;
+            ctx.moveTo(left, yPix);
+            ctx.lineTo(right, yPix);
+            ctx.stroke();
+
+            // Etiqueta flotante con estilo badge espacial
+            ctx.setLineDash([]);
+            ctx.font = '600 9.5px "JetBrains Mono", monospace';
+            const textMetrics = ctx.measureText(th.label);
+            const textWidth = textMetrics.width;
+            const padX = 6;
+            const boxW = textWidth + padX * 2;
+            const boxH = 16;
+            const boxX = (th.align === 'right') ? (right - boxW - 8) : (left + 8);
+            const boxY = Math.max(top + 2, Math.min(bottom - boxH - 2, yPix - boxH / 2));
+
+            // Fondo del badge
+            ctx.fillStyle = th.badgeBg;
+            ctx.strokeStyle = th.border;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(boxX, boxY, boxW, boxH, 4);
+            } else {
+              ctx.rect(boxX, boxY, boxW, boxH);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            // Texto de la etiqueta
+            ctx.fillStyle = th.color;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(th.label, boxX + padX, boxY + boxH / 2);
+          });
+          ctx.restore();
+        }
+      };
+
+      const lineDatasets = [
+        {
+          label: 'SPI 3-Meses (Histórico)',
+          data: spiVals,
+          borderColor: '#06B6D4',
+          backgroundColor: 'rgba(6, 182, 212, 0.08)',
+          borderWidth: 2,
+          pointRadius: 2.5,
+          pointHoverRadius: 5.5,
+          pointBackgroundColor: '#06B6D4',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Humedad Suelo (m³/m³)',
+          data: soilVals,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.08)',
+          borderWidth: 2,
+          borderDash: [4, 4],
+          pointRadius: 2,
+          pointHoverRadius: 4.5,
+          pointBackgroundColor: '#10B981',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y1'
+        }
+      ];
+
+      if (hasProjections) {
+        lineDatasets.push({
+          label: 'Proyección Futura SARIMAX (SPI)',
+          data: projSpiVals,
+          borderColor: '#C084FC',
+          backgroundColor: 'rgba(192, 132, 252, 0.12)',
+          borderWidth: 2.2,
+          borderDash: [5, 4],
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#C084FC',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y'
+        });
+      }
+
+      evolutionLineChart = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: lineDatasets
+        },
+        plugins: [spiThresholdPlugin],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.22)' },
+              ticks: {
+                color: '#94A3B8',
+                font: { family: 'JetBrains Mono', size: 9 },
+                maxRotation: 45,
+                autoSkip: true,
+                maxTicksLimit: 16
+              },
+              title: {
+                display: true,
+                text: 'Cronología de Observaciones & Horizonte de Pronóstico Futuro',
+                color: '#64748B',
+                font: { family: 'JetBrains Mono', size: 9.5 }
+              }
+            },
+            y: {
+              type: 'linear',
+              position: 'left',
+              suggestedMin: -2.5,
+              suggestedMax: 2.5,
+              grid: { color: 'rgba(51, 65, 85, 0.22)' },
+              ticks: {
+                color: '#06B6D4',
+                font: { family: 'JetBrains Mono', size: 9 },
+                callback: function(val) {
+                  return (val > 0 ? '+' : '') + Number(val).toFixed(1);
+                }
+              },
+              title: {
+                display: true,
+                text: 'Índice SPI-3M',
+                color: '#06B6D4',
+                font: { family: 'JetBrains Mono', size: 10, weight: 'bold' }
+              }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              suggestedMin: 0.05,
+              suggestedMax: 0.45,
+              grid: { drawOnChartArea: false },
+              ticks: {
+                color: '#10B981',
+                font: { family: 'JetBrains Mono', size: 9 },
+                callback: function(val) {
+                  return Number(val).toFixed(2);
+                }
+              },
+              title: {
+                display: true,
+                text: 'Humedad Suelo (m³/m³)',
+                color: '#10B981',
+                font: { family: 'JetBrains Mono', size: 10, weight: 'bold' }
+              }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(6, 9, 19, 0.95)',
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              borderWidth: 1.5,
+              cornerRadius: 8,
+              padding: 10,
+              titleColor: '#F8FAFC',
+              titleFont: { family: 'JetBrains Mono', size: 11, weight: 'bold' },
+              bodyFont: { family: 'Inter', size: 10.5 },
+              bodyColor: '#E2E8F0',
+              usePointStyle: true,
+              callbacks: {
+                title: function(items) {
+                  if (!items.length) return '';
+                  const idx = items[0].dataIndex;
+                  if (idx < sortedRecs.length) {
+                    const rec = sortedRecs[idx];
+                    return `${rec.fecha} • ${rec.localidad}`;
+                  } else {
+                    const pIdx = idx - sortedRecs.length;
+                    const p = projs[pIdx] || {};
+                    return `🔮 ${p['Fecha Proyectada'] || p.fecha || 'Futuro'} • Pronóstico SARIMAX (${p['Horizonte'] || 't+' + (pIdx + 1)})`;
+                  }
+                },
+                label: function(context) {
+                  const idx = context.dataIndex;
+                  if (idx < sortedRecs.length) {
+                    const rec = sortedRecs[idx];
+                    if (context.datasetIndex === 0) {
+                      const spi = rec.spi_3m !== undefined ? rec.spi_3m.toFixed(2) : context.parsed.y;
+                      return ` SPI-3M: ${spi} [${rec.spi_categoria || 'Normal'}]`;
+                    } else if (context.datasetIndex === 1) {
+                      const sm = rec.humedad_suelo !== undefined ? rec.humedad_suelo.toFixed(3) : context.parsed.y;
+                      return ` Humedad Suelo: ${sm} m³/m³ [${rec.humedad_suelo_estado || 'Óptima'}]`;
+                    }
+                  } else {
+                    const pIdx = idx - sortedRecs.length;
+                    const p = projs[pIdx] || {};
+                    if (context.datasetIndex === 2 && context.parsed.y !== null) {
+                      return ` SPI Proy: ${(context.parsed.y >= 0 ? '+' : '') + context.parsed.y.toFixed(2)} [Alerta ${p['Nivel Alerta Temprana'] || 'AMARILLA'}]`;
+                    }
+                  }
+                  return null;
+                },
+                afterBody: function(items) {
+                  if (!items.length) return '';
+                  const idx = items[0].dataIndex;
+                  if (idx < sortedRecs.length) {
+                    const rec = sortedRecs[idx];
+                    const lines = [];
+                    if (rec.precipitacion_mm !== undefined && rec.precipitacion_mm !== null) {
+                      lines.push(`🌧️ Precipitación: ${rec.precipitacion_mm} mm`);
+                    }
+                    if (rec.temp_media_c !== undefined && rec.temp_media_c !== null) {
+                      lines.push(`🌡️ Temp. Media: ${rec.temp_media_c} °C`);
+                    }
+                    lines.push(`🛡️ Alerta CLIMATE: ${rec.nivel_alerta} (${rec.confianza_pct || 90}% conf.)`);
+                    return lines;
+                  } else {
+                    const pIdx = idx - sortedRecs.length;
+                    const p = projs[pIdx] || {};
+                    return [
+                      `🌡️ Temp. Media Proy: ${p['Temp. Media Proy. (°C)']} °C (IC 95%: ${p['Temp. Media IC 95% Inf']} a ${p['Temp. Media IC 95% Sup']} °C)`,
+                      `🌧️ Lluvia Proy: ${p['Precip. Proy. (mm)']} mm (IC 95%: ${p['Precip. IC 95% Inf']} a ${p['Precip. IC 95% Sup']} mm)`,
+                      `🌊 Escenario ENSO ONI: ${p['ENSO ONI Escenario']} • Anom. Térmica: ${p['Anomalía Térmica vs 30a']} °C`,
+                      `📋 Protocolo: ${p['Protocolo / Acción Recomendada'] || 'Monitoreo preventivo'}`
+                    ];
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // ================= MODELOS PREDICTIVOS & TENDENCIAS CLIMÁTICAS =================
+    function renderPredictiveModels(data) {
+      const section = document.getElementById('section-predictive-models');
+      if (!section) return;
+
+      const mp = data.modelos_predictivos || {};
+      const sarimaxData = mp.sarimax || data.metadatos_solapas_adicionales?.sarimax_proyeccion;
+      const mkData = mp.tendencias_mk || data.metadatos_solapas_adicionales?.tendencias_mk_sen;
+
+      const hasModels = (sarimaxData && sarimaxData.modelos && sarimaxData.modelos.length > 0) ||
+                        (mkData && mkData.variables && mkData.variables.length > 0);
+
+      if (!hasModels) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+
+      // 1. Tarjetas de Rendimiento SARIMAX
+      const containerCards = document.getElementById('container-sarimax-cards');
+      if (containerCards && sarimaxData && sarimaxData.modelos) {
+        const modelIcons = {
+          temp_media: { icon: 'thermometer', color: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' },
+          temp_max: { icon: 'sun', color: 'text-rose-400', border: 'border-rose-500/40', bg: 'bg-rose-500/10' },
+          precip: { icon: 'cloud-rain', color: 'text-cyan-400', border: 'border-cyan-500/40', bg: 'bg-cyan-500/10' }
+        };
+
+        containerCards.innerHTML = sarimaxData.modelos.map(m => {
+          const varName = m['Variable Objetivo'] || 'Variable';
+          let theme = modelIcons.temp_media;
+          if (varName.toLowerCase().includes('max')) theme = modelIcons.temp_max;
+          else if (varName.toLowerCase().includes('precip')) theme = modelIcons.precip;
+
+          return `
+            <div class="bg-space-900 border border-space-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-lg relative overflow-hidden group hover:border-space-700 transition">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg ${theme.bg} ${theme.border} border flex items-center justify-center ${theme.color} shrink-0">
+                    <i data-lucide="${theme.icon}" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-white tracking-wide font-mono">${varName}</h4>
+                    <span class="text-[10px] text-slate-400 font-mono">ARIMA ${m['Orden ARIMA (p,d,q)'] || '(1,1,1)'} × ${m['Orden Estacional (P,D,Q,s)'] || '(1,1,1)[12]'}</span>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-space-950 text-cyan-400 border border-cyan-800/60 shrink-0">
+                  SARIMAX
+                </span>
+              </div>
+
+              <div class="text-[11px] text-slate-400 font-mono bg-space-950/80 p-2.5 rounded-xl border border-space-800/60 mb-3">
+                <span class="text-slate-500 block text-[9px] uppercase tracking-wider font-semibold">Variables Exógenas (X_t):</span>
+                <span class="text-slate-300 truncate block font-sans text-xs mt-0.5">${m['Variables Exógenas (X_t)'] || 'ENSO ONI (t-2)'}</span>
+              </div>
+
+              <div class="grid grid-cols-4 gap-2 pt-3 border-t border-space-800/80 text-center font-mono">
+                <div class="p-1.5 rounded-lg bg-space-950 border border-space-800/70">
+                  <span class="text-[9px] text-slate-500 block uppercase font-medium">AIC</span>
+                  <span class="text-xs font-bold text-cyan-300">${m['AIC'] || '—'}</span>
+                </div>
+                <div class="p-1.5 rounded-lg bg-space-950 border border-space-800/70">
+                  <span class="text-[9px] text-slate-500 block uppercase font-medium">BIC</span>
+                  <span class="text-xs font-bold text-slate-200">${m['BIC'] || '—'}</span>
+                </div>
+                <div class="p-1.5 rounded-lg bg-space-950 border border-space-800/70">
+                  <span class="text-[9px] text-slate-500 block uppercase font-medium">RMSE</span>
+                  <span class="text-xs font-bold text-emerald-400">${m['RMSE Validación'] || '—'}</span>
+                </div>
+                <div class="p-1.5 rounded-lg bg-space-950 border border-space-800/70">
+                  <span class="text-[9px] text-slate-500 block uppercase font-medium">MAE</span>
+                  <span class="text-xs font-bold text-amber-400">${m['MAE Validación'] || '—'}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 2. Tabla de Diagnóstico Mann-Kendall & Pendiente de Sen
+      const tableMkBody = document.getElementById('table-mann-kendall-body');
+      if (tableMkBody && mkData && mkData.variables) {
+        tableMkBody.innerHTML = mkData.variables.map(v => {
+          const sig = String(v['Significancia (α=0.05)'] || '');
+          let badgeSig = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800/80 text-slate-400 border border-slate-700">NO SIG. (p > 0.05)</span>';
+          if (sig.includes('CRECIENTE')) {
+            badgeSig = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40 inline-flex items-center gap-1">▲ CRECIENTE (95%)</span>';
+          } else if (sig.includes('DECRECIENTE')) {
+            badgeSig = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 inline-flex items-center gap-1">▼ DECRECIENTE (95%)</span>';
+          }
+
+          const qVal = typeof v['Pendiente de Sen (Q/año)'] === 'number' 
+            ? (v['Pendiente de Sen (Q/año)'] >= 0 ? '+' : '') + v['Pendiente de Sen (Q/año)'].toFixed(4)
+            : v['Pendiente de Sen (Q/año)'];
+
+          const cambio30 = typeof v['Cambio Acumulado 30 Años'] === 'number'
+            ? (v['Cambio Acumulado 30 Años'] >= 0 ? '+' : '') + v['Cambio Acumulado 30 Años'].toFixed(2)
+            : v['Cambio Acumulado 30 Años'];
+
+          const pVal = typeof v['Valor-p (Bilateral)'] === 'number' 
+            ? v['Valor-p (Bilateral)'].toFixed(4) 
+            : v['Valor-p (Bilateral)'];
+
+          const zVal = typeof v['Estadístico Z (MK)'] === 'number'
+            ? (v['Estadístico Z (MK)'] >= 0 ? '+' : '') + v['Estadístico Z (MK)'].toFixed(2)
+            : v['Estadístico Z (MK)'];
+
+          return `
+            <tr class="hover:bg-space-850/80 transition-colors">
+              <td class="py-2.5 px-3 text-white font-bold whitespace-nowrap">${v['Variable (METADATOS)'] || ''}</td>
+              <td class="py-2.5 px-3 text-slate-300 whitespace-nowrap font-sans">
+                <span>${v['Descripción'] || ''}</span>
+                <span class="text-slate-500 font-mono text-[10px] ml-1">(${v['Unidad'] || ''})</span>
+              </td>
+              <td class="py-2.5 px-3 whitespace-nowrap">${badgeSig}</td>
+              <td class="py-2.5 px-3 text-slate-200 font-mono whitespace-nowrap">${zVal}</td>
+              <td class="py-2.5 px-3 text-cyan-300 font-mono whitespace-nowrap">${pVal}</td>
+              <td class="py-2.5 px-3 font-mono whitespace-nowrap ${Number(v['Pendiente de Sen (Q/año)']) > 0 ? 'text-amber-400' : 'text-slate-300'}">
+                ${qVal} ${v['Unidad'] || ''}/año
+              </td>
+              <td class="py-2.5 px-3 font-mono font-bold whitespace-nowrap ${Number(v['Cambio Acumulado 30 Años']) > 0 ? 'text-rose-400' : 'text-slate-300'}">
+                ${cambio30} ${v['Unidad'] || ''}
+              </td>
+              <td class="py-2.5 px-3 text-slate-300 font-sans text-[11px] leading-snug">
+                ${v['Diagnóstico Climático'] || 'Estabilidad interanual.'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 3. Tabla de Proyecciones Futuras SARIMAX (24 Meses)
+      const tableProjBody = document.getElementById('table-sarimax-projections-body');
+      if (tableProjBody && sarimaxData && sarimaxData.proyecciones) {
+        tableProjBody.innerHTML = sarimaxData.proyecciones.map(p => {
+          const alerta = String(p['Nivel Alerta Temprana'] || 'VERDE').toUpperCase();
+          const alertaBadges = {
+            ROJA: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40">🔴 ROJA</span>',
+            ROJO: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40">🔴 ROJA</span>',
+            NARANJA: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40">🟠 NARANJA</span>',
+            AMARILLA: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">🟡 AMARILLA</span>',
+            AMARILLO: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">🟡 AMARILLA</span>',
+            VERDE: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">🟢 VERDE</span>',
+            CIAN: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">🔵 CIAN</span>'
+          };
+
+          const ensoVal = parseFloat(p['ENSO ONI Escenario']) || 0.0;
+          let ensoBadge = `<span class="text-slate-400 font-mono">${ensoVal >= 0 ? '+' : ''}${ensoVal.toFixed(2)} Neutro</span>`;
+          if (ensoVal >= 1.5) ensoBadge = `<span class="text-red-400 font-bold font-mono">+${ensoVal.toFixed(2)} El Niño Fuerte</span>`;
+          else if (ensoVal >= 0.5) ensoBadge = `<span class="text-amber-400 font-mono">+${ensoVal.toFixed(2)} El Niño Moderado</span>`;
+          else if (ensoVal <= -1.0) ensoBadge = `<span class="text-cyan-400 font-bold font-mono">${ensoVal.toFixed(2)} La Niña</span>`;
+          else if (ensoVal <= -0.5) ensoBadge = `<span class="text-blue-400 font-mono">${ensoVal.toFixed(2)} La Niña Leve</span>`;
+
+          const anomLluviaPct = typeof p['Anomalía Lluvia vs 30a (%)'] === 'number'
+            ? (p['Anomalía Lluvia vs 30a (%)'] >= 0 ? '+' : '') + (p['Anomalía Lluvia vs 30a (%)'] * 100).toFixed(1) + '%'
+            : p['Anomalía Lluvia vs 30a (%)'];
+
+          const anomTerm = typeof p['Anomalía Térmica vs 30a'] === 'number'
+            ? (p['Anomalía Térmica vs 30a'] >= 0 ? '+' : '') + p['Anomalía Térmica vs 30a'].toFixed(2) + ' °C'
+            : p['Anomalía Térmica vs 30a'];
+
+          return `
+            <tr class="hover:bg-space-850/80 transition-colors">
+              <td class="py-2 px-3 text-cyan-300 font-bold whitespace-nowrap">${p['Horizonte'] || ''}</td>
+              <td class="py-2 px-3 text-white font-semibold whitespace-nowrap">${p['Fecha Proyectada'] || ''}</td>
+              <td class="py-2 px-3 whitespace-nowrap">${ensoBadge}</td>
+              <td class="py-2 px-3 text-amber-300 font-mono whitespace-nowrap">
+                <b>${p['Temp. Media Proy. (°C)']}</b>
+                <span class="text-[10px] text-slate-500 font-normal">[${p['Temp. Media IC 95% Inf']} – ${p['Temp. Media IC 95% Sup']}]</span>
+              </td>
+              <td class="py-2 px-3 text-cyan-300 font-mono whitespace-nowrap">
+                <b>${p['Precip. Proy. (mm)']}</b>
+                <span class="text-[10px] text-slate-500 font-normal">[${p['Precip. IC 95% Inf']} – ${p['Precip. IC 95% Sup']}]</span>
+              </td>
+              <td class="py-2 px-3 font-mono text-rose-300 whitespace-nowrap">${anomTerm}</td>
+              <td class="py-2 px-3 font-mono text-blue-300 whitespace-nowrap">${anomLluviaPct}</td>
+              <td class="py-2 px-3 whitespace-nowrap">${alertaBadges[alerta] || alerta}</td>
+              <td class="py-2 px-3 text-slate-300 font-sans text-[11px] leading-snug">
+                ${p['Protocolo / Acción Recomendada'] || 'Monitoreo preventivo'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // ================= SISTEMA DE PAGINACIÓN Y TABLA DINÁMICA =================
+    function obtenerRegistrosFiltrados() {
+      if (!datosCompletos || datosCompletos.length === 0) return [];
+      const searchTerm = tableSearchInput.value.toLowerCase().trim();
+      const filterAlert = tableFilterAlert.value;
+
+      return datosCompletos.filter(r => {
+        const matchesAlert = (filterAlert === 'ALL') || (r.nivel_alerta === filterAlert);
+        const matchesSearch = !searchTerm || 
+          (r.localidad && r.localidad.toLowerCase().includes(searchTerm)) || 
+          (r.fecha && r.fecha.toLowerCase().includes(searchTerm)) ||
+          (r.recomendacion && r.recomendacion.toLowerCase().includes(searchTerm)) ||
+          (r.spi_categoria && r.spi_categoria.toLowerCase().includes(searchTerm));
+        return matchesAlert && matchesSearch;
+      });
+    }
+
+    function renderizarTablaPaginada() {
+      const filtrados = obtenerRegistrosFiltrados();
+      const total = filtrados.length;
+      const totalPaginas = Math.ceil(total / registrosPorPagina) || 1;
+
+      // Asegurar que la página actual esté dentro del rango válido
+      if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+      if (paginaActual < 1) paginaActual = 1;
+
+      const inicio = (paginaActual - 1) * registrosPorPagina;
+      const fin = Math.min(inicio + registrosPorPagina, total);
+      const datosPagina = filtrados.slice(inicio, fin);
+
+      countVisibleRows.textContent = total;
+
+      const alertBadges = {
+        ROJO: '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-500/20 text-red-300 border border-red-500/40 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>ROJO</span>',
+        NARANJA: '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>NARANJA</span>',
+        AMARILLO: '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>AMARILLO</span>',
+        VERDE: '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>VERDE</span>',
+        CIAN: '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>CIAN</span>'
+      };
+
+      if (total === 0) {
+        tableRecordsBody.innerHTML = `
+          <tr>
+            <td colspan="9" class="py-10 text-center text-slate-500 font-mono text-xs">
+              No se encontraron registros que coincidan con los filtros aplicados.
+            </td>
+          </tr>
+        `;
+        paginationStatusText.innerHTML = `Mostrando <b class="text-slate-400">0</b> registros`;
+        paginationPagesList.innerHTML = '';
+        btnPagePrev.disabled = true;
+        btnPageNext.disabled = true;
+        return;
+      }
+
+      tableRecordsBody.innerHTML = datosPagina.map(r => `
+        <tr class="hover:bg-space-850/80 transition-colors">
+          <td class="py-2.5 px-3 text-slate-500">${r.id}</td>
+          <td class="py-2.5 px-3 text-slate-300 font-semibold whitespace-nowrap">${r.fecha}</td>
+          <td class="py-2.5 px-3 text-white font-bold whitespace-nowrap">
+            <span class="inline-flex items-center gap-1">
+              <span>📍</span>
+              <span>${r.localidad}</span>
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-slate-400 text-[10px] whitespace-nowrap font-mono">
+            ${r.latitud.toFixed(3)}, ${r.longitud.toFixed(3)}
+          </td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white">${r.humedad_suelo.toFixed(3)}</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-medium" style="color: ${r.humedad_suelo_color}; background-color: ${r.humedad_suelo_color}20;">
+                ${r.humedad_suelo_estado.split('(')[0]}
+              </span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold font-mono ${r.spi_3m <= -1.0 ? 'text-red-400' : (r.spi_3m < -0.5 ? 'text-amber-400' : 'text-emerald-400')}">
+                ${r.spi_3m >= 0 ? '+' : ''}${r.spi_3m.toFixed(2)}
+              </span>
+              <span class="text-[9px] text-slate-400 font-normal">(${r.spi_categoria.split('(')[0]})</span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            ${alertBadges[r.nivel_alerta] || r.nivel_alerta}
+          </td>
+          <td class="py-2.5 px-3 text-slate-300 whitespace-nowrap">
+            <div class="flex items-center gap-1.5">
+              <div class="w-12 h-1.5 bg-space-800 rounded-full overflow-hidden">
+                <div class="h-full bg-cyan-400 rounded-full" style="width: ${r.confianza_pct}%"></div>
+              </div>
+              <span class="text-[10px] font-mono">${r.confianza_pct}%</span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 text-slate-300 font-sans text-[11px] leading-snug">
+            ${r.recomendacion}
+          </td>
+        </tr>
+      `).join('');
+
+      // Actualizar texto dinámico de estado
+      paginationStatusText.innerHTML = `Mostrando registros <b class="text-white">${inicio + 1}</b> a <b class="text-white">${fin}</b> de <b class="text-cyan-300 font-bold">${total}</b>`;
+
+      // Actualizar controles y botones numéricos de paginación
+      actualizarControlesPaginacion(totalPaginas);
+    }
+
+    function actualizarControlesPaginacion(totalPaginas) {
+      btnPagePrev.disabled = (paginaActual <= 1);
+      btnPageNext.disabled = (paginaActual >= totalPaginas);
+
+      // Generar botones numéricos compactos
+      let paginas = [];
+      if (totalPaginas <= 7) {
+        for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+      } else {
+        if (paginaActual <= 4) {
+          paginas = [1, 2, 3, 4, 5, '...', totalPaginas];
+        } else if (paginaActual >= totalPaginas - 3) {
+          paginas = [1, '...', totalPaginas - 4, totalPaginas - 3, totalPaginas - 2, totalPaginas - 1, totalPaginas];
+        } else {
+          paginas = [1, '...', paginaActual - 1, paginaActual, paginaActual + 1, '...', totalPaginas];
+        }
+      }
+
+      paginationPagesList.innerHTML = paginas.map(p => {
+        if (p === '...') {
+          return `<span class="w-7 h-8 flex items-center justify-center text-slate-500 font-mono text-xs">...</span>`;
+        }
+        const isActive = (p === paginaActual);
+        return `
+          <button onclick="cambiarPagina(${p})" class="h-8 min-w-[32px] px-2 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center cursor-pointer ${
+            isActive 
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/60 shadow-sm shadow-cyan-950' 
+              : 'bg-space-950 hover:bg-space-850 text-slate-400 hover:text-white border border-space-800 hover:border-space-700'
+          }">
+            ${p}
+          </button>
+        `;
+      }).join('');
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function cambiarPagina(nuevaPagina) {
+      const filtrados = obtenerRegistrosFiltrados();
+      const totalPaginas = Math.ceil(filtrados.length / registrosPorPagina) || 1;
+      if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+        paginaActual = nuevaPagina;
+        renderizarTablaPaginada();
+      }
+    }
+    window.cambiarPagina = cambiarPagina;
+
+    // Compatibilidad con invocaciones heredadas
+    function renderTableRows(records) {
+      datosCompletos = records || [];
+      paginaActual = 1;
+      renderizarTablaPaginada();
+    }
+
+    // Event listener para el selector de cantidad por página
+    selectRegistrosPagina.addEventListener('change', (e) => {
+      registrosPorPagina = parseInt(e.target.value);
+      paginaActual = 1; // Volver a la primera página
+      renderizarTablaPaginada();
+    });
+
+    // Event listeners para botones Anterior y Siguiente
+    btnPagePrev.addEventListener('click', () => {
+      cambiarPagina(paginaActual - 1);
+    });
+    btnPageNext.addEventListener('click', () => {
+      cambiarPagina(paginaActual + 1);
+    });
+
+    // Filtrado y Búsqueda en Vivo
+    tableSearchInput.addEventListener('input', () => {
+      paginaActual = 1;
+      renderizarTablaPaginada();
+    });
+    tableFilterAlert.addEventListener('change', () => {
+      paginaActual = 1;
+      renderizarTablaPaginada();
+    });
+
+    // Exportar Resultados Filtrados a CSV
+    btnExportCsv.addEventListener('click', () => {
+      const records = obtenerRegistrosFiltrados();
+      if (!records || records.length === 0) return;
+      
+      const headers = ['ID', 'Fecha', 'Localidad', 'Latitud', 'Longitud', 'Humedad_Suelo_m3m3', 'SPI_3M', 'SPI_Categoria', 'Nivel_Alerta', 'Confianza_Pct', 'Recomendacion'];
+      const csvRows = [headers.join(',')];
+
+      records.forEach(r => {
+        const row = [
+          r.id,
+          `"${r.fecha}"`,
+          `"${r.localidad}"`,
+          r.latitud,
+          r.longitud,
+          r.humedad_suelo,
+          r.spi_3m,
+          `"${r.spi_categoria}"`,
+          `"${r.nivel_alerta}"`,
+          r.confianza_pct,
+          `"${r.recomendacion.replace(/"/g, '""')}"`
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `analisis_climate_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  </script>
+</body>
+</html>
