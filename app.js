@@ -26,15 +26,51 @@ const SENTINEL_NODES = {
   },
   quimili: {
     id: 'quimili',
-    name: 'Nodo Quimilí (Chaco Seco Austral)',
+    name: 'Quimilí Gateway Hub',
     country: 'Argentina (Santiago del Estero)',
-    coords: [-62.42, -28.64],
-    zoom: 8.0,
+    coords: [-62.4160, -27.6460],
+    zoom: 8.5,
     spiFactor: 1.0,
     gwetFactor: 0.95,
     ndviFactor: 0.96,
     floodFactor: 0.90,
-    desc: 'Epicentro Semiárido y Pérdida de Humedad Radicular'
+    desc: 'Nodo Central Gateway MultiTech Conduit AEP (8 Canales RF)'
+  },
+  anatuya: {
+    id: 'anatuya',
+    name: 'Añatuya Gateway Hub',
+    country: 'Argentina (Santiago del Estero)',
+    coords: [-62.8340, -28.4600],
+    zoom: 8.5,
+    spiFactor: 1.02,
+    gwetFactor: 0.94,
+    ndviFactor: 0.95,
+    floodFactor: 0.88,
+    desc: 'Nodo Central Gateway MultiTech Conduit IP67 (8 Canales RF)'
+  },
+  bandera: {
+    id: 'bandera',
+    name: 'Bandera Gateway Hub',
+    country: 'Argentina (Santiago del Estero)',
+    coords: [-62.2660, -28.8870],
+    zoom: 8.5,
+    spiFactor: 1.04,
+    gwetFactor: 0.98,
+    ndviFactor: 0.97,
+    floodFactor: 0.92,
+    desc: 'Nodo Central Gateway MultiTech Conduit AEP (Bajos Submeridionales)'
+  },
+  termas: {
+    id: 'termas',
+    name: 'Termas Gateway Hub',
+    country: 'Argentina (Santiago del Estero)',
+    coords: [-64.8590, -27.4930],
+    zoom: 8.5,
+    spiFactor: 0.98,
+    gwetFactor: 1.05,
+    ndviFactor: 1.02,
+    floodFactor: 1.20,
+    desc: 'Nodo Central Gateway MultiTech Conduit IP67 (Cuenca Río Dulce)'
   },
   filadelfia: {
     id: 'filadelfia',
@@ -3602,12 +3638,15 @@ const state = {
   activeMapStyle: 'dark',
   mapLoaded: false,
   inspectedLngLat: null, // Coordenadas del punto inspeccionado dinámico
-  dataSource: 'baseline', // 'baseline' (Planilla Demo Calibrada) | 'gee' (Google Earth Engine en Vivo)
+  dataSource: 'baseline', // 'baseline' (Planilla Demo Calibrada) | 'gee' (Google Earth Engine en Vivo) | 'lora' (Campo ESP32-C3)
   geeData: null,          // Telemetría satelital y predicción obtenidas de GEE
-  isGeeLoading: false
+  isGeeLoading: false,
+  loraData: null,         // Telemetría in-situ de Nodos Centinela LoRa
+  isLoraLoading: false
 };
 
 let map = null;
+let sentinelMarkersList = [];
 let projectionChart = null;
 let shapChart = null;
 
@@ -3752,16 +3791,16 @@ function setupMapLayers() {
         }
       });
 
-      // Interacción: Click en cualquier punto del mapa (no solo en las ciudades)
-      map.on('click', (e) => {
-        handleMapPointClick(e.lngLat);
-      });
-
-      map.on('mouseenter', 'chaco-regions-fill', () => {
-        map.getCanvas().style.cursor = 'crosshair';
-      });
-      map.on('mouseleave', 'chaco-regions-fill', () => {
-        map.getCanvas().style.cursor = '';
+      // Cierre de popups o deselección al hacer clic en el fondo del mapa (sin crear marcador inspector azul)
+      map.on('click', () => {
+        if (activeGatewayPopup) {
+          activeGatewayPopup.remove();
+          activeGatewayPopup = null;
+        }
+        pinnedLoraGatewayId = null;
+        hoveredLoraGatewayId = null;
+        highlightLoraGatewayLinks(null);
+        closePointInspector();
       });
     }
   } catch (err) {
@@ -3773,27 +3812,11 @@ function setupMapLayers() {
 let pointInspectorMarker = null;
 
 function setPointInspectorMarker(lngLat) {
-  const mapLib = window.maplibregl || window.mapboxgl;
-  if (!mapLib || !map) return;
-
+  // Eliminado: no se renderizan círculos azules ni marcadores flotantes en clics generales
   if (pointInspectorMarker) {
     pointInspectorMarker.remove();
     pointInspectorMarker = null;
   }
-
-  const el = document.createElement('div');
-  el.className = 'point-inspector-marker';
-  el.innerHTML = `
-    <div style="position: relative; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
-      <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #06B6D4; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.85;"></div>
-      <div style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: rgba(6, 182, 212, 0.45); border: 2px solid #38BDF8; box-shadow: 0 0 10px #06B6D4;"></div>
-      <div style="width: 5px; height: 5px; border-radius: 50%; background: #FFFFFF;"></div>
-    </div>
-  `;
-
-  pointInspectorMarker = new mapLib.Marker({ element: el })
-    .setLngLat([lngLat.lng, lngLat.lat])
-    .addTo(map);
 }
 
 function closePointInspector() {
@@ -4073,43 +4096,884 @@ function showRegionPopup(lngLat, props) {
   handleMapPointClick(lngLat);
 }
 
-function setupSentinelMarkers() {
-  try {
-    const mapLib = window.maplibregl || window.mapboxgl;
+let activeGatewayPopup = null;
+let pinnedLoraGatewayId = null;       // Gateway fijado permanentemente por click (abre modal)
+let hoveredLoraGatewayId = null;      // Gateway temporalmente resaltado por hover
+let loraFlowAnimId = null;            // Handle para requestAnimationFrame
+let loraFlowStep = 0;                 // Paso actual de la animación de flujo
 
-    const nodeEntries = Object.values(SENTINEL_NODES).filter(n => n.id !== 'gran_chaco');
+// Secuencia de fases para un flujo continuo y sutil de paquetes de datos LoRa en las líneas activas
+const LORA_FLOW_PATTERNS = [
+  [0.2, 4.0, 3.0, 1.0],
+  [1.0, 4.0, 2.2, 1.0],
+  [2.0, 4.0, 1.2, 1.0],
+  [3.0, 3.2, 0.2, 1.8],
+  [2.0, 2.2, 0.2, 3.8],
+  [1.0, 2.2, 1.0, 4.0],
+  [0.2, 2.2, 2.0, 3.8],
+  [0.2, 3.0, 3.0, 2.0]
+];
 
-    nodeEntries.forEach(node => {
-      const el = document.createElement('div');
-      el.className = 'cursor-pointer';
-      
-      const isSelected = state.activeNode === node.id;
-      const pulseColor = isSelected ? '#38BDF8' : '#EF4444';
+/**
+ * Normaliza cualquier variante de ID o nombre de gateway a una clave uniforme
+ * @param {string} val - Ej. 'quimili', 'QUIMILI_NODO_01', 'Quimilí Gateway Hub'
+ * @returns {string} Clave normalizada ('quimili', 'anatuya', 'bandera', 'termas')
+ */
+function normalizeGatewayKey(val) {
+  if (!val) return '';
+  const str = String(val).toLowerCase();
+  if (str.includes('quimili')) return 'quimili';
+  if (str.includes('anatuya')) return 'anatuya';
+  if (str.includes('bandera')) return 'bandera';
+  if (str.includes('termas')) return 'termas';
+  return str;
+}
 
-      el.innerHTML = `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center;" title="${node.name}">
-          <div class="sentinel-pulse" style="position: absolute; width: 30px; height: 30px; border-radius: 50%; color: ${pulseColor};"></div>
-          <div style="width: 14px; height: 14px; border-radius: 50%; background: ${pulseColor}; border: 2px solid #FFFFFF; box-shadow: 0 0 12px ${pulseColor}; z-index: 10;"></div>
-          <div style="position: absolute; top: -28px; padding: 2px 6px; border-radius: 5px; background: rgba(11, 15, 25, 0.96); color: #38BDF8; font-family: monospace; font-size: 10px; font-weight: bold; border: 1.5px solid rgba(56, 189, 248, 0.6); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.85); z-index: 30; pointer-events: none;">
-            ${node.name.replace('Nodo ', '').split('(')[0].trim()}
+// Cerrar popup y restaurar enlaces atenuados con la tecla Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (activeGatewayPopup) {
+      activeGatewayPopup.remove();
+      activeGatewayPopup = null;
+    }
+    pinnedLoraGatewayId = null;
+    hoveredLoraGatewayId = null;
+    highlightLoraGatewayLinks(null);
+  }
+});
+
+/**
+ * Determina el estado de salud y la paleta de colores dinámicos para un nodo o sensor
+ * @param {Object} nodeData - Datos de telemetría in-situ (bateria_v, rssi, estado_conexion)
+ * @returns {Object} Paleta de color (#10B981, #F59E0B, #EF4444), etiqueta y resplandor
+ */
+function getNodeHealthStatus(nodeData) {
+  if (!nodeData) {
+    return {
+      status: 'optimo',
+      color: '#10B981',
+      badgeBg: 'rgba(16, 185, 129, 0.2)',
+      label: 'Operación Óptima',
+      glow: 'rgba(16, 185, 129, 0.65)'
+    };
+  }
+
+  const estado = String(nodeData.estado_conexion || nodeData.estado || 'Activo').toLowerCase();
+  const bateria = typeof nodeData.bateria_v === 'number' ? nodeData.bateria_v : 4.0;
+  const rssi = typeof nodeData.rssi === 'number' ? nodeData.rssi : -85.0;
+
+  // 1. Rojo (#EF4444): Nodo fuera de servicio, desconectado o con interrupción en el enlace / batería crítica
+  if (
+    estado.includes('fuera') || 
+    estado.includes('off') || 
+    estado.includes('interrup') || 
+    bateria < 3.55 || 
+    rssi < -115.0
+  ) {
+    return {
+      status: 'critico',
+      color: '#EF4444',
+      badgeBg: 'rgba(239, 68, 68, 0.25)',
+      label: 'Fuera de Servicio / Interrupción',
+      glow: 'rgba(239, 68, 68, 0.8)'
+    };
+  }
+
+  // 2. Amarillo Ámbar (#F59E0B): Advertencia por señal débil (RSSI < -105 dBm) o batería baja (3.6V - 3.7V)
+  if (
+    estado.includes('intermit') || 
+    (bateria >= 3.55 && bateria <= 3.78) || 
+    (rssi <= -105.0)
+  ) {
+    return {
+      status: 'advertencia',
+      color: '#F59E0B',
+      badgeBg: 'rgba(245, 158, 11, 0.25)',
+      label: 'Advertencia (Señal Débil / Bat. Baja)',
+      glow: 'rgba(245, 158, 11, 0.75)'
+    };
+  }
+
+  // 3. Verde Esmeralda (#10B981): Señal óptima, batería en buen estado (> 3.8V), operación normal
+  return {
+    status: 'optimo',
+    color: '#10B981',
+    badgeBg: 'rgba(16, 185, 129, 0.2)',
+    label: 'Operación Óptima',
+    glow: 'rgba(16, 185, 129, 0.65)'
+  };
+}
+
+/**
+ * Despliega la caja de información interactiva (Popup flotante en Dark Mode espacial)
+ * con la telemetría avanzada de red para cualquier Nodo Central Gateway Hub.
+ * Envuelto con scroll vertical (max-h-[68vh]) y diseño compacto libre de colisiones.
+ * @param {Object} gatewayData - Datos de telemetría del gateway
+ * @param {Array<number>} coords - Coordenadas [lon, lat] del marcador
+ */
+function showGatewayTelemetryPopup(gatewayData, coords) {
+  if (!map) return;
+  const mapLib = window.maplibregl || window.mapboxgl;
+  if (!mapLib) return;
+
+  if (activeGatewayPopup) {
+    activeGatewayPopup.remove();
+    activeGatewayPopup = null;
+  }
+
+  const health = getNodeHealthStatus(gatewayData);
+  const estado = gatewayData.estado_conexion || (health.status === 'optimo' ? 'Activo' : health.label.split(' ')[0]);
+
+  const perifericos = Array.isArray(gatewayData.sensores_perifericos) ? gatewayData.sensores_perifericos : [];
+  const perifericosHtml = perifericos.length > 0
+    ? perifericos.map(s => {
+        const sHealth = getNodeHealthStatus(s);
+        return `
+          <div class="flex items-center justify-between text-[9px] font-mono bg-space-900/90 px-2 py-1.5 rounded-lg border border-cyan-900/40">
+            <div class="flex items-center space-x-1.5 min-w-0 pr-1">
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${sHealth.color}; box-shadow: 0 0 6px ${sHealth.color};"></span>
+              <span class="text-slate-200 font-semibold truncate">${s.nombre || s.id}</span>
+            </div>
+            <div class="flex items-center space-x-1.5 text-cyan-300 shrink-0 text-[8.5px]">
+              <span class="text-slate-400">${s.distancia_km || 10} km</span>
+              <span class="text-slate-600">|</span>
+              <span class="text-cyan-400 font-bold">${s.rssi || -90} dBm</span>
+              <span class="text-slate-600">|</span>
+              <span style="color: ${sHealth.color}; font-weight: bold;">${s.bateria_v ? s.bateria_v.toFixed(2) + 'V' : '4.1V'}</span>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : '<div class="text-[9px] text-slate-400 italic text-center py-1">Sin sensores periféricos directos en radio</div>';
+
+  const popupContent = `
+    <div class="bg-space-950/98 text-slate-100 p-2.5 sm:p-3 rounded-xl border border-cyan-500/50 shadow-2xl font-sans w-[330px] sm:w-[370px] max-w-[92vw] select-text flex flex-col max-h-[calc(100vh-160px)] sm:max-h-[70vh]">
+      <!-- 1. Encabezado Fijo con Botón de Cierre Claro -->
+      <div class="flex items-start justify-between gap-2.5 border-b border-space-800 pb-2 mb-2 shrink-0">
+        <div class="flex items-start gap-2 flex-1 min-w-0">
+          <span class="text-base sm:text-lg shrink-0 mt-0.5">🏭</span>
+          <div class="min-w-0 flex-1">
+            <h4 class="font-bold text-xs sm:text-[13px] text-white tracking-wide leading-snug break-words">
+              ${gatewayData.localidad} Gateway Hub
+            </h4>
+            <div class="text-[8.5px] font-mono text-cyan-400/90 leading-normal break-words mt-0.5">
+              ${gatewayData.hardware_modelo || 'MultiTech Conduit AEP (MTCDT)'}
+            </div>
           </div>
         </div>
-      `;
+        <div class="flex items-center gap-1.5 shrink-0 ml-1">
+          <div class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-full border text-[8.5px] font-bold whitespace-nowrap" style="background-color: ${health.badgeBg}; color: ${health.color}; border-color: ${health.color}80;">
+            <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background-color: ${health.color};"></span>
+            <span>${estado}</span>
+          </div>
+          <button type="button" id="btn-close-gateway-popup" class="w-6 h-6 rounded-md bg-space-900 border border-space-700/80 hover:border-red-500/60 hover:bg-red-500/20 text-slate-400 hover:text-red-300 flex items-center justify-center transition-colors text-xs font-bold leading-none cursor-pointer" title="Cerrar telemetría">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Bloques Superiores Fijos (Resumen de Cobertura y Frecuencia) -->
+      <div class="grid grid-cols-2 gap-1.5 mb-2 shrink-0">
+        <div class="bg-space-900/90 p-2 rounded-lg border border-cyan-900/40 flex flex-col justify-between min-h-[62px]">
+          <span class="text-[8px] text-slate-400 uppercase font-mono font-medium tracking-normal leading-tight truncate block">
+            Sensores en Cobertura
+          </span>
+          <div class="text-sm font-bold text-cyan-300 font-mono flex items-baseline gap-1 my-0.5">
+            <span>📡</span>
+            <span>${gatewayData.nodos_asociados_count !== undefined ? gatewayData.nodos_asociados_count : perifericos.length}</span>
+            <span class="text-[9px] text-slate-400 font-normal">nodos</span>
+          </div>
+          <span class="text-[8px] text-cyan-400/80 font-mono truncate block">
+            Radio útil: ${gatewayData.radio_cobertura_km || 15.0} km
+          </span>
+        </div>
+
+        <div class="bg-space-900/90 p-2 rounded-lg border border-cyan-900/40 flex flex-col justify-between min-h-[62px]">
+          <span class="text-[8px] text-slate-400 uppercase font-mono font-medium tracking-normal leading-tight truncate block">
+            Frecuencia / Canales
+          </span>
+          <div class="text-sm font-bold text-blue-400 font-mono my-0.5 truncate">
+            ${gatewayData.frecuencia_mhz || 915.3} MHz
+          </div>
+          <span class="text-[8px] text-slate-400 font-mono truncate block">
+            Plan AU915 • ${gatewayData.canales_rf || 8} Ch RF
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. Bloque Fijo de Métricas de Radioenlace LoRa -->
+      <div class="bg-space-900/80 p-2 rounded-lg border border-space-800 space-y-1 text-[9.5px] font-mono mb-2 shrink-0">
+        <div class="flex items-center justify-between text-slate-300">
+          <span class="text-slate-400">Intensidad Señal (RSSI):</span>
+          <span class="text-cyan-300 font-bold">${Math.round(gatewayData.rssi)} dBm</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-300">
+          <span class="text-slate-400">Relación Señal/Ruido (SNR):</span>
+          <span class="text-emerald-400 font-bold">${gatewayData.snr !== undefined ? gatewayData.snr.toFixed(1) : '8.5'} dB</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-300">
+          <span class="text-slate-400">Pérdida de Paquetes:</span>
+          <span class="${(gatewayData.paquetes_perdidos_pct || 0.4) > 1.0 ? 'text-amber-400' : 'text-emerald-400'} font-bold">
+            ${gatewayData.paquetes_perdidos_pct !== undefined ? gatewayData.paquetes_perdidos_pct : 0.4}%
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-slate-300">
+          <span class="text-slate-400">Retardo Propagación:</span>
+          <span class="text-cyan-300 font-bold">${gatewayData.velocidad_propagacion_ms || 12.4} ms</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-300 pt-1 border-t border-space-800/80">
+          <span class="text-slate-400">Modulación / Rate:</span>
+          <span class="text-slate-200 text-[8.5px] font-semibold">${gatewayData.velocidad_retransmision || 'SF7 / 125 kHz @ 5.4 kbps'}</span>
+        </div>
+      </div>
+
+      <!-- 4. ÚNICO Contenedor Interno con Desplazamiento Scroll: Sensores de Campo en Radio -->
+      <div class="flex-1 min-h-0 flex flex-col mb-1.5">
+        <div class="text-[9px] font-mono uppercase text-slate-400 font-semibold tracking-wider flex items-center justify-between mb-1 shrink-0">
+          <span>Sensores de Campo en Radio:</span>
+          <span class="text-cyan-400 font-mono">${perifericos.length} activos</span>
+        </div>
+        <div class="max-h-24 sm:max-h-28 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+          ${perifericosHtml}
+        </div>
+      </div>
+
+      <!-- 5. Pie Fijo con Timestamp y Jurisdicción -->
+      <div class="pt-1.5 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-500 shrink-0">
+        <span>Santiago del Estero • LoRa Red</span>
+        <span class="text-cyan-400">${gatewayData.fecha_local || '2026-11-15'} ${gatewayData.hora_local || ''}</span>
+      </div>
+    </div>
+  `;
+
+  activeGatewayPopup = new mapLib.Popup({
+    className: 'gateway-telemetry-popup',
+    closeButton: false,
+    closeOnClick: true,
+    anchor: 'bottom',
+    offset: [0, -16],
+    maxWidth: '380px'
+  })
+    .setLngLat(coords)
+    .setHTML(popupContent)
+    .addTo(map);
+
+  activeGatewayPopup.on('close', () => {
+    activeGatewayPopup = null;
+    pinnedLoraGatewayId = null;
+    hoveredLoraGatewayId = null;
+    highlightLoraGatewayLinks(null);
+  });
+
+  // Conectar listener del botón de cierre manual del modal
+  setTimeout(() => {
+    const closeBtn = document.getElementById('btn-close-gateway-popup');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (activeGatewayPopup) {
+          activeGatewayPopup.remove();
+          activeGatewayPopup = null;
+        }
+        pinnedLoraGatewayId = null;
+        hoveredLoraGatewayId = null;
+        highlightLoraGatewayLinks(null);
+      });
+    }
+  }, 10);
+}
+
+/**
+ * Genera la colección completa de features GeoJSON para los radioenlaces LoRa,
+ * clasificando entre enlaces de infraestructura backbone y enlaces periféricos a sensores.
+ */
+function buildLoraLinksFeatures() {
+  const features = [];
+
+  // 1. Red Backbone de Nodos Centrales Gateways en Santiago del Estero
+  if (SENTINEL_NODES.quimili && SENTINEL_NODES.anatuya) {
+    features.push({
+      type: 'Feature',
+      properties: { 
+        name: 'Backbone LoRa Quimilí - Añatuya',
+        tipo: 'backbone',
+        gateway_key: 'quimili',
+        peer_key: 'anatuya'
+      },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.anatuya.coords] }
+    });
+  }
+  if (SENTINEL_NODES.anatuya && SENTINEL_NODES.bandera) {
+    features.push({
+      type: 'Feature',
+      properties: { 
+        name: 'Backbone LoRa Añatuya - Bandera',
+        tipo: 'backbone',
+        gateway_key: 'anatuya',
+        peer_key: 'bandera'
+      },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.anatuya.coords, SENTINEL_NODES.bandera.coords] }
+    });
+  }
+  if (SENTINEL_NODES.quimili && SENTINEL_NODES.termas) {
+    features.push({
+      type: 'Feature',
+      properties: { 
+        name: 'Backbone LoRa Quimilí - Termas de Río Hondo',
+        tipo: 'backbone',
+        gateway_key: 'quimili',
+        peer_key: 'termas'
+      },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.termas.coords] }
+    });
+  }
+
+  // 2. Enlaces hacia Sensores Periféricos dentro del radio de cobertura
+  if (state.loraData && Array.isArray(state.loraData)) {
+    state.loraData.forEach(node => {
+      if (node.tipo_nodo === 'GATEWAY_HUB' && Array.isArray(node.sensores_perifericos)) {
+        const gwKey = normalizeGatewayKey(node.node_id || node.localidad);
+        node.sensores_perifericos.forEach(sensor => {
+          if (sensor.lat && sensor.lon) {
+            features.push({
+              type: 'Feature',
+              properties: { 
+                name: `Radioenlace ${node.localidad} ⇄ ${sensor.nombre}`,
+                tipo: 'periferico',
+                gateway_key: gwKey,
+                gateway_id: node.node_id,
+                gateway_name: node.localidad,
+                sensor_id: sensor.id,
+                sensor_name: sensor.nombre,
+                distancia_km: sensor.distancia_km,
+                rssi: sensor.rssi,
+                bateria_v: sensor.bateria_v
+              },
+              geometry: { type: 'LineString', coordinates: [[node.longitud, node.latitud], [sensor.lon, sensor.lat]] }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // 3. Enlaces Regionales Trinacionales de Largo Alcance (Backbone Gran Chaco)
+  if (SENTINEL_NODES.quimili && SENTINEL_NODES.saenzpena) {
+    features.push({
+      type: 'Feature',
+      properties: { name: 'Enlace Regional Quimilí - Sáenz Peña', tipo: 'regional', gateway_key: 'quimili' },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.saenzpena.coords] }
+    });
+  }
+  if (SENTINEL_NODES.saenzpena && SENTINEL_NODES.resistencia) {
+    features.push({
+      type: 'Feature',
+      properties: { name: 'Enlace Regional Sáenz Peña - Resistencia', tipo: 'regional', gateway_key: 'saenzpena' },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.saenzpena.coords, SENTINEL_NODES.resistencia.coords] }
+    });
+  }
+  if (SENTINEL_NODES.quimili && SENTINEL_NODES.filadelfia) {
+    features.push({
+      type: 'Feature',
+      properties: { name: 'Enlace Regional Quimilí - Filadelfia', tipo: 'regional', gateway_key: 'quimili' },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.filadelfia.coords] }
+    });
+  }
+  if (SENTINEL_NODES.quimili && SENTINEL_NODES.villamontes) {
+    features.push({
+      type: 'Feature',
+      properties: { name: 'Enlace Regional Quimilí - Villa Montes', tipo: 'regional', gateway_key: 'quimili' },
+      geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.villamontes.coords] }
+    });
+  }
+
+  return features;
+}
+
+/**
+ * Bucle ligero para animación de flujo continuo de paquetes LoRa (line-dasharray)
+ * Solo se activa cuando hay un Gateway en hover o click seleccionado.
+ */
+function startLoraFlowAnimation() {
+  if (loraFlowAnimId) return; // Evitar instancias duplicadas
+  let lastTime = 0;
+
+  function loop(timestamp) {
+    const activeKey = pinnedLoraGatewayId || hoveredLoraGatewayId;
+    if (!activeKey || state.dataSource !== 'lora') {
+      stopLoraFlowAnimation();
+      return;
+    }
+
+    // Throttle a ~16 FPS (cada 60ms) para flujo fluido con 0% impacto en performance
+    if (timestamp - lastTime > 60) {
+      lastTime = timestamp;
+      loraFlowStep = (loraFlowStep + 1) % LORA_FLOW_PATTERNS.length;
+      try {
+        if (map && map.getLayer('lora-rf-links-active-line')) {
+          map.setPaintProperty(
+            'lora-rf-links-active-line',
+            'line-dasharray',
+            LORA_FLOW_PATTERNS[loraFlowStep]
+          );
+        }
+      } catch (err) {}
+    }
+
+    loraFlowAnimId = requestAnimationFrame(loop);
+  }
+
+  loraFlowAnimId = requestAnimationFrame(loop);
+}
+
+function stopLoraFlowAnimation() {
+  if (loraFlowAnimId) {
+    cancelAnimationFrame(loraFlowAnimId);
+    loraFlowAnimId = null;
+  }
+  try {
+    if (map && map.getLayer('lora-rf-links-active-line')) {
+      map.setPaintProperty('lora-rf-links-active-line', 'line-dasharray', [3, 3]);
+    }
+  } catch (err) {}
+}
+
+/**
+ * Resalta exclusivamente los enlaces periféricos del Nodo Central especificado
+ * @param {string|null} gatewayId - Clave o ID del gateway (ej. 'quimili', 'QUIMILI_NODO_01') o null para limpiar
+ */
+function highlightLoraGatewayLinks(gatewayId) {
+  if (state.dataSource !== 'lora' || !map || !state.mapLoaded) return;
+  const activeSourceId = 'lora-rf-links-active';
+  const activeSource = map.getSource(activeSourceId);
+
+  if (!gatewayId) {
+    stopLoraFlowAnimation();
+    if (activeSource) {
+      activeSource.setData({ type: 'FeatureCollection', features: [] });
+    }
+    return;
+  }
+
+  const targetKey = normalizeGatewayKey(gatewayId);
+  const allFeatures = buildLoraLinksFeatures();
+
+  // Filtrar ÚNICAMENTE los radioenlaces periféricos asociados al Gateway enfocado
+  const activeFeatures = allFeatures.filter(f => {
+    return f.properties.tipo === 'periferico' && 
+           (f.properties.gateway_key === targetKey || 
+            (f.properties.gateway_id && f.properties.gateway_id.toLowerCase().includes(targetKey)));
+  });
+
+  if (activeSource) {
+    activeSource.setData({
+      type: 'FeatureCollection',
+      features: activeFeatures
+    });
+  }
+
+  if (activeFeatures.length > 0) {
+    startLoraFlowAnimation();
+  } else {
+    stopLoraFlowAnimation();
+  }
+}
+
+function refreshActiveGatewayLinks() {
+  const currentKey = pinnedLoraGatewayId || hoveredLoraGatewayId;
+  highlightLoraGatewayLinks(currentKey);
+}
+
+/**
+ * Gestiona las capas MapLibre GL para los radioenlaces LoRa RF
+ * Divide la representación en 2 capas:
+ *  1. Capa base atenuada: Líneas tenues (opacidad 0.15) de fondo con trazo fino [2, 4].
+ *  2. Capa activa interactiva: Resalta enlaces con halo y animación al interactuar con un Nodo Central.
+ */
+function updateLoraRfLinksLayer(show) {
+  if (!map || !state.mapLoaded) return;
+  const dimmedSourceId = 'lora-rf-links-dimmed';
+  const activeSourceId = 'lora-rf-links-active';
+
+  // Si se oculta el modo LoRa
+  if (!show) {
+    if (activeGatewayPopup) {
+      activeGatewayPopup.remove();
+      activeGatewayPopup = null;
+    }
+    pinnedLoraGatewayId = null;
+    hoveredLoraGatewayId = null;
+    stopLoraFlowAnimation();
+
+    if (map.getSource(dimmedSourceId)) {
+      map.setLayoutProperty('lora-rf-links-dimmed-line', 'visibility', 'none');
+    }
+    if (map.getSource(activeSourceId)) {
+      map.setLayoutProperty('lora-rf-links-active-glow', 'visibility', 'none');
+      map.setLayoutProperty('lora-rf-links-active-line', 'visibility', 'none');
+      map.getSource(activeSourceId).setData({ type: 'FeatureCollection', features: [] });
+    }
+    return;
+  }
+
+  // Limpiar capas previas legacy si existieran
+  try {
+    if (map.getLayer('lora-rf-links-line')) map.removeLayer('lora-rf-links-line');
+    if (map.getLayer('lora-rf-links-glow')) map.removeLayer('lora-rf-links-glow');
+    if (map.getSource('lora-rf-links')) map.removeSource('lora-rf-links');
+  } catch (e) {}
+
+  const allFeatures = buildLoraLinksFeatures();
+  const dimmedGeoJson = {
+    type: 'FeatureCollection',
+    features: allFeatures
+  };
+
+  try {
+    // 1. CAPA BASE ATENUADA (Por defecto: sutil, opacidad 0.15, trazo fino discontinuo [2, 4])
+    if (!map.getSource(dimmedSourceId)) {
+      map.addSource(dimmedSourceId, {
+        type: 'geojson',
+        data: dimmedGeoJson
+      });
+
+      map.addLayer({
+        id: 'lora-rf-links-dimmed-line',
+        type: 'line',
+        source: dimmedSourceId,
+        layout: { 
+          'visibility': 'visible',
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': '#06B6D4',
+          'line-width': 1.3,
+          'line-opacity': 0.15,
+          'line-dasharray': [2, 4]
+        }
+      });
+    } else {
+      map.getSource(dimmedSourceId).setData(dimmedGeoJson);
+      map.setLayoutProperty('lora-rf-links-dimmed-line', 'visibility', 'visible');
+    }
+
+    // 2. CAPA ACTIVA INTERACTIVA (Destaca enlaces del Gateway seleccionado/hover con halo y flujo)
+    if (!map.getSource(activeSourceId)) {
+      map.addSource(activeSourceId, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      // Halo de resplandor cian para enlaces destacados
+      map.addLayer({
+        id: 'lora-rf-links-active-glow',
+        type: 'line',
+        source: activeSourceId,
+        layout: { 
+          'visibility': 'visible',
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': '#06B6D4',
+          'line-width': 6.0,
+          'line-opacity': 0.45,
+          'line-blur': 3.0
+        }
+      });
+
+      // Línea principal con cian brillante y flujo sutil de paquetes
+      map.addLayer({
+        id: 'lora-rf-links-active-line',
+        type: 'line',
+        source: activeSourceId,
+        layout: { 
+          'visibility': 'visible',
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': '#22D3EE',
+          'line-width': 2.8,
+          'line-opacity': 0.95,
+          'line-dasharray': [3, 3]
+        }
+      });
+    } else {
+      map.setLayoutProperty('lora-rf-links-active-glow', 'visibility', 'visible');
+      map.setLayoutProperty('lora-rf-links-active-line', 'visibility', 'visible');
+    }
+
+    // Refrescar enlaces del gateway activo si hubiese uno
+    refreshActiveGatewayLinks();
+
+  } catch (err) {
+    console.warn('Error gestionando capa de enlaces LoRa RF en el mapa:', err);
+  }
+}
+
+function renderSentinelMarkers() {
+  try {
+    const mapLib = window.maplibregl || window.mapboxgl;
+    if (!map || !mapLib) return;
+
+    // Limpiar marcadores previos
+    if (sentinelMarkersList && sentinelMarkersList.length) {
+      sentinelMarkersList.forEach(m => m.remove());
+      sentinelMarkersList = [];
+    }
+
+    const isLora = state.dataSource === 'lora';
+
+    // Actualizar enlaces RF en el mapa
+    updateLoraRfLinksLayer(isLora);
+
+    // 1. Colección de marcadores con jerarquía visual (Gateway Hubs vs. Sensores de Campo)
+    const baseNodeEntries = Object.values(SENTINEL_NODES).filter(n => n.id !== 'gran_chaco');
+    const markersToRender = [];
+
+    baseNodeEntries.forEach(node => {
+      const loraItem = isLora ? getLoraTelemetryForNode(node.id) : null;
+      const isGateway = isLora && (
+        ['quimili', 'anatuya', 'bandera', 'termas'].includes(node.id) ||
+        (loraItem && loraItem.tipo_nodo === 'GATEWAY_HUB')
+      );
+
+      markersToRender.push({
+        id: node.id,
+        name: node.name,
+        coords: node.coords,
+        isGateway: isGateway,
+        isFieldSensor: isLora && !isGateway,
+        loraData: loraItem,
+        originalNode: node
+      });
+    });
+
+    // 2. En modo LoRa, desplegar los sensores de campo periféricos en sus ubicaciones para jerarquía completa
+    if (isLora && state.loraData && Array.isArray(state.loraData)) {
+      const addedSensorIds = new Set();
+      state.loraData.forEach(gatewayNode => {
+        if (gatewayNode.tipo_nodo === 'GATEWAY_HUB' && Array.isArray(gatewayNode.sensores_perifericos)) {
+          gatewayNode.sensores_perifericos.forEach(sensor => {
+            if (sensor.lat && sensor.lon && !addedSensorIds.has(sensor.id)) {
+              addedSensorIds.add(sensor.id);
+              markersToRender.push({
+                id: sensor.id,
+                name: sensor.nombre || sensor.id,
+                coords: [sensor.lon, sensor.lat],
+                isGateway: false,
+                isFieldSensor: true,
+                loraData: {
+                  node_id: sensor.id,
+                  localidad: sensor.nombre,
+                  provincia: gatewayNode.provincia || 'Santiago del Estero',
+                  rssi: sensor.rssi,
+                  snr: sensor.snr,
+                  bateria_v: sensor.bateria_v,
+                  estado_conexion: sensor.estado || 'Activo',
+                  tipo_nodo: 'SENSOR_CAMPO',
+                  distancia_km: sensor.distancia_km,
+                  gateway_asociado: gatewayNode.localidad
+                },
+                parentGateway: gatewayNode
+              });
+            }
+          });
+        }
+      });
+    }
+
+    markersToRender.forEach(item => {
+      // Contenedor principal nativo de MapLibre GL con tamaño fijo y clase CSS limpia
+      const el = document.createElement('div');
+      const isGateway = isLora && item.isGateway;
+      const isSensor = isLora && item.isFieldSensor;
+      const sizeClass = isGateway ? 'lora-marker-gateway' : (isSensor ? 'lora-marker-sensor' : 'lora-marker-sentinel');
+      const markerSize = isGateway ? 40 : (isSensor ? 24 : 28);
+
+      // Usar estrictamente lora-marker-container con tamaño fijo (MapLibre GL posiciona con position: absolute y transform)
+      el.className = `lora-marker-container ${sizeClass} group`;
+      el.style.width = `${markerSize}px`;
+      el.style.height = `${markerSize}px`;
+
+      const isSelected = state.activeNode === item.id;
+
+      if (isLora) {
+        const loraItem = item.loraData;
+        const rssiVal = loraItem ? Math.round(loraItem.rssi) : -82;
+        const health = getNodeHealthStatus(loraItem);
+        const isOnline = health.status !== 'critico';
+
+        if (isGateway) {
+          // ================= NODO CENTRAL (GATEWAY HUB - 40x40px con Anillo de Pulso Sutil) =================
+          const hubName = loraItem?.localidad || item.name.replace('Gateway Hub', '').replace('Nodo ', '').trim();
+
+          // Ondas sutiles lentas y continuas aplicadas exclusivamente si el nodo está activo/en línea
+          const pulseRingsHtml = isOnline ? `
+            <div class="lora-pulse-subtle" style="border-color: ${health.color};"></div>
+            <div class="lora-pulse-subtle delay-1" style="border-color: ${health.color};"></div>
+          ` : `
+            <div style="position: absolute; width: 38px; height: 38px; border-radius: 50%; border: 1px dashed ${health.color}; opacity: 0.35;"></div>
+          `;
+
+          el.innerHTML = `
+            <div class="relative w-full h-full flex items-center justify-center">
+              <!-- Tooltip en Hover con Color de Salud -->
+              <div class="opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 transform -translate-y-1 group-hover:translate-y-0 absolute bottom-full mb-2 z-50 whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-space-950/95 border border-cyan-500/70 shadow-2xl flex flex-col items-center gap-0.5">
+                <div class="flex items-center gap-1.5 text-[10.5px] font-bold text-cyan-300 font-mono">
+                  <span>🏭</span>
+                  <span>${hubName} ★ Gateway Hub</span>
+                </div>
+                <div class="text-[8.5px] font-mono text-slate-300 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${health.color}; box-shadow: 0 0 6px ${health.color};"></span>
+                  <span style="color: ${health.color}; font-weight: 600;">${health.label}</span>
+                  <span class="text-slate-500">•</span>
+                  <span class="text-cyan-400 font-bold">${rssiVal} dBm</span>
+                </div>
+                <div class="text-[7.5px] font-mono text-cyan-400/80">Clic para telemetría avanzada</div>
+              </div>
+
+              <!-- Baliza Industrial Destacada (40x40px) con Anillo Atmosférico Sutil -->
+              <div class="lora-radio-beacon pointer-events-none" style="position: absolute; width: 40px; height: 40px; top: 0; left: 0; display: flex; align-items: center; justify-content: center;">
+                ${pulseRingsHtml}
+                
+                <div style="width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #0284C7, #0F766E); border: 2px solid ${isSelected ? '#38BDF8' : health.color}; box-shadow: 0 0 12px ${health.glow}; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 22h16"></path>
+                    <path d="M12 2v20"></path>
+                    <path d="m7.5 7.5 9 9"></path>
+                    <path d="m16.5 7.5-9 9"></path>
+                    <circle cx="12" cy="5" r="2.5" fill="#38BDF8"></circle>
+                    <path d="M6 10a8 8 0 0 1 12 0"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          // ================= SENSOR DE CAMPO PERIFÉRICO (COMPACTO Y DISCRETO - 24x24px) =================
+          const sensorLabel = item.name.replace('Nodo ', '').replace('Sensor ', '').split('(')[0].trim();
+          const batVal = loraItem?.bateria_v ? loraItem.bateria_v.toFixed(2) + 'V' : '4.1V';
+
+          el.innerHTML = `
+            <div class="relative w-full h-full flex items-center justify-center">
+              <!-- Tooltip en Hover para Sensor de Campo -->
+              <div class="opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 transform -translate-y-1 group-hover:translate-y-0 absolute bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-1 rounded-md bg-space-950/95 border border-cyan-500/50 shadow-xl flex items-center gap-1.5 text-[9px] font-mono">
+                <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${health.color};"></span>
+                <span class="text-slate-200 font-semibold">${sensorLabel}</span>
+                <span class="text-slate-500">•</span>
+                <span style="color: ${health.color}; font-weight: bold;">${health.label}</span>
+                <span class="text-slate-500">•</span>
+                <span class="text-emerald-400 font-bold">${batVal}</span>
+                <span class="text-slate-500">•</span>
+                <span class="text-cyan-400 font-bold">${rssiVal} dBm</span>
+              </div>
+
+              <!-- Halo Estático Translúcido Sutil (24x24px) para no sobrecargar zonas densas -->
+              <div class="lora-radio-beacon pointer-events-none" style="position: absolute; width: 24px; height: 24px; top: 0; left: 0; display: flex; align-items: center; justify-content: center;">
+                <div class="lora-sensor-halo" style="border-color: ${health.color};"></div>
+                
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: #082F49; border: 1.5px solid ${isSelected ? '#38BDF8' : health.color}; box-shadow: 0 0 6px ${health.glow}; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path>
+                    <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        // Modo Estándar / Satelital: Marcador limpio con tooltip únicamente en hover
+        const pulseColor = isSelected ? '#38BDF8' : '#EF4444';
+        el.innerHTML = `
+          <div class="relative w-full h-full flex items-center justify-center">
+            <!-- Tooltip flotante visible ÚNICAMENTE en hover -->
+            <div class="opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-150 transform -translate-y-1 group-hover:translate-y-0 absolute bottom-full mb-1.5 z-50 whitespace-nowrap px-2 py-0.5 rounded-md bg-space-950/95 border border-cyan-500/50 shadow-xl text-[9.5px] font-mono text-cyan-300">
+              ${item.name.replace('Nodo ', '').replace('Gateway Hub', '').split('(')[0].trim()}
+            </div>
+            <div class="sentinel-pulse pointer-events-none" style="position: absolute; width: 28px; height: 28px; top: 0; left: 0; border-radius: 50%; color: ${pulseColor};"></div>
+            <div style="width: 14px; height: 14px; border-radius: 50%; background: ${pulseColor}; border: 2px solid #FFFFFF; box-shadow: 0 0 12px ${pulseColor}; z-index: 10; pointer-events: none;"></div>
+          </div>
+        `;
+      }
+
+      // Eventos interactivos en hover sobre Nodo Central: resalta enlaces sutilmente si no hay modal fijado
+      if (isLora && item.isGateway) {
+        el.addEventListener('mouseenter', () => {
+          if (!pinnedLoraGatewayId) {
+            hoveredLoraGatewayId = normalizeGatewayKey(item.id || item.loraData?.node_id);
+            highlightLoraGatewayLinks(hoveredLoraGatewayId);
+          }
+        });
+
+        el.addEventListener('mouseleave', () => {
+          if (!pinnedLoraGatewayId) {
+            hoveredLoraGatewayId = null;
+            highlightLoraGatewayLinks(null);
+          }
+        });
+      }
 
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        selectNode(node.id);
-        handleMapPointClick({ lng: node.coords[0], lat: node.coords[1] });
+        if (item.originalNode) {
+          selectNode(item.id);
+        }
+        
+        if (isLora && item.isGateway && item.loraData) {
+          // Fijar Gateway activo y resaltar exclusivamente sus enlaces periféricos con animación de flujo
+          const gwKey = normalizeGatewayKey(item.id || item.loraData.node_id);
+          pinnedLoraGatewayId = gwKey;
+          hoveredLoraGatewayId = null;
+          highlightLoraGatewayLinks(gwKey);
+
+          // Desplazar mapa suavemente con margen de seguridad vertical para que el popup quede holgado y visible
+          if (map) {
+            map.easeTo({
+              center: item.coords,
+              offset: [0, 80],
+              duration: 350
+            });
+          }
+          showGatewayTelemetryPopup(item.loraData, item.coords);
+        } else {
+          // Si hace clic en un sensor o nodo normal, cerrar popup flotante previo y restaurar enlaces atenuados
+          if (activeGatewayPopup) {
+            activeGatewayPopup.remove();
+            activeGatewayPopup = null;
+          }
+          pinnedLoraGatewayId = null;
+          hoveredLoraGatewayId = null;
+          highlightLoraGatewayLinks(null);
+          handleMapPointClick({ lng: item.coords[0], lat: item.coords[1] }, false);
+        }
       });
 
-      new mapLib.Marker({ element: el })
-        .setLngLat(node.coords)
+      // Coordenadas geográficas reales estrictas [longitud, latitud] y anclaje al centro nativo
+      const geoLng = Number(item.coords[0]);
+      const geoLat = Number(item.coords[1]);
+
+      const markerInstance = new mapLib.Marker({
+        element: el,
+        anchor: 'center'
+      })
+        .setLngLat([geoLng, geoLat])
         .addTo(map);
+
+      sentinelMarkersList.push(markerInstance);
     });
 
   } catch (err) {
     console.error('Error creando la red de marcadores centinela:', err);
   }
+}
+
+function setupSentinelMarkers() {
+  renderSentinelMarkers();
 }
 
 function updateMapData() {
@@ -4362,6 +5226,34 @@ const projectionOverlayPlugin = {
   }
 };
 
+// ================= POSICIONADOR INTELIGENTE DE TOOLTIP PARA CHART.JS =================
+// Desplaza el tooltip dinámicamente hacia la esquina superior opuesta al cursor (estilo HUD flotante),
+// garantizando que NUNCA se superponga sobre los puntos activos, la curva proyectada,
+// ni el área sombreada de incertidumbre [p10-p90].
+if (typeof Chart !== 'undefined' && Chart.Tooltip && Chart.Tooltip.positioners) {
+  Chart.Tooltip.positioners.smartAvoidData = function(items, eventPosition) {
+    if (!items || !items.length) return false;
+    const chart = this.chart;
+    const { chartArea } = chart;
+    const activePoint = items[0].element;
+    const x = activePoint ? activePoint.x : eventPosition.x;
+
+    // Centro del área gráfica útil
+    const midX = (chartArea.left + chartArea.right) / 2;
+    const isLeftHalf = x <= midX;
+
+    // Si el cursor está en la mitad izquierda (t-6 a t0), situar el tooltip en la esquina superior derecha.
+    // Si está en la mitad derecha (t+1 a t+6), situarlo en la esquina superior izquierda.
+    const targetX = isLeftHalf ? (chartArea.right - 8) : (chartArea.left + 8);
+    const targetY = chartArea.top + 6;
+
+    return {
+      x: targetX,
+      y: targetY
+    };
+  };
+}
+
 function initProjectionChart() {
   const canvas = document.getElementById('chart-projection');
   if (!canvas) return;
@@ -4465,13 +5357,19 @@ function initProjectionChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0B0F19',
-          borderColor: 'rgba(56, 189, 248, 0.5)',
+          enabled: true,
+          position: 'smartAvoidData',
+          caretSize: 0,
+          caretPadding: 6,
+          backgroundColor: 'rgba(11, 15, 25, 0.96)',
+          borderColor: 'rgba(56, 189, 248, 0.6)',
           borderWidth: 1.5,
-          padding: 10,
-          titleFont: { family: 'monospace', size: 11, weight: 'bold' },
-          bodyFont: { family: 'monospace', size: 10 },
-          footerFont: { family: 'monospace', size: 9, style: 'italic' },
+          cornerRadius: 8,
+          padding: 8,
+          boxPadding: 4,
+          titleFont: { family: 'monospace', size: 10.5, weight: 'bold' },
+          bodyFont: { family: 'monospace', size: 9.5 },
+          footerFont: { family: 'monospace', size: 8.5, style: 'italic' },
           footerColor: '#94A3B8',
           filter: (tooltipItem) => {
             if (tooltipItem.datasetIndex <= 1) return true;
@@ -4488,7 +5386,7 @@ function initProjectionChart() {
             },
             beforeBody: (items) => {
               const idx = items[0].dataIndex;
-              return idx <= 6 ? '• Régimen: Observación Histórica (NASA/NOAA)' : '• Régimen: Proyección Predictiva Multivariable';
+              return idx <= 6 ? '• Régimen: Observación Histórica' : '• Régimen: Proyección IA Multivariable';
             },
             label: (ctx) => {
               const idx = ctx.dataIndex;
@@ -4505,8 +5403,7 @@ function initProjectionChart() {
               if (datasetIndex === 0) {
                 if (idx <= 6) {
                   return [
-                    `  SPI Observado: ${effSpi >= 0 ? '+' : ''}${effSpi.toFixed(2)}`,
-                    `  Categoría SPI: ${getSpiCategoryName(effSpi)}`
+                    `  SPI Obs: ${effSpi >= 0 ? '+' : ''}${effSpi.toFixed(2)} (${getSpiCategoryName(effSpi)})`
                   ];
                 }
                 return null;
@@ -4515,15 +5412,14 @@ function initProjectionChart() {
               if (datasetIndex === 1) {
                 if (idx > 6) {
                   return [
-                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)} [Escenario más probable]`,
-                    `  Intervalo Incertidumbre [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}] [Confianza 80%]`,
-                    `  Amplitud de Incertidumbre: ${(effP90 - effP10).toFixed(2)} σ`,
-                    `  Categoría Mediana: ${getSpiCategoryName(effP50)}`
+                    `  Mediana p50: ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)} (${getSpiCategoryName(effP50)})`,
+                    `  Banda [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}] (80% conf)`,
+                    `  Amplitud σ: ${(effP90 - effP10).toFixed(2)}`
                   ];
                 } else if (idx === 6) {
                   return [
-                    `  Mediana Proyectada (p50): ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)} [Escenario más probable]`,
-                    `  Intervalo [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}] [Confianza 80%]`
+                    `  Mediana p50: ${effP50 >= 0 ? '+' : ''}${effP50.toFixed(2)} (${getSpiCategoryName(effP50)})`,
+                    `  Banda [p10, p90]: [${effP10 >= 0 ? '+' : ''}${effP10.toFixed(2)}, ${effP90 >= 0 ? '+' : ''}${effP90.toFixed(2)}]`
                   ];
                 }
                 return null;
@@ -4532,24 +5428,21 @@ function initProjectionChart() {
               if (datasetIndex === 4) {
                 const val = Number((ANALOGUE_YEARS['2008_09'].spi[idx] * factor).toFixed(2));
                 return [
-                  `  ${ANALOGUE_YEARS['2008_09'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}`,
-                  `  Categoría SPI: ${getSpiCategoryName(val)}`
+                  `  ${ANALOGUE_YEARS['2008_09'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)} (${getSpiCategoryName(val)})`
                 ];
               }
 
               if (datasetIndex === 5) {
                 const val = Number((ANALOGUE_YEARS['2018'].spi[idx] * factor).toFixed(2));
                 return [
-                  `  ${ANALOGUE_YEARS['2018'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}`,
-                  `  Categoría SPI: ${getSpiCategoryName(val)}`
+                  `  ${ANALOGUE_YEARS['2018'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)} (${getSpiCategoryName(val)})`
                 ];
               }
 
               if (datasetIndex === 6) {
                 const val = Number((ANALOGUE_YEARS['2022_23'].spi[idx] * factor).toFixed(2));
                 return [
-                  `  ${ANALOGUE_YEARS['2022_23'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)}`,
-                  `  Categoría SPI: ${getSpiCategoryName(val)}`
+                  `  ${ANALOGUE_YEARS['2022_23'].name}: ${val >= 0 ? '+' : ''}${val.toFixed(2)} (${getSpiCategoryName(val)})`
                 ];
               }
 
@@ -4557,8 +5450,8 @@ function initProjectionChart() {
             },
             footer: (items) => {
               const idx = items[0].dataIndex;
-              if (idx === 6) return '📍 Línea HOY: Fin de observación satelital / Inicio de proyección LightGBM a 6 meses';
-              if (idx > 6) return 'Incertidumbre cuantílica 80% (p10 pesimista vs p90 optimista)';
+              if (idx === 6) return '📍 Línea HOY: Fin Satélite / Inicio IA 6M';
+              if (idx > 6) return 'Incertidumbre cuantílica 80%';
               return null;
             }
           }
@@ -4791,33 +5684,301 @@ async function loadGeeLiveSimulation(forceNode) {
   }
 }
 
-function setDataSource(source) {
+/**
+ * Filtra los nodos LoRa cuya provincia coincida con el objetivo (insensible a mayúsculas y acentos)
+ * @param {string} targetProvince - Nombre de la provincia (ej. 'Santiago del Estero')
+ * @returns {Array} Lista de nodos filtrados pertenecientes a la jurisdicción
+ */
+function getLoraNodesByProvince(targetProvince = 'Santiago del Estero') {
+  if (!state.loraData || !Array.isArray(state.loraData)) return [];
+  const normalize = (str) =>
+    str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : '';
+  const targetNorm = normalize(targetProvince);
+  return state.loraData.filter(node => normalize(node.provincia).includes(targetNorm));
+}
+
+/**
+ * Cuenta dinámicamente la cantidad de nodos LoRa activos en la provincia especificada
+ * @param {string} targetProvince - Nombre de la provincia (ej. 'Santiago del Estero')
+ * @returns {number} Cantidad de nodos activos
+ */
+function getActiveNodesCountByProvince(targetProvince = 'Santiago del Estero') {
+  return getLoraNodesByProvince(targetProvince).length;
+}
+
+/**
+ * Filtra específicamente los Nodos Centrales (Gateway Hubs / MultiTech Conduit) de una provincia
+ * @param {string} targetProvince - Nombre de la provincia (ej. 'Santiago del Estero')
+ * @returns {Array} Lista de nodos gateway centrales
+ */
+function getCentralGatewayNodesByProvince(targetProvince = 'Santiago del Estero') {
+  if (!state.loraData || !Array.isArray(state.loraData)) return [];
+  const normalize = (str) =>
+    str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : '';
+  const targetNorm = normalize(targetProvince);
+  return state.loraData.filter(node => 
+    normalize(node.provincia).includes(targetNorm) && 
+    (node.tipo_nodo === 'GATEWAY_HUB' || node.node_id === 'QUIMILI_NODO_01')
+  );
+}
+
+/**
+ * Obtiene el conteo exacto de Nodos Centrales Gateway activos en la provincia
+ * @param {string} targetProvince - Nombre de la provincia (ej. 'Santiago del Estero')
+ * @returns {number} Cantidad de gateways activos
+ */
+function getActiveGatewaysCountByProvince(targetProvince = 'Santiago del Estero') {
+  return getCentralGatewayNodesByProvince(targetProvince).length;
+}
+
+function getLoraTelemetryForNode(nodeId) {
+  if (!state.loraData || !state.loraData.length) return null;
+  const keyMap = {
+    quimili: 'QUIMILI_NODO_01',
+    anatuya: 'ANATUYA_GATEWAY_02',
+    bandera: 'BANDERA_GATEWAY_03',
+    termas: 'TERMAS_GATEWAY_04',
+    filadelfia: 'FILADELFIA_NODO_02',
+    villamontes: 'VILLAMONTES_NODO_03',
+    saenzpena: 'SAENZPENA_NODO_04',
+    resistencia: 'RESISTENCIA_NODO_05',
+    gran_chaco: 'QUIMILI_NODO_01'
+  };
+  const targetId = keyMap[nodeId] || nodeId;
+  const found = state.loraData.find(item => 
+    item.node_id === targetId || 
+    item.node_id.toLowerCase().includes(nodeId.toLowerCase()) ||
+    (item.localidad && item.localidad.toLowerCase().includes(nodeId.toLowerCase()))
+  );
+  return found || state.loraData[0];
+}
+
+async function fetchLoraTelemetrySimulation() {
+  state.isLoraLoading = true;
+  updateSourceToggleUI();
+  try {
+    const res = await fetch('http://localhost:8000/api/nodes/telemetry/simulate');
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      state.loraData = data;
+    }
+  } catch (err) {
+    console.warn('[LoRa] Error al conectar con /api/nodes/telemetry/simulate, usando fallback local:', err);
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const dateStr = now.toISOString().split('T')[0];
+    state.loraData = [
+      {
+        node_id: "QUIMILI_NODO_01",
+        localidad: "Quimilí",
+        provincia: "Santiago del Estero",
+        latitud: -27.6460,
+        longitud: -62.4160,
+        altitud_m: 145,
+        fecha_local: dateStr,
+        hora_local: timeStr,
+        fuente_id: "LORA_DIY_CAMPO",
+        tipo_dato: "OBSERVACION_IN_SITU",
+        temp_max_C: 32.5,
+        temp_min_C: 18.2,
+        temp_media_C: 25.4,
+        humedad_relativa_media_pct: 52.0,
+        humedad_relativa_min_pct: 35.0,
+        humedad_suelo_0_7cm_m3m3: 0.22,
+        bateria_v: 4.12,
+        rssi: -82.0,
+        snr: 8.5,
+        tipo_nodo: "GATEWAY_HUB",
+        hardware_modelo: "MultiTech Conduit AEP (MTCDT)",
+        canales_rf: 8,
+        radio_cobertura_km: 15.0,
+        nodos_asociados_count: 3,
+        estado_conexion: "Activo",
+        velocidad_propagacion_ms: 12.4,
+        frecuencia_mhz: 915.3,
+        paquetes_perdidos_pct: 0.4,
+        velocidad_retransmision: "SF7 / 125 kHz @ 5.4 kbps",
+        sensores_perifericos: [
+          { id: "QUIMILI_CAMPO_02", nombre: "Sacháyoj", distancia_km: 12.4, lat: -26.6800, lon: -61.8200, rssi: -89.0, snr: 6.8, bateria_v: 4.05 },
+          { id: "QUIMILI_CAMPO_03", nombre: "Otumpa", distancia_km: 8.7, lat: -27.7500, lon: -62.2300, rssi: -85.2, snr: 7.4, bateria_v: 3.95 },
+          { id: "QUIMILI_CAMPO_04", nombre: "Tintina", distancia_km: 14.1, lat: -27.0300, lon: -62.7100, rssi: -101.4, snr: 5.1, bateria_v: 4.10 }
+        ]
+      },
+      {
+        node_id: "ANATUYA_GATEWAY_02",
+        localidad: "Añatuya",
+        provincia: "Santiago del Estero",
+        latitud: -28.4600,
+        longitud: -62.8340,
+        altitud_m: 108,
+        fecha_local: dateStr,
+        hora_local: timeStr,
+        fuente_id: "LORA_DIY_CAMPO",
+        tipo_dato: "OBSERVACION_IN_SITU",
+        temp_max_C: 33.1,
+        temp_min_C: 19.0,
+        temp_media_C: 26.1,
+        humedad_relativa_media_pct: 50.0,
+        humedad_relativa_min_pct: 32.0,
+        humedad_suelo_0_7cm_m3m3: 0.21,
+        bateria_v: 4.15,
+        rssi: -81.5,
+        snr: 9.2,
+        tipo_nodo: "GATEWAY_HUB",
+        hardware_modelo: "MultiTech Conduit IP67 (MTCDTIP)",
+        canales_rf: 8,
+        radio_cobertura_km: 15.0,
+        nodos_asociados_count: 3,
+        estado_conexion: "Activo",
+        velocidad_propagacion_ms: 11.8,
+        frecuencia_mhz: 915.3,
+        paquetes_perdidos_pct: 0.3,
+        velocidad_retransmision: "SF7 / 125 kHz @ 5.4 kbps",
+        sensores_perifericos: [
+          { id: "ANATUYA_CAMPO_01", nombre: "Los Juríes", distancia_km: 11.5, lat: -28.3800, lon: -62.1100, rssi: -91.0, snr: 6.2, bateria_v: 4.02 },
+          { id: "ANATUYA_CAMPO_02", nombre: "Herrera", distancia_km: 9.8, lat: -28.4300, lon: -63.0500, rssi: -87.4, snr: 8.0, bateria_v: 4.18 },
+          { id: "ANATUYA_CAMPO_03", nombre: "Colonia Dora", distancia_km: 13.2, lat: -28.6000, lon: -62.9500, rssi: -95.6, snr: 5.8, bateria_v: 3.92 }
+        ]
+      },
+      {
+        node_id: "BANDERA_GATEWAY_03",
+        localidad: "Bandera",
+        provincia: "Santiago del Estero",
+        latitud: -28.8870,
+        longitud: -62.2660,
+        altitud_m: 84,
+        fecha_local: dateStr,
+        hora_local: timeStr,
+        fuente_id: "LORA_DIY_CAMPO",
+        tipo_dato: "OBSERVACION_IN_SITU",
+        temp_max_C: 31.8,
+        temp_min_C: 17.5,
+        temp_media_C: 25.0,
+        humedad_relativa_media_pct: 56.0,
+        humedad_relativa_min_pct: 37.0,
+        humedad_suelo_0_7cm_m3m3: 0.25,
+        bateria_v: 4.08,
+        rssi: -83.2,
+        snr: 8.0,
+        tipo_nodo: "GATEWAY_HUB",
+        hardware_modelo: "MultiTech Conduit AEP (MTCDT)",
+        canales_rf: 8,
+        radio_cobertura_km: 12.5,
+        nodos_asociados_count: 2,
+        estado_conexion: "Activo",
+        velocidad_propagacion_ms: 13.2,
+        frecuencia_mhz: 915.3,
+        paquetes_perdidos_pct: 0.5,
+        velocidad_retransmision: "SF8 / 125 kHz @ 3.1 kbps",
+        sensores_perifericos: [
+          { id: "BANDERA_CAMPO_01", nombre: "Cuatro Bocas", distancia_km: 7.3, lat: -28.9800, lon: -61.9800, rssi: -93.5, snr: 5.9, bateria_v: 3.88 },
+          { id: "BANDERA_CAMPO_02", nombre: "Fortín Inca", distancia_km: 10.9, lat: -29.0700, lon: -62.3800, rssi: -97.1, snr: 4.8, bateria_v: 4.04 }
+        ]
+      },
+      {
+        node_id: "TERMAS_GATEWAY_04",
+        localidad: "Termas de Río Hondo",
+        provincia: "Santiago del Estero",
+        latitud: -27.4930,
+        longitud: -64.8590,
+        altitud_m: 265,
+        fecha_local: dateStr,
+        hora_local: timeStr,
+        fuente_id: "LORA_DIY_CAMPO",
+        tipo_dato: "OBSERVACION_IN_SITU",
+        temp_max_C: 32.0,
+        temp_min_C: 18.0,
+        temp_media_C: 24.8,
+        humedad_relativa_media_pct: 58.0,
+        humedad_relativa_min_pct: 39.0,
+        humedad_suelo_0_7cm_m3m3: 0.27,
+        bateria_v: 4.20,
+        rssi: -80.8,
+        snr: 9.8,
+        tipo_nodo: "GATEWAY_HUB",
+        hardware_modelo: "MultiTech Conduit IP67 (MTCDTIP)",
+        canales_rf: 8,
+        radio_cobertura_km: 15.0,
+        nodos_asociados_count: 3,
+        estado_conexion: "Activo",
+        velocidad_propagacion_ms: 10.9,
+        frecuencia_mhz: 915.3,
+        paquetes_perdidos_pct: 0.2,
+        velocidad_retransmision: "SF7 / 125 kHz @ 5.4 kbps",
+        sensores_perifericos: [
+          { id: "TERMAS_CAMPO_01", nombre: "Villa Balnearia", distancia_km: 5.8, lat: -27.5200, lon: -64.8900, rssi: -88.0, snr: 7.4, bateria_v: 4.12 },
+          { id: "TERMAS_CAMPO_02", nombre: "El Charco", distancia_km: 13.6, lat: -27.3500, lon: -64.6700, rssi: -99.4, snr: 5.0, bateria_v: 3.96 },
+          { id: "TERMAS_CAMPO_03", nombre: "Embalse Frontal", distancia_km: 6.4, lat: -27.5050, lon: -64.9150, rssi: -84.2, snr: 8.8, bateria_v: 4.16 }
+        ]
+      },
+      { node_id: "QUIMILI_CAMPO_02", localidad: "Sacháyoj", provincia: "Santiago del Estero", latitud: -26.6800, longitud: -61.8200, altitud_m: 115, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 33.5, temp_min_C: 19.0, temp_media_C: 25.8, humedad_relativa_media_pct: 50.0, humedad_relativa_min_pct: 33.0, humedad_suelo_0_7cm_m3m3: 0.20, bateria_v: 4.05, rssi: -89.0, snr: 6.8, tipo_nodo: "SENSOR_CAMPO", hardware_modelo: "ESP32-C3 + Ra-02", canales_rf: 1 },
+      { node_id: "FILADELFIA_NODO_02", localidad: "Filadelfia", provincia: "Boquerón (Paraguay)", latitud: -22.3500, longitud: -60.0300, altitud_m: 135, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 34.1, temp_min_C: 20.5, temp_media_C: 27.8, humedad_relativa_media_pct: 46.0, humedad_relativa_min_pct: 29.0, humedad_suelo_0_7cm_m3m3: 0.16, bateria_v: 3.98, rssi: -96.0, snr: 5.2, tipo_nodo: "SENSOR_CAMPO", hardware_modelo: "ESP32-C3 + SX1262", canales_rf: 1 },
+      { node_id: "VILLAMONTES_NODO_03", localidad: "Villa Montes", provincia: "Tarija (Bolivia)", latitud: -21.2600, longitud: -63.4600, altitud_m: 390, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 30.2, temp_min_C: 17.0, temp_media_C: 24.1, humedad_relativa_media_pct: 58.0, humedad_relativa_min_pct: 38.0, humedad_suelo_0_7cm_m3m3: 0.29, bateria_v: 4.05, rssi: -104.0, snr: 2.8, tipo_nodo: "SENSOR_CAMPO", hardware_modelo: "ESP32-C3 + Ra-02", canales_rf: 1 },
+      { node_id: "SAENZPENA_NODO_04", localidad: "Sáenz Peña", provincia: "Chaco", latitud: -26.7900, longitud: -60.4400, altitud_m: 90, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 33.0, temp_min_C: 19.4, temp_media_C: 26.0, humedad_relativa_media_pct: 54.0, humedad_relativa_min_pct: 34.0, humedad_suelo_0_7cm_m3m3: 0.24, bateria_v: 4.15, rssi: -88.0, snr: 7.1, tipo_nodo: "SENSOR_CAMPO", hardware_modelo: "ESP32-C3 + Ra-02", canales_rf: 1 },
+      { node_id: "RESISTENCIA_NODO_05", localidad: "Resistencia", provincia: "Chaco", latitud: -27.4500, longitud: -58.9800, altitud_m: 52, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 31.8, temp_min_C: 21.0, temp_media_C: 26.8, humedad_relativa_media_pct: 68.0, humedad_relativa_min_pct: 45.0, humedad_suelo_0_7cm_m3m3: 0.35, bateria_v: 3.88, rssi: -84.0, snr: 9.4, tipo_nodo: "SENSOR_CAMPO", hardware_modelo: "ESP32-C3 + SX1262", canales_rf: 1 }
+    ];
+  } finally {
+    state.isLoraLoading = false;
+    updateSourceToggleUI();
+  }
+}
+
+async function setDataSource(source) {
+  if (activeGatewayPopup) {
+    activeGatewayPopup.remove();
+    activeGatewayPopup = null;
+  }
+  pinnedLoraGatewayId = null;
+  hoveredLoraGatewayId = null;
+  highlightLoraGatewayLinks(null);
+  if (state.dataSource === source && source === 'lora' && state.loraData) {
+    // Si ya está activo y vuelve a tocar, refrescar simulación LoRa
+    await fetchLoraTelemetrySimulation();
+    renderSentinelMarkers();
+    updateUI();
+    return;
+  }
   if (state.dataSource === source && state.geeData) return;
   state.dataSource = source;
   updateSourceToggleUI();
 
   if (source === 'gee') {
     if (!state.geeData) {
-      loadGeeLiveSimulation();
+      await loadGeeLiveSimulation();
     } else {
       updateUI();
     }
+  } else if (source === 'lora') {
+    await fetchLoraTelemetrySimulation();
+    updateUI();
   } else {
     updateUI();
   }
+  renderSentinelMarkers();
 }
 
 function updateSourceToggleUI() {
   const btnBaseline = document.getElementById('btn-source-baseline');
   const btnGee = document.getElementById('btn-source-gee');
+  const btnLora = document.getElementById('btn-source-lora');
   const badge = document.getElementById('telemetry-source-badge');
 
+  const inactiveBtnClass = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
+
+  if (btnBaseline) btnBaseline.className = inactiveBtnClass;
+  if (btnGee) {
+    btnGee.className = inactiveBtnClass.replace('text-slate-400', 'text-emerald-400');
+    btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
+  }
+  if (btnLora) {
+    btnLora.className = inactiveBtnClass.replace('text-slate-400', 'text-cyan-400');
+    btnLora.innerHTML = '<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">📡 LoRa (Campo)</span>';
+  }
+
   if (state.dataSource === 'gee') {
-    if (btnBaseline) {
-      btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
-    }
     if (btnGee) {
-      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0';
+      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0 border border-emerald-400/50';
       btnGee.innerHTML = state.isGeeLoading 
         ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
         : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
@@ -4827,13 +5988,21 @@ function updateSourceToggleUI() {
       badge.textContent = '🛰️ GEE EN VIVO';
       badge.title = 'Datos satelitales en tiempo real obtenidos de Google Earth Engine';
     }
+  } else if (state.dataSource === 'lora') {
+    if (btnLora) {
+      btnLora.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
+      btnLora.innerHTML = state.isLoraLoading
+        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando LoRa...</span>'
+        : '<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">📡 LoRa (Campo)</span>';
+    }
+    if (badge) {
+      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-400 animate-pulse whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.5)]';
+      badge.textContent = '📡 LORA CAMPO';
+      badge.title = 'Telemetría in-situ de Nodos Centinela LoRa (ESP32-C3 + Ra-02 / SX1262)';
+    }
   } else {
     if (btnBaseline) {
       btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
-    }
-    if (btnGee) {
-      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
-      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
@@ -4841,6 +6010,7 @@ function updateSourceToggleUI() {
       badge.title = 'Serie temporal histórica calibrada con benchmark NASA (13 meses)';
     }
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function updateComparisonModal(data) {
@@ -4914,8 +6084,11 @@ function selectNode(nodeId) {
     if (nodeId === 'gran_chaco') {
       fitGranChacoBounds(true);
     } else {
+      const isLora = state.dataSource === 'lora';
+      const isGateway = ['quimili', 'anatuya', 'bandera', 'termas'].includes(nodeId);
       map.flyTo({
         center: node.coords,
+        offset: (isLora && isGateway) ? [0, 80] : [0, 0],
         zoom: node.zoom || 8.0,
         duration: 1300
       });
@@ -4927,6 +6100,7 @@ function selectNode(nodeId) {
   } else {
     updateUI();
   }
+  renderSentinelMarkers();
 }
 
 // ================= ACTUALIZACIÓN DE TELEMETRÍA Y UI =================
@@ -5153,49 +6327,162 @@ function updateUI() {
     if (window.lucide) lucide.createIcons();
   }
 
-  // 4. Métricas Satelitales Acopladas
+  // 4. Telemetría (Satelital Acoplada vs LoRa en Campo)
+  const isLoraMode = state.dataSource === 'lora';
   const siteLabel = document.getElementById('telemetry-site-label');
   if (siteLabel) {
     if (activeNode.id === 'gran_chaco') {
       siteLabel.textContent = 'Gran Chaco (~1.1M km²)';
       siteLabel.title = 'Gran Chaco Americano (Consolidado Ecorregional Trinacional: ARG • BOL • PRY)';
     } else {
-      const shortCity = activeNode.name.split('(')[0].replace('Nodo', '').trim();
-      const prov = activeNode.country.includes('(') ? activeNode.country.split('(')[1].replace(')', '').trim() : activeNode.country;
-      siteLabel.textContent = `${shortCity} (${prov})`;
-      siteLabel.title = `${activeNode.name} • ${activeNode.country}`;
+      // Limpiar cualquier caracter '_' residual y normalizar texto
+      const cleanNodeName = (activeNode.name || '').replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+      const shortCity = cleanNodeName.split('(')[0].replace('Nodo', '').trim();
+      const provRaw = activeNode.country.includes('(') ? activeNode.country.split('(')[1].replace(')', '').trim() : activeNode.country;
+      const prov = provRaw.replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+
+      if (isLoraMode) {
+        siteLabel.textContent = shortCity;
+        siteLabel.title = `${cleanNodeName} (${prov})`;
+      } else {
+        siteLabel.textContent = `${shortCity} (${prov})`;
+        siteLabel.title = `${cleanNodeName} • ${activeNode.country}`;
+      }
     }
   }
 
-  const precEl = document.getElementById('metric-precip');
-  if (precEl) precEl.textContent = (currentStepData.precip * (spiFactor > 1.1 ? 1.25 : 0.95)).toFixed(1);
+  const satellitePanel = document.getElementById('telemetry-satellite-panel');
+  const loraPanel = document.getElementById('telemetry-lora-panel');
+  const telemetryTitle = document.getElementById('telemetry-card-title');
+  const telemetryIcon = document.getElementById('telemetry-card-icon');
 
-  const precAnomEl = document.getElementById('metric-precip-anom');
-  if (precAnomEl) {
-    precAnomEl.textContent = `${currentStepData.precipAnom >= 0 ? '+' : ''}${currentStepData.precipAnom}% vs climatología (μ)`;
-    precAnomEl.className = currentStepData.precipAnom < -30 ? 'text-[10px] font-mono text-red-400 mt-0.5' : 'text-[10px] font-mono text-cyan-400 mt-0.5';
-  }
+  if (isLoraMode) {
+    if (satellitePanel) satellitePanel.classList.add('hidden');
+    if (loraPanel) loraPanel.classList.remove('hidden');
+    if (telemetryTitle) telemetryTitle.textContent = 'TELEMETRÍA LORA EN TIEMPO REAL';
+    if (telemetryIcon) telemetryIcon.setAttribute('data-lucide', 'radio');
 
-  const gwetEl = document.getElementById('metric-gwetroot');
-  if (gwetEl) gwetEl.textContent = currentGwet;
+    // Cargar telemetría del nodo activo
+    const loraTelemetry = getLoraTelemetryForNode(activeNode.id || state.activeNode);
+    if (loraTelemetry) {
+      // 1. Humedad de suelo (In-Situ)
+      const soilEl = document.getElementById('lora-metric-soil');
+      if (soilEl) soilEl.textContent = loraTelemetry.humedad_suelo_0_7cm_m3m3.toFixed(2);
+      const soilStatusEl = document.getElementById('lora-metric-soil-status');
+      if (soilStatusEl) {
+        const val = loraTelemetry.humedad_suelo_0_7cm_m3m3;
+        if (val >= 0.25) {
+          soilStatusEl.textContent = 'Óptima';
+          soilStatusEl.className = 'text-[9px] font-mono text-emerald-400 font-bold';
+        } else if (val >= 0.18) {
+          soilStatusEl.textContent = 'Seco (Vigilancia)';
+          soilStatusEl.className = 'text-[9px] font-mono text-amber-400 font-bold';
+        } else {
+          soilStatusEl.textContent = 'Crítica (Déficit)';
+          soilStatusEl.className = 'text-[9px] font-mono text-red-400 font-bold';
+        }
+      }
 
-  const gwetAnomEl = document.getElementById('metric-gwetroot-anom');
-  if (gwetAnomEl) gwetAnomEl.textContent = `Z-score: ${currentStepData.gwetrootZ >= 0 ? '+' : ''}${currentStepData.gwetrootZ.toFixed(2)} σ`;
+      // 2. Batería del Nodo (Solar DIY)
+      const batEl = document.getElementById('lora-metric-bat');
+      if (batEl) batEl.textContent = loraTelemetry.bateria_v.toFixed(2);
+      const batPctEl = document.getElementById('lora-metric-bat-pct');
+      if (batPctEl) {
+        const pct = Math.min(100, Math.max(0, Math.round(((loraTelemetry.bateria_v - 3.60) / 0.60) * 100)));
+        batPctEl.textContent = `${pct}% est.`;
+      }
 
-  const ndviEl = document.getElementById('metric-ndvi');
-  if (ndviEl) ndviEl.textContent = currentNdvi;
+      // 3. Fuerza de Señal (RSSI)
+      const rssiEl = document.getElementById('lora-metric-rssi');
+      if (rssiEl) rssiEl.textContent = Math.round(loraTelemetry.rssi);
+      const rssiVal = loraTelemetry.rssi;
+      const b1 = document.getElementById('rssi-bar-1');
+      const b2 = document.getElementById('rssi-bar-2');
+      const b3 = document.getElementById('rssi-bar-3');
+      const b4 = document.getElementById('rssi-bar-4');
+      const rssiLvl = document.getElementById('lora-metric-rssi-level');
 
-  const ndviAnomEl = document.getElementById('metric-ndvi-anom');
-  if (ndviAnomEl) ndviAnomEl.textContent = Number(currentNdvi) < 0.28 ? 'Estrés fotosintético severo' : (Number(currentNdvi) < 0.45 ? 'Vigor medio' : 'Biomasa óptima');
+      if (b1 && b2 && b3 && b4 && rssiLvl) {
+        const resetBars = () => {
+          [b1, b2, b3, b4].forEach(b => { b.className = 'w-1 rounded-xs bg-space-800'; });
+        };
+        resetBars();
+        if (rssiVal >= -85) {
+          [b1, b2, b3, b4].forEach(b => { b.className = 'w-1 rounded-xs bg-emerald-400'; });
+          rssiLvl.textContent = 'Excelente';
+          rssiLvl.className = 'text-[8.5px] font-mono text-emerald-400 font-semibold';
+        } else if (rssiVal >= -100) {
+          [b1, b2, b3].forEach(b => { b.className = 'w-1 rounded-xs bg-cyan-400'; });
+          rssiLvl.textContent = 'Buena';
+          rssiLvl.className = 'text-[8.5px] font-mono text-cyan-400 font-semibold';
+        } else if (rssiVal >= -112) {
+          [b1, b2].forEach(b => { b.className = 'w-1 rounded-xs bg-amber-400'; });
+          rssiLvl.textContent = 'Marginal';
+          rssiLvl.className = 'text-[8.5px] font-mono text-amber-400 font-semibold';
+        } else {
+          b1.className = 'w-1 rounded-xs bg-red-400';
+          rssiLvl.textContent = 'Crítica';
+          rssiLvl.className = 'text-[8.5px] font-mono text-red-400 font-semibold';
+        }
+      }
 
-  // ONI Observado en Telemetría vs Contribución SHAP
-  const oniEl = document.getElementById('metric-oni');
-  if (oniEl) oniEl.textContent = `${currentStepData.oni >= 0 ? '+' : ''}${currentStepData.oni.toFixed(2)}`;
+      // 4. Calidad de Enlace (SNR)
+      const snrEl = document.getElementById('lora-metric-snr');
+      if (snrEl) snrEl.textContent = `${loraTelemetry.snr >= 0 ? '+' : ''}${loraTelemetry.snr.toFixed(1)}`;
+      const timeEl = document.getElementById('lora-metric-time');
+      if (timeEl) timeEl.textContent = loraTelemetry.hora_local;
 
-  const oniPhaseEl = document.getElementById('metric-oni-phase');
-  if (oniPhaseEl) {
-    const rawVal = currentStepData.oni;
-    oniPhaseEl.textContent = rawVal >= 0.5 ? `Fase "El Niño" (+${rawVal.toFixed(2)} °C)` : (rawVal <= -0.5 ? `Fase "La Niña" (${rawVal.toFixed(2)} °C)` : `Fase Neutral (${rawVal.toFixed(2)} °C)`);
+      // 5. Actualización de Indicador Destacado de Gateway Central y Nodos en Santiago del Estero
+      const sgoGateways = getCentralGatewayNodesByProvince('Santiago del Estero');
+      const sgoGatewaysCount = sgoGateways.length;
+      const sgoNodes = getLoraNodesByProvince('Santiago del Estero');
+      const sgoNodesCount = sgoNodes.length;
+
+      const sgoGatewayCountEl = document.getElementById('lora-sgo-gateway-count');
+      if (sgoGatewayCountEl) {
+        sgoGatewayCountEl.textContent = `[ ${sgoGatewaysCount} / ${Math.max(1, sgoGatewaysCount)} ]`;
+      }
+      const sgoNodesCountEl = document.getElementById('lora-sgo-nodes-count');
+      if (sgoNodesCountEl) {
+        sgoNodesCountEl.textContent = sgoNodesCount;
+      }
+    }
+  } else {
+    if (satellitePanel) satellitePanel.classList.remove('hidden');
+    if (loraPanel) loraPanel.classList.add('hidden');
+    if (telemetryTitle) telemetryTitle.textContent = 'Telemetría Satelital Acoplada';
+    if (telemetryIcon) telemetryIcon.setAttribute('data-lucide', 'satellite');
+
+    const precEl = document.getElementById('metric-precip');
+    if (precEl) precEl.textContent = (currentStepData.precip * (spiFactor > 1.1 ? 1.25 : 0.95)).toFixed(1);
+
+    const precAnomEl = document.getElementById('metric-precip-anom');
+    if (precAnomEl) {
+      precAnomEl.textContent = `${currentStepData.precipAnom >= 0 ? '+' : ''}${currentStepData.precipAnom}% vs climatología (μ)`;
+      precAnomEl.className = currentStepData.precipAnom < -30 ? 'text-[10px] font-mono text-red-400 mt-0.5' : 'text-[10px] font-mono text-cyan-400 mt-0.5';
+    }
+
+    const gwetEl = document.getElementById('metric-gwetroot');
+    if (gwetEl) gwetEl.textContent = currentGwet;
+
+    const gwetAnomEl = document.getElementById('metric-gwetroot-anom');
+    if (gwetAnomEl) gwetAnomEl.textContent = `Z-score: ${currentStepData.gwetrootZ >= 0 ? '+' : ''}${currentStepData.gwetrootZ.toFixed(2)} σ`;
+
+    const ndviEl = document.getElementById('metric-ndvi');
+    if (ndviEl) ndviEl.textContent = currentNdvi;
+
+    const ndviAnomEl = document.getElementById('metric-ndvi-anom');
+    if (ndviAnomEl) ndviAnomEl.textContent = Number(currentNdvi) < 0.28 ? 'Estrés fotosintético severo' : (Number(currentNdvi) < 0.45 ? 'Vigor medio' : 'Biomasa óptima');
+
+    // ONI Observado en Telemetría vs Contribución SHAP
+    const oniEl = document.getElementById('metric-oni');
+    if (oniEl) oniEl.textContent = `${currentStepData.oni >= 0 ? '+' : ''}${currentStepData.oni.toFixed(2)}`;
+
+    const oniPhaseEl = document.getElementById('metric-oni-phase');
+    if (oniPhaseEl) {
+      const rawVal = currentStepData.oni;
+      oniPhaseEl.textContent = rawVal >= 0.5 ? `Fase "El Niño" (+${rawVal.toFixed(2)} °C)` : (rawVal <= -0.5 ? `Fase "La Niña" (${rawVal.toFixed(2)} °C)` : `Fase Neutral (${rawVal.toFixed(2)} °C)`);
+    }
   }
 
   // 5. Texto SHAP: Distingue explícitamente ONI Observado vs Contribución SHAP del ONI
@@ -5640,9 +6927,10 @@ function setupEventHandlers() {
     btnCloseDocs.addEventListener('click', () => modalDocs.classList.add('hidden'));
   }
 
-  // Conmutador de Fuente de Datos: Planilla Demo vs GEE en Vivo & Modal Comparativa
+  // Conmutador de Fuente de Datos: Planilla Demo vs GEE en Vivo vs LoRa Campo & Modal Comparativa
   const btnSourceBaseline = document.getElementById('btn-source-baseline');
   const btnSourceGee = document.getElementById('btn-source-gee');
+  const btnSourceLora = document.getElementById('btn-source-lora');
   const btnModalCompare = document.getElementById('btn-modal-compare-data');
   const modalCompare = document.getElementById('modal-compare-data');
   const btnCloseCompare = document.getElementById('btn-close-compare');
@@ -5654,6 +6942,9 @@ function setupEventHandlers() {
   }
   if (btnSourceGee) {
     btnSourceGee.addEventListener('click', () => setDataSource('gee'));
+  }
+  if (btnSourceLora) {
+    btnSourceLora.addEventListener('click', () => setDataSource('lora'));
   }
   if (btnModalCompare && modalCompare) {
     btnModalCompare.addEventListener('click', () => {

@@ -4,10 +4,10 @@ NASA Space Apps Challenge 2026
 API Backend FastAPI: Integración Google Earth Engine (GEE), LightGBM y Random Forest con SHAP
 """
 
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import math
 import numpy as np
 import os
@@ -15,10 +15,17 @@ import json
 import time
 import uuid
 import smtplib
+import random
+import logging
+from datetime import datetime
 import urllib.request
 import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+# Configuración de logging para telemetría LoRa e IoT
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("climate_lora")
 
 # Importar gestor de Google Earth Engine
 from gee_service import gee_manager, GEE_CATALOG
@@ -68,6 +75,262 @@ class TelemetryPayload(BaseModel):
 class GEEConfigRequest(BaseModel):
     project_id: Optional[str] = None
     service_account_json: Optional[str] = None
+
+# ================= MODELO DE DATOS LORA (ESP32-C3 + Ra-02 / SX1262) =================
+class LoraTelemetry(BaseModel):
+    node_id: str
+    localidad: str
+    provincia: str
+    latitud: float
+    longitud: float
+    altitud_m: Optional[float] = None
+    fecha_local: str
+    hora_local: str
+    fuente_id: str = "LORA_DIY_CAMPO"
+    tipo_dato: str = "OBSERVACION_IN_SITU"
+    temp_max_C: float
+    temp_min_C: float
+    temp_media_C: float
+    humedad_relativa_media_pct: float
+    humedad_relativa_min_pct: float
+    humedad_suelo_0_7cm_m3m3: float
+    bateria_v: float
+    rssi: float
+    snr: float
+    tipo_nodo: Optional[str] = "SENSOR_CAMPO"
+    hardware_modelo: Optional[str] = "ESP32-C3 + Ra-02"
+    canales_rf: Optional[int] = 1
+    radio_cobertura_km: Optional[float] = 15.0
+    nodos_asociados_count: Optional[int] = 0
+    estado_conexion: Optional[str] = "Activo"
+    velocidad_propagacion_ms: Optional[float] = 12.4
+    frecuencia_mhz: Optional[float] = 915.3
+    paquetes_perdidos_pct: Optional[float] = 0.4
+    velocidad_retransmision: Optional[str] = "SF7 / 125 kHz @ 5.4 kbps"
+    sensores_perifericos: Optional[List[Dict[str, Any]]] = None
+
+# Almacén en memoria de la última telemetría in-situ recibida por nodo
+LATEST_LORA_STORE: Dict[str, Dict[str, Any]] = {}
+
+# Configuración geográfica fija de los Nodos Centinela LoRa Trinacionales y Gateways
+LORA_SENTINEL_NODES_CONFIG = [
+    # ================= 4 NODOS CENTRALES GATEWAY HUBS EN SANTIAGO DEL ESTERO =================
+    {
+        "node_id": "QUIMILI_NODO_01",
+        "localidad": "Quimilí",
+        "provincia": "Santiago del Estero",
+        "latitud": -27.6460,
+        "longitud": -62.4160,
+        "altitud_m": 145.0,
+        "temp_base": 25.4,
+        "suelo_base": 0.22,
+        "rssi_base": -82.0,
+        "snr_base": 8.5,
+        "tipo_nodo": "GATEWAY_HUB",
+        "hardware_modelo": "MultiTech Conduit AEP (MTCDT)",
+        "canales_rf": 8,
+        "radio_cobertura_km": 15.0,
+        "frecuencia_mhz": 915.3,
+        "velocidad_retransmision": "SF7 / 125 kHz @ 5.4 kbps",
+        "sensores_perifericos": [
+            {"id": "QUIMILI_CAMPO_02", "nombre": "Sacháyoj", "distancia_km": 12.4, "lat": -26.6800, "lon": -61.8200},
+            {"id": "QUIMILI_CAMPO_03", "nombre": "Otumpa", "distancia_km": 8.7, "lat": -27.7500, "lon": -62.2300},
+            {"id": "QUIMILI_CAMPO_04", "nombre": "Tintina", "distancia_km": 14.1, "lat": -27.0300, "lon": -62.7100}
+        ]
+    },
+    {
+        "node_id": "ANATUYA_GATEWAY_02",
+        "localidad": "Añatuya",
+        "provincia": "Santiago del Estero",
+        "latitud": -28.4600,
+        "longitud": -62.8340,
+        "altitud_m": 108.0,
+        "temp_base": 26.1,
+        "suelo_base": 0.21,
+        "rssi_base": -81.5,
+        "snr_base": 9.2,
+        "tipo_nodo": "GATEWAY_HUB",
+        "hardware_modelo": "MultiTech Conduit IP67 (MTCDTIP)",
+        "canales_rf": 8,
+        "radio_cobertura_km": 15.0,
+        "frecuencia_mhz": 915.3,
+        "velocidad_retransmision": "SF7 / 125 kHz @ 5.4 kbps",
+        "sensores_perifericos": [
+            {"id": "ANATUYA_CAMPO_01", "nombre": "Los Juríes", "distancia_km": 11.5, "lat": -28.3800, "lon": -62.1100},
+            {"id": "ANATUYA_CAMPO_02", "nombre": "Herrera", "distancia_km": 9.8, "lat": -28.4300, "lon": -63.0500},
+            {"id": "ANATUYA_CAMPO_03", "nombre": "Colonia Dora", "distancia_km": 13.2, "lat": -28.6000, "lon": -62.9500}
+        ]
+    },
+    {
+        "node_id": "BANDERA_GATEWAY_03",
+        "localidad": "Bandera",
+        "provincia": "Santiago del Estero",
+        "latitud": -28.8870,
+        "longitud": -62.2660,
+        "altitud_m": 84.0,
+        "temp_base": 25.0,
+        "suelo_base": 0.25,
+        "rssi_base": -83.2,
+        "snr_base": 8.0,
+        "tipo_nodo": "GATEWAY_HUB",
+        "hardware_modelo": "MultiTech Conduit AEP (MTCDT)",
+        "canales_rf": 8,
+        "radio_cobertura_km": 12.5,
+        "frecuencia_mhz": 915.3,
+        "velocidad_retransmision": "SF8 / 125 kHz @ 3.1 kbps",
+        "sensores_perifericos": [
+            {"id": "BANDERA_CAMPO_01", "nombre": "Cuatro Bocas", "distancia_km": 7.3, "lat": -28.9800, "lon": -61.9800},
+            {"id": "BANDERA_CAMPO_02", "nombre": "Fortín Inca", "distancia_km": 10.9, "lat": -29.0700, "lon": -62.3800}
+        ]
+    },
+    {
+        "node_id": "TERMAS_GATEWAY_04",
+        "localidad": "Termas de Río Hondo",
+        "provincia": "Santiago del Estero",
+        "latitud": -27.4930,
+        "longitud": -64.8590,
+        "altitud_m": 265.0,
+        "temp_base": 24.8,
+        "suelo_base": 0.27,
+        "rssi_base": -80.8,
+        "snr_base": 9.8,
+        "tipo_nodo": "GATEWAY_HUB",
+        "hardware_modelo": "MultiTech Conduit IP67 (MTCDTIP)",
+        "canales_rf": 8,
+        "radio_cobertura_km": 15.0,
+        "frecuencia_mhz": 915.3,
+        "velocidad_retransmision": "SF7 / 125 kHz @ 5.4 kbps",
+        "sensores_perifericos": [
+            {"id": "TERMAS_CAMPO_01", "nombre": "Villa Balnearia", "distancia_km": 5.8, "lat": -27.5200, "lon": -64.8900},
+            {"id": "TERMAS_CAMPO_02", "nombre": "El Charco", "distancia_km": 13.6, "lat": -27.3500, "lon": -64.6700},
+            {"id": "TERMAS_CAMPO_03", "nombre": "Embalse Frontal", "distancia_km": 6.4, "lat": -27.5050, "lon": -64.9150}
+        ]
+    },
+
+    # ================= SENSORES DE CAMPO LO RA EN SANTIAGO DEL ESTERO =================
+    {
+        "node_id": "QUIMILI_CAMPO_02",
+        "localidad": "Sacháyoj",
+        "provincia": "Santiago del Estero",
+        "latitud": -26.6800,
+        "longitud": -61.8200,
+        "altitud_m": 115.0,
+        "temp_base": 25.8,
+        "suelo_base": 0.20,
+        "rssi_base": -89.0,
+        "snr_base": 6.8,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + Ra-02",
+        "canales_rf": 1
+    },
+    {
+        "node_id": "ANATUYA_CAMPO_01",
+        "localidad": "Los Juríes",
+        "provincia": "Santiago del Estero",
+        "latitud": -28.3800,
+        "longitud": -62.1100,
+        "altitud_m": 95.0,
+        "temp_base": 26.2,
+        "suelo_base": 0.23,
+        "rssi_base": -91.0,
+        "snr_base": 6.2,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + SX1262",
+        "canales_rf": 1
+    },
+    {
+        "node_id": "BANDERA_CAMPO_01",
+        "localidad": "Cuatro Bocas",
+        "provincia": "Santiago del Estero",
+        "latitud": -28.9800,
+        "longitud": -61.9800,
+        "altitud_m": 82.0,
+        "temp_base": 25.1,
+        "suelo_base": 0.24,
+        "rssi_base": -93.5,
+        "snr_base": 5.9,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + Ra-02",
+        "canales_rf": 1
+    },
+    {
+        "node_id": "TERMAS_CAMPO_01",
+        "localidad": "Villa Balnearia",
+        "provincia": "Santiago del Estero",
+        "latitud": -27.5200,
+        "longitud": -64.8900,
+        "altitud_m": 255.0,
+        "temp_base": 24.6,
+        "suelo_base": 0.28,
+        "rssi_base": -88.0,
+        "snr_base": 7.4,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + SX1262",
+        "canales_rf": 1
+    },
+
+    # ================= NODOS REGIONALES TRINACIONALES GRAN CHACO =================
+    {
+        "node_id": "FILADELFIA_NODO_02",
+        "localidad": "Filadelfia",
+        "provincia": "Boquerón (Paraguay)",
+        "latitud": -22.3500,
+        "longitud": -60.0300,
+        "altitud_m": 135.0,
+        "temp_base": 27.8,
+        "suelo_base": 0.16,
+        "rssi_base": -96.0,
+        "snr_base": 5.2,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + Ra-02",
+        "canales_rf": 1
+    },
+    {
+        "node_id": "VILLAMONTES_NODO_03",
+        "localidad": "Villa Montes",
+        "provincia": "Tarija (Bolivia)",
+        "latitud": -21.2600,
+        "longitud": -63.4600,
+        "altitud_m": 390.0,
+        "temp_base": 24.1,
+        "suelo_base": 0.29,
+        "rssi_base": -104.0,
+        "snr_base": 2.8,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + SX1262",
+        "canales_rf": 1
+    },
+    {
+        "node_id": "SAENZPENA_NODO_04",
+        "localidad": "Sáenz Peña",
+        "provincia": "Chaco",
+        "latitud": -26.7900,
+        "longitud": -60.4400,
+        "altitud_m": 90.0,
+        "temp_base": 26.0,
+        "suelo_base": 0.24,
+        "rssi_base": -88.0,
+        "snr_base": 7.1,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + Ra-02",
+        "canales_rf": 1
+    },
+    {
+        "node_id": "RESISTENCIA_NODO_05",
+        "localidad": "Resistencia",
+        "provincia": "Chaco",
+        "latitud": -27.4500,
+        "longitud": -58.9800,
+        "altitud_m": 52.0,
+        "temp_base": 26.8,
+        "suelo_base": 0.35,
+        "rssi_base": -84.0,
+        "snr_base": 9.4,
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + SX1262",
+        "canales_rf": 1
+    }
+]
 
 @app.get("/")
 def read_root():
@@ -133,6 +396,130 @@ def configure_gee(config: GEEConfigRequest):
     # Reintentar inicialización
     gee_manager._try_initialize()
     return gee_manager.get_status()
+
+# ================= ENDPOINTS LORA CENTINELA (ESP32-C3 / Ra-02 / SX1262) =================
+@app.post("/api/nodes/telemetry", status_code=status.HTTP_201_CREATED)
+def ingest_lora_telemetry(telemetry: LoraTelemetry):
+    """
+    Endpoint de Ingesta Real para Nodos Centinela LoRa de campo (ESP32-C3 + Ra-02 / SX1262).
+    Valida la estructura recibida, registra en consola/logger y devuelve confirmación 201.
+    """
+    log_msg = (
+        f"[LoRa Ingesta Real] Nodo={telemetry.node_id} ({telemetry.localidad}, {telemetry.provincia}) | "
+        f"Suelo={telemetry.humedad_suelo_0_7cm_m3m3:.2f} m³/m³ | Batería={telemetry.bateria_v:.2f}V | "
+        f"RSSI={telemetry.rssi:.1f} dBm | SNR={telemetry.snr:.1f} dB | "
+        f"Temp={telemetry.temp_media_C:.1f}°C (Min: {telemetry.temp_min_C:.1f}, Max: {telemetry.temp_max_C:.1f}) | "
+        f"RH={telemetry.humedad_relativa_media_pct:.1f}% | Fecha={telemetry.fecha_local} {telemetry.hora_local}"
+    )
+    logger.info(log_msg)
+    print(log_msg)
+    
+    # Almacenar en el almacén de última telemetría in-situ recibida
+    LATEST_LORA_STORE[telemetry.node_id] = telemetry.model_dump() if hasattr(telemetry, "model_dump") else telemetry.dict()
+    
+    return {"status": "success"}
+
+@app.get("/api/nodes/telemetry/simulate", response_model=List[LoraTelemetry])
+def simulate_lora_telemetry():
+    """
+    Mock dinámico que genera y devuelve una lista coherente de objetos LoraTelemetry
+    para los 5 Nodos Centinela Trinacionales (Quimilí, Filadelfia, Villa Montes, Sáenz Peña, Resistencia).
+    Aplica fluctuaciones físicas realistas en cada llamada.
+    """
+    now = datetime.now()
+    fecha_str = now.strftime("%Y-%m-%d")
+    hora_str = now.strftime("%H:%M:%S")
+
+    simulated_list: List[LoraTelemetry] = []
+
+    for cfg in LORA_SENTINEL_NODES_CONFIG:
+        # 1. Fluctuaciones realistas de hardware
+        # Voltaje de batería entre 3.6 y 4.2 V
+        bateria_v = round(random.uniform(3.60, 4.20), 2)
+        
+        # Intensidad de señal RSSI entre -120 y -80 dBm
+        rssi = round(random.uniform(-120.0, -80.0), 1)
+        
+        # Relación señal/ruido SNR entre -5.0 y 12.0 dB
+        snr = round(random.uniform(-5.0, 12.0), 1)
+        
+        # Humedad del suelo in-situ entre 0.10 y 0.40 m³/m³
+        humedad_suelo = round(random.uniform(0.10, 0.40), 2)
+
+        # 2. Temperaturas y humedad coherentes entre sí
+        t_base = cfg["temp_base"] + random.uniform(-1.2, 1.2)
+        temp_min = round(t_base - random.uniform(5.0, 7.5), 1)
+        temp_max = round(t_base + random.uniform(6.5, 9.5), 1)
+        temp_media = round((temp_min * 0.45 + temp_max * 0.55) + random.uniform(-0.3, 0.3), 1)
+
+        # Humedad relativa coherente: min <= media
+        rh_min = round(random.uniform(28.0, 42.0), 1)
+        rh_med = round(min(96.0, rh_min + random.uniform(18.0, 32.0)), 1)
+
+        # 3. Métricas extendidas de conectividad y radioenlace LoRa
+        is_gateway = cfg.get("tipo_nodo") == "GATEWAY_HUB"
+        radio_cobertura = cfg.get("radio_cobertura_km", 15.0 if is_gateway else 5.0)
+        frecuencia_mhz = cfg.get("frecuencia_mhz", 915.3)
+        velocidad_retransmision = cfg.get("velocidad_retransmision", "SF7 / 125 kHz @ 5.4 kbps")
+        paquetes_perdidos = round(random.uniform(0.1, 0.8), 2) if is_gateway else round(random.uniform(0.4, 2.2), 2)
+        velocidad_ms = round(random.uniform(10.5, 14.5), 1)  # retardo de propagación de trama en ms
+        estado_conexion = "Activo"
+
+        # Sensores periféricos asociados dentro del radio útil de cobertura (5 a 15 km)
+        sensores_raw = cfg.get("sensores_perifericos", None)
+        sensores_dinamicos = None
+        if sensores_raw:
+            sensores_dinamicos = []
+            for s in sensores_raw:
+                sensores_dinamicos.append({
+                    "id": s.get("id"),
+                    "nombre": s.get("nombre"),
+                    "distancia_km": s.get("distancia_km"),
+                    "lat": s.get("lat"),
+                    "lon": s.get("lon"),
+                    "rssi": round(random.uniform(-105.0, -84.0), 1),
+                    "snr": round(random.uniform(4.5, 9.8), 1),
+                    "bateria_v": round(random.uniform(3.70, 4.18), 2),
+                    "estado": "Activo"
+                })
+
+        nodos_asociados = len(sensores_dinamicos) if sensores_dinamicos is not None else 0
+
+        node_data = LoraTelemetry(
+            node_id=cfg["node_id"],
+            localidad=cfg["localidad"],
+            provincia=cfg["provincia"],
+            latitud=cfg["latitud"],
+            longitud=cfg["longitud"],
+            altitud_m=cfg["altitud_m"],
+            fecha_local=fecha_str,
+            hora_local=hora_str,
+            fuente_id="LORA_DIY_CAMPO",
+            tipo_dato="OBSERVACION_IN_SITU",
+            temp_max_C=temp_max,
+            temp_min_C=temp_min,
+            temp_media_C=temp_media,
+            humedad_relativa_media_pct=rh_med,
+            humedad_relativa_min_pct=rh_min,
+            humedad_suelo_0_7cm_m3m3=humedad_suelo,
+            bateria_v=bateria_v,
+            rssi=rssi,
+            snr=snr,
+            tipo_nodo=cfg.get("tipo_nodo", "SENSOR_CAMPO"),
+            hardware_modelo=cfg.get("hardware_modelo", "ESP32-C3 + Ra-02"),
+            canales_rf=cfg.get("canales_rf", 1),
+            radio_cobertura_km=radio_cobertura,
+            nodos_asociados_count=nodos_asociados,
+            estado_conexion=estado_conexion,
+            velocidad_propagacion_ms=velocidad_ms,
+            frecuencia_mhz=frecuencia_mhz,
+            paquetes_perdidos_pct=paquetes_perdidos,
+            velocidad_retransmision=velocidad_retransmision,
+            sensores_perifericos=sensores_dinamicos
+        )
+        simulated_list.append(node_data)
+
+    return simulated_list
 
 # ================= MOTOR DE MACHINE LEARNING HÍBRIDO =================
 @app.post("/api/predict")
