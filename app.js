@@ -126,8 +126,9 @@ const QUIMILI_COORDS = SENTINEL_NODES.quimili.coords;
 const CHACO_CENTER = GRAN_CHACO_CENTER;
 
 // Open high-resolution tile styles (NO REQUIEREN API KEY NI TIENEN MARCA DE AGUA)
-const TILE_STYLES = {
-  dark: {
+function getMasterMapStyle(initialTheme) {
+  const isLight = initialTheme === 'light';
+  return {
     version: 8,
     sources: {
       'esri-dark': {
@@ -138,37 +139,28 @@ const TILE_STYLES = {
         tileSize: 256,
         attribution: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap'
       },
-      'esri-labels': {
+      'esri-labels-dark': {
         type: 'raster',
         tiles: [
           'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
         ],
         tileSize: 256
-      }
-    },
-    layers: [
-      {
-        id: 'esri-dark-layer',
-        type: 'raster',
-        source: 'esri-dark',
-        minzoom: 0,
-        maxzoom: 19
       },
-      {
-        id: 'esri-labels-layer',
+      'esri-light': {
         type: 'raster',
-        source: 'esri-labels',
-        minzoom: 0,
-        maxzoom: 19,
-        paint: {
-          'raster-opacity': 0.30
-        }
-      }
-    ]
-  },
-  satellite: {
-    version: 8,
-    sources: {
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap'
+      },
+      'esri-labels-light': {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256
+      },
       'esri-sat': {
         type: 'raster',
         tiles: [
@@ -176,21 +168,7 @@ const TILE_STYLES = {
         ],
         tileSize: 256,
         attribution: '&copy; Esri, Maxar, Earthstar Geographics'
-      }
-    },
-    layers: [
-      {
-        id: 'esri-sat-layer',
-        type: 'raster',
-        source: 'esri-sat',
-        minzoom: 0,
-        maxzoom: 19
-      }
-    ]
-  },
-  osm: {
-    version: 8,
-    sources: {
+      },
       'osm-tiles': {
         type: 'raster',
         tiles: [
@@ -202,53 +180,64 @@ const TILE_STYLES = {
     },
     layers: [
       {
-        id: 'osm-layer',
+        id: 'basemap-dark-layer',
         type: 'raster',
-        source: 'osm-tiles',
+        source: 'esri-dark',
         minzoom: 0,
-        maxzoom: 19
-      }
-    ]
-  },
-  light: {
-    version: 8,
-    sources: {
-      'esri-light': {
-        type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-        ],
-        tileSize: 256,
-        attribution: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap'
+        maxzoom: 19,
+        layout: { visibility: isLight ? 'none' : 'visible' }
       },
-      'esri-labels': {
-        type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
-        ],
-        tileSize: 256
-      }
-    },
-    layers: [
       {
-        id: 'esri-light-layer',
+        id: 'basemap-dark-labels',
+        type: 'raster',
+        source: 'esri-labels-dark',
+        minzoom: 0,
+        maxzoom: 19,
+        paint: { 'raster-opacity': 0.30 },
+        layout: { visibility: isLight ? 'none' : 'visible' }
+      },
+      {
+        id: 'basemap-light-layer',
         type: 'raster',
         source: 'esri-light',
         minzoom: 0,
-        maxzoom: 19
+        maxzoom: 19,
+        layout: { visibility: isLight ? 'visible' : 'none' }
       },
       {
-        id: 'esri-labels-layer',
+        id: 'basemap-light-labels',
         type: 'raster',
-        source: 'esri-labels',
+        source: 'esri-labels-light',
         minzoom: 0,
         maxzoom: 19,
-        paint: {
-          'raster-opacity': 0.35
-        }
+        paint: { 'raster-opacity': 0.35 },
+        layout: { visibility: isLight ? 'visible' : 'none' }
+      },
+      {
+        id: 'basemap-sat-layer',
+        type: 'raster',
+        source: 'esri-sat',
+        minzoom: 0,
+        maxzoom: 19,
+        layout: { visibility: 'none' }
+      },
+      {
+        id: 'basemap-osm-layer',
+        type: 'raster',
+        source: 'osm-tiles',
+        minzoom: 0,
+        maxzoom: 19,
+        layout: { visibility: 'none' }
       }
     ]
-  }
+  };
+}
+
+const TILE_STYLES = {
+  dark: getMasterMapStyle('dark'),
+  light: getMasterMapStyle('light'),
+  satellite: getMasterMapStyle('dark'),
+  osm: getMasterMapStyle('dark')
 };
 
 // ================= TIMELINE STEPS (t-6 a t+6 meses) =================
@@ -4089,24 +4078,13 @@ function applyTheme(theme) {
   }
 
   if (typeof map !== 'undefined' && map && state.mapLoaded) {
-    if (theme === 'light' && state.activeMapStyle === 'dark') {
-      state.activeMapStyle = 'light';
-      map.setStyle(TILE_STYLES.light);
-      map.once('style.load', () => {
-        setupMapLayers();
-        updateMapData();
-      });
+    if (state.activeMapStyle === 'dark' || state.activeMapStyle === 'light') {
+      const nextBasemap = theme === 'light' ? 'light' : 'dark';
+      switchMapBasemap(nextBasemap);
       const btnDark = document.getElementById('btn-style-dark');
-      if (btnDark) btnDark.textContent = t('btn_style_light', 'Claro');
-    } else if (theme === 'dark' && state.activeMapStyle === 'light') {
-      state.activeMapStyle = 'dark';
-      map.setStyle(TILE_STYLES.dark);
-      map.once('style.load', () => {
-        setupMapLayers();
-        updateMapData();
-      });
-      const btnDark = document.getElementById('btn-style-dark');
-      if (btnDark) btnDark.textContent = t('btn_style_dark', 'Oscuro');
+      if (btnDark) {
+        btnDark.textContent = theme === 'light' ? t('btn_style_light', 'Claro') : t('btn_style_dark', 'Oscuro');
+      }
     }
   }
 
@@ -4276,7 +4254,7 @@ function initMap() {
 
     map = new mapLib.Map({
       container: 'map',
-      style: TILE_STYLES.dark,
+      style: getMasterMapStyle(state.currentTheme),
       center: GRAN_CHACO_CENTER,
       zoom: 5.2,
       attributionControl: false,
@@ -4330,8 +4308,9 @@ function setupMapLayers() {
         }
       });
 
-      // Cierre de popups o deselección al hacer clic en el fondo del mapa (sin crear marcador inspector azul)
-      map.on('click', () => {
+      // Clic en cualquier punto del mapa (dentro o fuera del Gran Chaco):
+      // Despliega el inspector puntual con telemetría agroclimática y coloca el marcador de mira
+      map.on('click', (e) => {
         if (activeGatewayPopup) {
           activeGatewayPopup.remove();
           activeGatewayPopup = null;
@@ -4339,7 +4318,7 @@ function setupMapLayers() {
         pinnedLoraGatewayId = null;
         hoveredLoraGatewayId = null;
         highlightLoraGatewayLinks(null);
-        closePointInspector();
+        handleMapPointClick(e.lngLat);
       });
     }
   } catch (err) {
@@ -4347,15 +4326,76 @@ function setupMapLayers() {
   }
 }
 
+// Conmutación atómica instantánea de mapas base sin destruir polígonos ni límites del Gran Chaco
+function switchMapBasemap(targetStyle) {
+  if (!map || !state.mapLoaded) return;
+  state.activeMapStyle = targetStyle;
+
+  const basemapLayers = [
+    { id: 'basemap-dark-layer', visible: targetStyle === 'dark' },
+    { id: 'basemap-dark-labels', visible: targetStyle === 'dark' },
+    { id: 'basemap-light-layer', visible: targetStyle === 'light' },
+    { id: 'basemap-light-labels', visible: targetStyle === 'light' },
+    { id: 'basemap-sat-layer', visible: targetStyle === 'satellite' },
+    { id: 'basemap-osm-layer', visible: targetStyle === 'osm' }
+  ];
+
+  basemapLayers.forEach(({ id, visible }) => {
+    if (map.getLayer(id)) {
+      map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+    }
+  });
+
+  // Calibración de contraste y nitidez del Gran Chaco según el mapa base
+  if (map.getLayer('chaco-regions-fill') && map.getLayer('chaco-regions-line')) {
+    if (targetStyle === 'satellite') {
+      // Satélite: borde cyan eléctrico de 2.5px y opacidad reducida a 0.42 para transparentar el terreno
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#22D3EE');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.5);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 1.0);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.42);
+    } else if (targetStyle === 'osm') {
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#0891B2');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.2);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 0.95);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.48);
+    } else if (targetStyle === 'light') {
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#0891B2');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.2);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 0.90);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.50);
+    } else {
+      // dark
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#06B6D4');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.0);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 0.85);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.55);
+    }
+  }
+}
+
 // ================= INSPECCIÓN PUNTUAL DINÁMICA DEL MAPA =================
 let pointInspectorMarker = null;
 
 function setPointInspectorMarker(lngLat) {
-  // Eliminado: no se renderizan círculos azules ni marcadores flotantes en clics generales
+  const mapLib = window.maplibregl || window.mapboxgl;
+  if (!mapLib || !map) return;
   if (pointInspectorMarker) {
     pointInspectorMarker.remove();
     pointInspectorMarker = null;
   }
+  const el = document.createElement('div');
+  el.className = 'point-inspector-marker pointer-events-none';
+  el.innerHTML = `
+    <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+      <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-cyan-400 opacity-75"></span>
+      <div style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: rgba(6, 182, 212, 0.45); border: 2px solid #38BDF8; box-shadow: 0 0 10px #06B6D4;"></div>
+      <div style="width: 5px; height: 5px; border-radius: 50%; background: #FFFFFF;"></div>
+    </div>
+  `;
+  const lng = Number(lngLat.lng != null ? lngLat.lng : lngLat[0]);
+  const lat = Number(lngLat.lat != null ? lngLat.lat : lngLat[1]);
+  pointInspectorMarker = new mapLib.Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(map);
 }
 
 function closePointInspector() {
@@ -7486,40 +7526,22 @@ function setupEventHandlers() {
   if (btnDark) {
     btnDark.addEventListener('click', () => {
       setActiveStyleBtn(btnDark);
-      if (map) {
-        const styleToSet = state.currentTheme === 'light' ? TILE_STYLES.light : TILE_STYLES.dark;
-        map.setStyle(styleToSet);
-        map.once('style.load', () => {
-          setupMapLayers();
-          updateMapData();
-        });
-      }
+      const targetStyle = state.currentTheme === 'light' ? 'light' : 'dark';
+      switchMapBasemap(targetStyle);
     });
   }
 
   if (btnSat) {
     btnSat.addEventListener('click', () => {
       setActiveStyleBtn(btnSat);
-      if (map) {
-        map.setStyle(TILE_STYLES.satellite);
-        map.once('style.load', () => {
-          setupMapLayers();
-          updateMapData();
-        });
-      }
+      switchMapBasemap('satellite');
     });
   }
 
   if (btnOsm) {
     btnOsm.addEventListener('click', () => {
       setActiveStyleBtn(btnOsm);
-      if (map) {
-        map.setStyle(TILE_STYLES.osm);
-        map.once('style.load', () => {
-          setupMapLayers();
-          updateMapData();
-        });
-      }
+      switchMapBasemap('osm');
     });
   }
 
