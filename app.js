@@ -4814,13 +4814,13 @@ function updateSourceToggleUI() {
 
   if (state.dataSource === 'gee') {
     if (btnBaseline) {
-      btnBaseline.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1.5 whitespace-nowrap shrink-0';
+      btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
     }
     if (btnGee) {
-      btnGee.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1.5 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0';
+      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0';
       btnGee.innerHTML = state.isGeeLoading 
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando GEE...</span>'
-        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE en Vivo</span>';
+        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
+        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 animate-pulse whitespace-nowrap shrink-0';
@@ -4829,11 +4829,11 @@ function updateSourceToggleUI() {
     }
   } else {
     if (btnBaseline) {
-      btnBaseline.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1.5 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
+      btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
     }
     if (btnGee) {
-      btnGee.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1.5 whitespace-nowrap shrink-0';
-      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE en Vivo</span>';
+      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
+      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
