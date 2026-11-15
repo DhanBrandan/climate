@@ -303,6 +303,259 @@
     .gateway-telemetry-popup .mapboxgl-popup-close-button {
       display: none !important;
     }
+
+    /* ================= LIGHT THEME OVERRIDES (html.light) ================= */
+    html.light body {
+      background-color: #F8FAFC !important;
+      color: #0F172A !important;
+    }
+
+    html.light header {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border-color: #E2E8F0 !important;
+    }
+
+    /* Backgrounds */
+    html.light .bg-space-950 {
+      background-color: #FFFFFF !important;
+    }
+    html.light .bg-space-950\/95,
+    html.light .bg-space-950\/90,
+    html.light .bg-space-950\/80,
+    html.light .bg-space-950\/70,
+    html.light .bg-space-950\/60,
+    html.light .bg-space-950\/50,
+    html.light .bg-space-950\/40 {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    html.light .bg-space-900 {
+      background-color: #F8FAFC !important;
+    }
+    html.light .bg-space-900\/95,
+    html.light .bg-space-900\/90,
+    html.light .bg-space-900\/80,
+    html.light .bg-space-900\/70 {
+      background-color: rgba(248, 250, 252, 0.95) !important;
+    }
+
+    html.light .bg-space-850 {
+      background-color: #F1F5F9 !important;
+    }
+
+    html.light .bg-space-800 {
+      background-color: #E2E8F0 !important;
+    }
+    html.light .bg-space-800\/90,
+    html.light .bg-space-800\/80,
+    html.light .bg-space-800\/60,
+    html.light .bg-space-800\/50,
+    html.light .bg-space-800\/40 {
+      background-color: rgba(226, 232, 240, 0.85) !important;
+    }
+
+    /* Hover states */
+    html.light .hover\:bg-space-800:hover,
+    html.light .hover\:bg-space-800\/80:hover,
+    html.light .hover\:bg-space-800\/50:hover,
+    html.light .hover\:bg-space-800\/40:hover {
+      background-color: #E2E8F0 !important;
+    }
+    html.light .hover\:bg-space-700:hover {
+      background-color: #CBD5E1 !important;
+    }
+
+    /* Borders */
+    html.light .border-space-800,
+    html.light .border-space-800\/80,
+    html.light .border-space-800\/60,
+    html.light .border-space-800\/40 {
+      border-color: #E2E8F0 !important;
+    }
+    html.light .border-space-700,
+    html.light .border-space-700\/80,
+    html.light .border-space-700\/60 {
+      border-color: #CBD5E1 !important;
+    }
+    html.light .divide-space-800 > :not([hidden]) ~ :not([hidden]),
+    html.light .divide-space-800\/60 > :not([hidden]) ~ :not([hidden]),
+    html.light .divide-space-800\/80 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #E2E8F0 !important;
+    }
+
+    /* Gradients */
+    html.light .from-space-850 {
+      --tw-gradient-from: #F8FAFC !important;
+    }
+    html.light .to-space-900 {
+      --tw-gradient-to: #FFFFFF !important;
+    }
+    html.light .via-space-850 {
+      --tw-gradient-via: #F1F5F9 !important;
+    }
+    html.light .from-cyan-950\/90 {
+      --tw-gradient-from: #E0F2FE !important;
+    }
+
+    /* Typography in Light Mode */
+    html.light .text-white:not(.bg-cyan-600 *):not(.bg-cyan-500 *):not(.bg-blue-600 *):not(.bg-purple-600 *):not(.bg-emerald-600 *):not(.bg-red-600 *):not(.bg-gradient-to-r *) {
+      color: #0F172A !important;
+    }
+    html.light .text-slate-100 {
+      color: #0F172A !important;
+    }
+    html.light .text-slate-200 {
+      color: #1E293B !important;
+    }
+    html.light .text-slate-300 {
+      color: #334155 !important;
+    }
+    html.light .text-slate-400 {
+      color: #64748B !important;
+    }
+    html.light .text-slate-500 {
+      color: #64748B !important;
+    }
+
+    /* Accents in Light Mode */
+    html.light .text-cyan-300 {
+      color: #0284C7 !important;
+    }
+    html.light .text-cyan-400 {
+      color: #0369A1 !important;
+    }
+    html.light .text-emerald-300 {
+      color: #047857 !important;
+    }
+    html.light .text-emerald-400 {
+      color: #059669 !important;
+    }
+    html.light .text-amber-300 {
+      color: #B45309 !important;
+    }
+    html.light .text-amber-400 {
+      color: #D97706 !important;
+    }
+    html.light .text-purple-300 {
+      color: #6D28D9 !important;
+    }
+    html.light .text-purple-400 {
+      color: #7C3AED !important;
+    }
+
+    /* Keep solid buttons with readable text */
+    html.light .bg-cyan-600,
+    html.light .bg-cyan-600 *,
+    html.light .bg-cyan-500,
+    html.light .bg-cyan-500 *,
+    html.light .bg-purple-600,
+    html.light .bg-purple-600 *,
+    html.light .bg-blue-600,
+    html.light .bg-blue-600 *,
+    html.light .bg-emerald-600,
+    html.light .bg-emerald-600 *,
+    html.light .bg-red-600,
+    html.light .bg-red-600 * {
+      color: #FFFFFF !important;
+    }
+
+    /* Badges & Alert highlights in Light Mode */
+    html.light #alert-card {
+      background-color: #FEF2F2 !important;
+      border-color: #FCA5A5 !important;
+    }
+    html.light .bg-cyan-950,
+    html.light .bg-cyan-950\/60,
+    html.light .bg-cyan-950\/40 {
+      background-color: #E0F2FE !important;
+      border-color: #7DD3FC !important;
+    }
+    html.light .bg-emerald-950\/40,
+    html.light .bg-emerald-950\/20 {
+      background-color: #D1FAE5 !important;
+      border-color: #6EE7B7 !important;
+    }
+    html.light .bg-amber-950\/20 {
+      background-color: #FEF3C7 !important;
+      border-color: #FCD34D !important;
+    }
+
+    /* Glass Panels */
+    html.light .glass-panel {
+      background: rgba(255, 255, 255, 0.94) !important;
+      border-color: #E2E8F0 !important;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Form Inputs & Selects */
+    html.light select,
+    html.light input[type="text"],
+    html.light input[type="email"],
+    html.light input[type="tel"] {
+      background-color: #FFFFFF !important;
+      color: #0F172A !important;
+      border-color: #CBD5E1 !important;
+    }
+
+    /* MapLibre / Mapbox Popups in Light Mode */
+    html.light .maplibregl-popup-content,
+    html.light .mapboxgl-popup-content {
+      background: #FFFFFF !important;
+      color: #0F172A !important;
+      border: 1px solid #CBD5E1 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12) !important;
+    }
+    html.light .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+    html.light .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+      border-bottom-color: #FFFFFF !important;
+    }
+    html.light .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+    html.light .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+      border-top-color: #FFFFFF !important;
+    }
+    html.light .maplibregl-popup-close-button,
+    html.light .mapboxgl-popup-close-button {
+      color: #64748B !important;
+    }
+
+    /* Gateway Telemetry Popup in Light Mode */
+    html.light .gateway-telemetry-popup .maplibregl-popup-content,
+    html.light .gateway-telemetry-popup .mapboxgl-popup-content {
+      background: #FFFFFF !important;
+      color: #0F172A !important;
+      border: 1px solid rgba(6, 182, 212, 0.5) !important;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15), 0 0 25px rgba(6, 182, 212, 0.15) !important;
+    }
+    html.light .gateway-telemetry-popup .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+    html.light .gateway-telemetry-popup .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+      border-bottom-color: #FFFFFF !important;
+    }
+    html.light .gateway-telemetry-popup .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+    html.light .gateway-telemetry-popup .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+      border-top-color: #FFFFFF !important;
+    }
+
+    /* Modals in Light Mode */
+    html.light #modal-gee > div,
+    html.light #modal-docs > div,
+    html.light #modal-alerts > div,
+    html.light #modal-compare-data > div {
+      background-color: #FFFFFF !important;
+      color: #0F172A !important;
+      border-color: #CBD5E1 !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    }
+    html.light #modal-gee .bg-space-850,
+    html.light #modal-docs .bg-space-850,
+    html.light #modal-alerts .bg-space-850,
+    html.light #modal-compare-data .bg-space-850 {
+      background-color: #F8FAFC !important;
+    }
+
+    /* Range slider track in light mode */
+    html.light #timeline-slider {
+      background-color: #E2E8F0 !important;
+    }
   </style>
 </head>
 
@@ -318,13 +571,13 @@
       </div>
       <div>
         <div class="flex items-center space-x-1.5">
-          <span class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-xs sm:text-sm lg:text-base whitespace-nowrap">PROYECTO CLIMATE</span>
+          <span data-i18n="brand_title" class="font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 text-xs sm:text-sm lg:text-base whitespace-nowrap">PROYECTO CLIMATE</span>
           <span class="hidden 2xl:inline text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 whitespace-nowrap">NASA Space Apps</span>
         </div>
         <p class="hidden 2xl:flex text-[10px] text-slate-400 font-mono items-center gap-1 whitespace-nowrap">
-          <span>Sistema Híbrido de Proyección & Alerta</span>
+          <span data-i18n="brand_sub">Sistema Híbrido de Proyección & Alerta</span>
           <span class="text-slate-600">•</span>
-          <span class="text-slate-300">Gran Chaco</span>
+          <span data-i18n="brand_region" class="text-slate-300">Gran Chaco</span>
         </p>
       </div>
     </div>
@@ -337,7 +590,7 @@
           <span id="header-pulse-dot" class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
         </span>
         <div class="text-[11px] flex items-center gap-1 shrink-0">
-          <span class="text-slate-400 font-mono hidden 2xl:inline whitespace-nowrap">Monitoreo:</span>
+          <span data-i18n="monitoring_label" class="text-slate-400 font-mono hidden 2xl:inline whitespace-nowrap">Monitoreo:</span>
           <select id="select-active-node" class="bg-space-950 border border-space-700/80 hover:border-cyan-500 rounded-md text-[10.5px] sm:text-[11px] font-semibold text-slate-200 px-1.5 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition w-28 sm:w-34 lg:w-44 truncate">
             <option value="gran_chaco" selected>🌎 Gran Chaco</option>
             <option value="quimili">🇦🇷 Quimilí (Hub Sgo. del Estero)</option>
@@ -364,22 +617,37 @@
       <div class="flex items-center bg-space-900/90 border border-space-700/80 rounded-lg p-0.5 shadow-sm shrink-0">
         <button id="btn-source-baseline" class="h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0" title="Modo Planilla Demo: Serie temporal calibrada con benchmark NASA (13 pasos)">
           <i data-lucide="table" class="w-3 h-3 shrink-0"></i>
-          <span class="whitespace-nowrap">Planilla</span>
+          <span data-i18n="source_baseline" class="whitespace-nowrap">Planilla</span>
         </button>
         <button id="btn-source-gee" class="h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo Google Earth Engine: Telemetría satelital en tiempo real (GPM, SMAP, MODIS)">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-          <span class="whitespace-nowrap">GEE Vivo</span>
+          <span data-i18n="source_gee" class="whitespace-nowrap">GEE Vivo</span>
         </button>
         <button id="btn-source-lora" class="h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-cyan-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo LoRa Campo: Telemetría in-situ de Nodos Centinela LoRa (ESP32-C3 + Ra-02 / SX1262)">
           <i data-lucide="radio" class="w-3 h-3 shrink-0"></i>
-          <span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>
+          <span class="whitespace-nowrap"><span data-i18n="source_lora">LoRa</span><span class="hidden 2xl:inline"> (Campo)</span></span>
         </button>
       </div>
 
       <!-- Botón Comparativa Planilla vs GEE -->
       <button id="btn-modal-compare-data" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-cyan-800/60 shadow-sm transition whitespace-nowrap shrink-0" title="Ver tabla comparativa: Planilla Demo vs Google Earth Engine en Vivo">
         <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
-        <span class="hidden xl:inline font-mono text-[10.5px] whitespace-nowrap">Comparar</span>
+        <span data-i18n="btn_compare" class="hidden xl:inline font-mono text-[10.5px] whitespace-nowrap">Comparar</span>
+      </button>
+
+      <!-- Divisor -->
+      <div class="h-3.5 w-px bg-space-800 shrink-0 hidden sm:block"></div>
+
+      <!-- Conmutador de Idioma (ES / EN) -->
+      <div id="lang-switcher" class="flex items-center bg-space-900/90 border border-space-700/80 rounded-lg p-0.5 shrink-0" title="Cambiar Idioma / Switch Language">
+        <button id="btn-lang-es" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-bold font-mono bg-cyan-600 text-white transition">ES</button>
+        <button id="btn-lang-en" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-bold font-mono text-slate-400 hover:text-white transition">EN</button>
+      </div>
+
+      <!-- Conmutador de Tema Claro / Oscuro -->
+      <button id="btn-theme-toggle" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-amber-300 border border-space-700 shadow-sm transition whitespace-nowrap shrink-0" title="Cambiar Tema (Oscuro / Claro) / Toggle Theme">
+        <i id="theme-toggle-icon" data-lucide="sun" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+        <span id="theme-toggle-label" data-i18n="btn_theme_mode" class="hidden xl:inline font-mono text-[10.5px] whitespace-nowrap">Claro</span>
       </button>
 
       <!-- Divisor -->
@@ -387,44 +655,44 @@
 
       <!-- Map Style Selector -->
       <div class="flex items-center bg-space-900/90 border border-space-700/80 rounded-lg p-0.5 shrink-0">
-        <button id="btn-style-dark" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0">Oscuro</button>
-        <button id="btn-style-sat" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">Satélite</button>
-        <button id="btn-style-osm" class="hidden 2xl:block h-6 px-1.5 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">OSM</button>
+        <button id="btn-style-dark" data-i18n="btn_style_dark" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0">Oscuro</button>
+        <button id="btn-style-sat" data-i18n="btn_style_sat" class="h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">Satélite</button>
+        <button id="btn-style-osm" data-i18n="btn_style_osm" class="hidden 2xl:block h-6 px-1.5 rounded text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">OSM</button>
       </div>
 
       <!-- Ficha Técnica & Ecuaciones Modal Trigger -->
       <button id="btn-modal-docs" class="h-7 hidden sm:flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700 text-purple-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Ver Ficha Técnica y Ecuaciones Matemáticas">
         <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400 shrink-0"></i>
-        <span class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Ficha</span>
+        <span data-i18n="btn_docs" class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Ficha</span>
       </button>
 
       <!-- Suscripción a Alertas Tempranas Modal Trigger -->
       <button id="btn-modal-alerts" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700 text-amber-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Suscribirse a alertas automáticas por Email o Telegram">
         <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-        <span class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Alertas</span>
+        <span data-i18n="btn_alerts" class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Alertas</span>
         <span id="alerts-sub-badge-count" class="hidden px-1 rounded-full text-[8px] bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-500/40">0</span>
       </button>
 
       <!-- Export Report (Generar PDF) -->
       <button id="btn-export-report" class="h-7 flex items-center space-x-1 px-2 sm:px-2.5 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm shadow-cyan-950 transition whitespace-nowrap shrink-0" title="Generar Informe Oficial en PDF">
         <i data-lucide="file-down" class="w-3.5 h-3.5 shrink-0"></i>
-        <span class="whitespace-nowrap">Reporte<span class="hidden sm:inline"> PDF</span></span>
+        <span class="whitespace-nowrap"><span data-i18n="btn_report">Reporte</span><span class="hidden sm:inline"> PDF</span></span>
       </button>
 
       <!-- Toggle Sidebar Button in Header -->
       <button id="btn-toggle-sidebar" class="h-7 flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-space-700 shadow-sm transition whitespace-nowrap shrink-0" title="Mostrar/Ocultar Panel Lateral">
         <i data-lucide="panel-right" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
-        <span class="hidden lg:inline whitespace-nowrap">Panel</span>
+        <span data-i18n="btn_panel" class="hidden lg:inline whitespace-nowrap">Panel</span>
       </button>
 
     </div>
   </header>
 
-  <!-- ================= MAIN WORKSPACE ================= -->
-  <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative min-h-0 h-[calc(100vh-3.5rem)] xl:h-[calc(100vh-4rem)]">
+  <!-- ================= MAIN WORKSPACE (Flex-1 Responsive Container) ================= -->
+  <div class="flex-1 min-h-0 w-full flex flex-col md:flex-row overflow-hidden relative">
 
     <!-- LEFT / CENTER AREA: MAP + CONTROLS + TIMELINE -->
-    <div class="flex-1 flex flex-col relative h-[50vh] md:h-full border-r border-space-800 min-h-0">
+    <div class="flex-1 min-h-0 flex flex-col relative h-[50vh] md:h-full border-r border-space-800">
       
       <!-- Top Overlay on Map: Layer Switcher & Recenter -->
       <div class="absolute top-2.5 left-2.5 right-2.5 z-10 flex flex-wrap items-center justify-between gap-1.5 pointer-events-none">
@@ -432,24 +700,24 @@
         <!-- Active Layer Switcher + Recenter Button (Pointer events auto) -->
         <div class="pointer-events-auto flex items-center flex-wrap gap-1 bg-space-900/90 backdrop-blur-md border border-space-700/80 rounded-xl p-1 shadow-2xl">
           <span class="text-[10px] xl:text-[11px] font-mono text-slate-400 px-2 hidden sm:flex items-center gap-1">
-            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> Capa:
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i> <span data-i18n="layer_label">Capa:</span>
           </span>
-          <button data-layer="spi" class="layer-btn active px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium bg-cyan-600 text-white transition">
+          <button data-layer="spi" data-i18n="layer_spi" class="layer-btn active px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium bg-cyan-600 text-white transition">
             SPI Sequía
           </button>
-          <button data-layer="gwetroot" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
+          <button data-layer="gwetroot" data-i18n="layer_gwetroot" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
             Humedad (SMAP)
           </button>
-          <button data-layer="ndvi" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
+          <button data-layer="ndvi" data-i18n="layer_ndvi" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
             NDVI (MODIS)
           </button>
-          <button data-layer="flood" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
+          <button data-layer="flood" data-i18n="layer_flood" class="layer-btn px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-medium text-slate-300 hover:text-white transition">
             Anegamiento
           </button>
           <div class="h-4 w-px bg-space-700 mx-1 hidden sm:block"></div>
           <button id="btn-recenter" class="px-2.5 py-1 rounded-lg text-[11px] xl:text-xs font-mono text-cyan-300 hover:text-white hover:bg-space-800 flex items-center gap-1.5 transition border border-cyan-500/30 bg-cyan-950/40" title="Ver todo el Gran Chaco Americano">
             <i data-lucide="globe-2" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>Enfocar Gran Chaco</span>
+            <span data-i18n="recenter_label">Enfocar Gran Chaco</span>
           </button>
         </div>
 
@@ -551,9 +819,9 @@
       </div>
 
       <!-- MAP LEGEND (Bottom-Right over Map) -->
-      <div id="map-legend" class="absolute bottom-20 xl:bottom-24 right-3 z-10 glass-panel rounded-xl p-2 xl:p-2.5 shadow-xl text-xs max-w-[190px] xl:max-w-[210px]">
+      <div id="map-legend" class="absolute bottom-20 xl:bottom-22 right-3 z-10 glass-panel rounded-xl p-2 xl:p-2.5 shadow-xl text-xs max-w-[190px] xl:max-w-[210px] pointer-events-auto">
         <div class="font-semibold text-slate-200 mb-1 flex items-center justify-between text-[11px] xl:text-xs">
-          <span id="legend-title">Escala SPI (Sequía)</span>
+          <span id="legend-title" data-i18n="legend_spi">Escala SPI (Sequía)</span>
           <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
         </div>
         <div id="legend-gradient" class="h-2 xl:h-2.5 w-full rounded-sm mb-1" style="background: linear-gradient(to right, #7F1D1D, #EF4444, #F59E0B, #E2E8F0, #3B82F6, #1E40AF);"></div>
@@ -570,7 +838,7 @@
         <!-- Timeline Controls Row -->
         <div class="flex items-center justify-between mb-1">
           <!-- Play / Pause / Step Controls -->
-          <div class="flex items-center space-x-1.5 xl:space-x-2">
+          <div class="flex items-center space-x-1.5 xl:space-x-2 shrink-0">
             <button id="btn-play-pause" class="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition shadow-md shadow-cyan-900/30" title="Reproducir Simulación">
               <i id="play-icon" data-lucide="play" class="w-3.5 h-3.5 xl:w-4 xl:h-4 fill-current"></i>
             </button>
@@ -580,24 +848,24 @@
             <button id="btn-next-step" class="w-6 h-6 xl:w-7 xl:h-7 rounded-lg bg-space-800 hover:bg-space-700 text-slate-300 flex items-center justify-center transition" title="Mes Siguiente">
               <i data-lucide="skip-forward" class="w-3 h-3 xl:w-3.5 xl:h-3.5"></i>
             </button>
-            <span class="text-[11px] xl:text-xs font-mono text-slate-400 pl-1 hidden sm:inline">Paso:</span>
-            <span id="timeline-step-label" class="text-[11px] xl:text-xs font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded-md truncate max-w-[190px] sm:max-w-none">
+            <span data-i18n="timeline_step" class="text-[11px] xl:text-xs font-mono text-slate-400 pl-1 hidden sm:inline">Paso:</span>
+            <span id="timeline-step-label" class="text-[11px] xl:text-xs font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded-md truncate max-w-[170px] sm:max-w-none">
               t0 (Noviembre 2026 - HOY)
             </span>
           </div>
 
-          <!-- Timeline Phase Legend -->
-          <div class="flex items-center space-x-3 xl:space-x-4 text-[10px] xl:text-xs font-mono">
-            <div class="hidden md:flex items-center space-x-1.5 text-slate-400">
+          <!-- Timeline Phase Legend & Speed Controls -->
+          <div class="flex items-center space-x-2 xl:space-x-3 text-[10px] xl:text-xs font-mono shrink-0">
+            <div class="hidden 2xl:flex items-center space-x-1.5 text-slate-400 whitespace-nowrap">
               <span class="w-2 h-2 rounded-sm bg-slate-600"></span>
-              <span>Histórico (t-6 a t-1)</span>
+              <span data-i18n="timeline_historical">Histórico (t-6 a t-1)</span>
             </div>
-            <div class="hidden md:flex items-center space-x-1.5 text-cyan-400">
+            <div class="hidden 2xl:flex items-center space-x-1.5 text-cyan-400 whitespace-nowrap">
               <span class="w-2 h-2 rounded-sm bg-cyan-500 animate-pulse"></span>
-              <span>Proyección IA (t+1 a t+6)</span>
+              <span data-i18n="timeline_projection">Proyección IA (t+1 a t+6)</span>
             </div>
-            <!-- Speed Selector -->
-            <div class="flex items-center bg-space-950 border border-space-800 rounded-lg p-0.5">
+            <!-- Speed Selector (Always pinned to bottom-right) -->
+            <div id="timeline-speed-controls" class="flex items-center bg-space-950 border border-space-800 rounded-lg p-0.5 shrink-0 z-10 shadow-sm">
               <button data-speed="1" class="speed-btn active px-1.5 xl:px-2 py-0.5 rounded text-[10px] xl:text-[11px] font-mono text-cyan-400 bg-space-800">1x</button>
               <button data-speed="2" class="speed-btn px-1.5 xl:px-2 py-0.5 rounded text-[10px] xl:text-[11px] font-mono text-slate-400 hover:text-white">2x</button>
             </div>
