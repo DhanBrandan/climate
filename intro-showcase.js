@@ -276,10 +276,8 @@
       box-shadow: 0 0 16px rgba(34, 211, 238, 0.48);
       opacity: 1 !important;
     }
-    /* Spotlight del Demo Guiado en vivo */
+    /* Spotlight del Demo Guiado en vivo (sin alterar position: absolute/fixed de paneles) */
     .climate-demo-highlight {
-      position: relative;
-      z-index: 25;
       box-shadow: 0 0 0 2px #22D3EE, 0 0 26px rgba(34, 211, 238, 0.45) !important;
       border-radius: 14px;
       transition: box-shadow 0.35s ease;
@@ -1382,6 +1380,11 @@
       const hud = ensureDemoHud();
       const stage = DEMO_STAGES[demoStageIdx];
       if (!stage) return;
+
+      const isInspectorStage = stage.id === 'point-inspector';
+      hud.className = isInspectorStage
+        ? 'fixed bottom-20 left-3 sm:left-[412px] z-[60] w-[calc(100vw-1.5rem)] max-w-sm xl:max-w-md rounded-2xl border border-cyan-500/45 bg-space-900/95 backdrop-blur-xl shadow-2xl p-3.5 text-slate-100 transition-all duration-300'
+        : 'fixed bottom-20 left-3 sm:left-4 z-[60] w-[calc(100vw-1.5rem)] max-w-md rounded-2xl border border-cyan-500/45 bg-space-900/95 backdrop-blur-xl shadow-2xl p-3.5 text-slate-100 transition-all duration-300';
 
       const isEn = lang === 'en';
       const badge = isEn ? stage.badgeEn : stage.badgeEs;
