@@ -4814,29 +4814,29 @@ function updateSourceToggleUI() {
 
   if (state.dataSource === 'gee') {
     if (btnBaseline) {
-      btnBaseline.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1';
+      btnBaseline.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1.5 whitespace-nowrap shrink-0';
     }
     if (btnGee) {
-      btnGee.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm';
+      btnGee.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1.5 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0';
       btnGee.innerHTML = state.isGeeLoading 
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin"></span><span>Cargando GEE...</span>'
-        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span><span>GEE en Vivo</span>';
+        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando GEE...</span>'
+        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE en Vivo</span>';
     }
     if (badge) {
-      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 animate-pulse';
+      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 animate-pulse whitespace-nowrap shrink-0';
       badge.textContent = '🛰️ GEE EN VIVO';
       badge.title = 'Datos satelitales en tiempo real obtenidos de Google Earth Engine';
     }
   } else {
     if (btnBaseline) {
-      btnBaseline.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm';
+      btnBaseline.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1.5 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
     }
     if (btnGee) {
-      btnGee.className = 'px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1';
-      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>GEE en Vivo</span>';
+      btnGee.className = 'h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1.5 whitespace-nowrap shrink-0';
+      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE en Vivo</span>';
     }
     if (badge) {
-      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800';
+      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
       badge.textContent = '📋 PLANILLA DEMO';
       badge.title = 'Serie temporal histórica calibrada con benchmark NASA (13 meses)';
     }
@@ -5042,25 +5042,25 @@ function updateUI() {
 
   if (headerBadge) {
     if (currentStepData.alert === 'ROJO') {
-      headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse';
+      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0';
       headerBadge.textContent = 'ALERTA ROJA: SEQUÍA SEVERA';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-red-500';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
     } else if (currentStepData.alert === 'NARANJA') {
-      headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/40';
+      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/40 whitespace-nowrap shrink-0';
       headerBadge.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: ANEGAMIENTO' : 'ALERTA NARANJA: DÉFICIT';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-orange-500';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75';
     } else if (currentStepData.alert === 'AMARILLO') {
-      headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/40';
+      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/40 whitespace-nowrap shrink-0';
       headerBadge.textContent = 'ALERTA AMARILLA: VIGILANCIA';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-amber-500';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
     } else {
-      headerBadge.className = 'px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+      headerBadge.className = 'px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 whitespace-nowrap shrink-0';
       headerBadge.textContent = 'CONDICIONES NORMALES';
-      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-500';
-      if (headerPulseBeacon) headerPulseBeacon.className = 'relative inline-flex rounded-full h-3 w-3 bg-emerald-400';
+      if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
+      if (headerPulseBeacon) headerPulseBeacon.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400';
     }
   }
 

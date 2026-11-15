@@ -147,15 +147,15 @@
     </div>
 
     <!-- Gran Chaco Regional Selector & Status Pill -->
-    <div class="hidden lg:flex items-center space-x-2 xl:space-x-3 bg-space-950/80 border border-space-800 rounded-xl px-2.5 xl:px-3 py-1">
-      <div class="flex items-center space-x-1.5">
-        <span class="relative flex h-2.5 w-2.5">
+    <div class="hidden lg:flex items-center space-x-2 bg-space-950/80 border border-space-800 rounded-xl px-2.5 py-1 shrink-0">
+      <div class="flex items-center space-x-1.5 shrink-0">
+        <span class="relative flex h-2 w-2 shrink-0">
           <span id="header-pulse-beacon" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-          <span id="header-pulse-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+          <span id="header-pulse-dot" class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
         </span>
-        <div class="text-[11px] xl:text-xs flex items-center gap-1.5">
-          <span class="text-slate-400 font-mono hidden xl:inline">Monitoreo:</span>
-          <select id="select-active-node" class="bg-space-900 border border-space-700 hover:border-cyan-500 rounded-md text-[11px] xl:text-xs font-semibold text-slate-200 px-2 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition max-w-[210px] xl:max-w-none">
+        <div class="text-[11px] xl:text-xs flex items-center gap-1.5 shrink-0">
+          <span class="text-slate-400 font-mono hidden xl:inline whitespace-nowrap">Monitoreo:</span>
+          <select id="select-active-node" class="bg-space-900 border border-space-700/80 hover:border-cyan-500 rounded-md text-[11px] xl:text-xs font-semibold text-slate-200 px-2 py-0.5 focus:outline-none focus:border-cyan-500 cursor-pointer transition max-w-[190px] xl:max-w-none">
             <option value="gran_chaco" selected>🌎 Gran Chaco Americano (Consolidado)</option>
             <option value="quimili">🇦🇷 Quimilí (Chaco Seco Austral)</option>
             <option value="filadelfia">🇵🇾 Filadelfia (Chaco Boreal - PRY)</option>
@@ -165,62 +165,66 @@
           </select>
         </div>
       </div>
-      <div class="h-3.5 w-px bg-space-800"></div>
-      <div id="header-alert-badge" class="px-2 py-0.5 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap">
+      <div class="h-4 w-px bg-space-800 shrink-0"></div>
+      <div id="header-alert-badge" class="px-2.5 py-1 rounded-lg text-[10px] xl:text-xs font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0 flex items-center">
         ALERTA ROJA: SEQUÍA SEVERA
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="flex items-center space-x-1.5 xl:space-x-2">
-      <!-- Toggle Sidebar Button in Header -->
-      <button id="btn-toggle-sidebar" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-space-700 shadow-sm transition" title="Mostrar/Ocultar Panel Lateral">
-        <i data-lucide="panel-right" class="w-3.5 h-3.5 text-cyan-400"></i>
-        <span class="hidden sm:inline">Panel</span>
-      </button>
+    <!-- Actions Toolbar -->
+    <div class="flex items-center space-x-1.5 xl:space-x-2 shrink-0">
 
       <!-- Conmutador de Fuente de Datos: Planilla Calibrada vs Google Earth Engine en Vivo -->
-      <div class="flex items-center bg-space-950 border border-space-700/80 rounded-lg p-0.5 shadow-sm">
-        <button id="btn-source-baseline" class="px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm" title="Modo Planilla Demo: Serie temporal calibrada con benchmark NASA (13 pasos)">
-          <i data-lucide="table" class="w-3 h-3"></i>
+      <div class="flex items-center bg-space-950/90 border border-space-700/80 rounded-lg p-0.5 shadow-sm shrink-0">
+        <button id="btn-source-baseline" class="h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0" title="Modo Planilla Demo: Serie temporal calibrada con benchmark NASA (13 pasos)">
+          <i data-lucide="table" class="w-3 h-3 shrink-0"></i>
           <span>Planilla</span>
         </button>
-        <button id="btn-source-gee" class="px-2 py-1 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1" title="Modo Google Earth Engine: Telemetría satelital en tiempo real (GPM, SMAP, MODIS)">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <button id="btn-source-gee" class="h-7 px-2 xl:px-2.5 rounded-md text-[10px] xl:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0" title="Modo Google Earth Engine: Telemetría satelital en tiempo real (GPM, SMAP, MODIS)">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
           <span>GEE en Vivo</span>
         </button>
       </div>
 
       <!-- Botón Comparativa Planilla vs GEE -->
-      <button id="btn-modal-compare-data" class="flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-cyan-800/60 shadow-sm transition" title="Ver tabla comparativa: Planilla Demo vs Google Earth Engine en Vivo">
-        <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400"></i>
+      <button id="btn-modal-compare-data" class="h-8 flex items-center space-x-1 px-2 xl:px-2.5 rounded-lg text-xs font-medium bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-cyan-800/60 shadow-sm transition whitespace-nowrap shrink-0" title="Ver tabla comparativa: Planilla Demo vs Google Earth Engine en Vivo">
+        <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
         <span class="font-mono text-[10px] xl:text-[11px]">Comparar</span>
       </button>
 
+      <!-- Divisor -->
+      <div class="h-4 w-px bg-space-800 shrink-0 hidden sm:block"></div>
+
       <!-- Map Style Selector -->
-      <div class="flex items-center bg-space-950 border border-space-700/80 rounded-lg p-0.5">
-        <button id="btn-style-dark" class="px-2 py-0.5 xl:py-1 rounded-md text-[11px] xl:text-xs font-medium bg-space-800 text-cyan-300 transition">Oscuro</button>
-        <button id="btn-style-sat" class="px-2 py-0.5 xl:py-1 rounded-md text-[11px] xl:text-xs font-medium text-slate-400 hover:text-white transition">Satélite</button>
-        <button id="btn-style-osm" class="hidden xl:block px-2 py-0.5 xl:py-1 rounded-md text-[11px] xl:text-xs font-medium text-slate-400 hover:text-white transition">OSM</button>
+      <div class="flex items-center bg-space-950/90 border border-space-700/80 rounded-lg p-0.5 shrink-0">
+        <button id="btn-style-dark" class="h-7 px-2 rounded-md text-[10px] xl:text-xs font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0">Oscuro</button>
+        <button id="btn-style-sat" class="h-7 px-2 rounded-md text-[10px] xl:text-xs font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">Satélite</button>
+        <button id="btn-style-osm" class="hidden 2xl:block h-7 px-2 rounded-md text-[10px] xl:text-xs font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0">OSM</button>
       </div>
 
       <!-- Ficha Técnica & Ecuaciones Modal Trigger -->
-      <button id="btn-modal-docs" class="hidden md:flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-slate-200 border border-space-700 transition">
-        <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400"></i>
-        <span class="text-[11px] xl:text-xs">Ficha</span>
+      <button id="btn-modal-docs" class="h-8 hidden md:flex items-center space-x-1 px-2 xl:px-2.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-purple-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Ver Ficha Técnica y Ecuaciones Matemáticas">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400 shrink-0"></i>
+        <span class="text-[10px] xl:text-xs font-semibold">Ficha</span>
       </button>
 
       <!-- Suscripción a Alertas Tempranas Modal Trigger -->
-      <button id="btn-modal-alerts" class="flex items-center space-x-1.5 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-amber-300 border border-space-700 hover:border-amber-500/50 transition shadow-sm" title="Suscribirse a alertas automáticas por Email o Telegram">
-        <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span class="hidden sm:inline text-[11px] xl:text-xs font-semibold">Alertas</span>
+      <button id="btn-modal-alerts" class="h-8 flex items-center space-x-1.5 px-2 xl:px-2.5 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700/80 text-amber-300 border border-space-700 hover:border-amber-500/50 transition shadow-sm whitespace-nowrap shrink-0" title="Suscribirse a alertas automáticas por Email o Telegram">
+        <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+        <span class="hidden sm:inline text-[10px] xl:text-xs font-semibold">Alertas</span>
         <span id="alerts-sub-badge-count" class="hidden px-1.5 py-0.2 rounded-full text-[8.5px] bg-amber-500/20 text-amber-300 font-mono font-bold border border-amber-500/40">0</span>
       </button>
 
       <!-- Export Report (Generar PDF) -->
-      <button id="btn-export-report" class="flex items-center space-x-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/30 transition" title="Generar Informe Oficial en PDF">
-        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+      <button id="btn-export-report" class="h-8 flex items-center space-x-1.5 px-2.5 xl:px-3 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-md shadow-cyan-950 transition whitespace-nowrap shrink-0" title="Generar Informe Oficial en PDF">
+        <i data-lucide="file-down" class="w-3.5 h-3.5 shrink-0"></i>
         <span class="hidden sm:inline">Reporte PDF</span>
+      </button>
+
+      <!-- Toggle Sidebar Button in Header -->
+      <button id="btn-toggle-sidebar" class="h-8 flex items-center space-x-1.5 px-2.5 rounded-lg text-xs font-semibold bg-space-800/90 hover:bg-space-700 text-cyan-300 border border-space-700 shadow-sm transition whitespace-nowrap shrink-0" title="Mostrar/Ocultar Panel Lateral">
+        <i data-lucide="panel-right" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+        <span class="hidden sm:inline">Panel</span>
       </button>
     </div>
   </header>
