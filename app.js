@@ -4833,16 +4833,16 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
     : '<div class="text-[9px] text-slate-400 italic text-center py-1">Sin sensores periféricos directos en radio</div>';
 
   const popupContent = `
-    <div class="bg-space-950/98 text-slate-100 p-2.5 sm:p-3 rounded-xl border border-cyan-500/50 shadow-2xl font-sans w-[330px] sm:w-[370px] max-w-[92vw] select-text flex flex-col max-h-[calc(100vh-160px)] sm:max-h-[70vh]">
+    <div class="bg-space-950/98 text-slate-100 p-2 sm:p-2.5 rounded-xl border border-cyan-500/50 shadow-2xl font-sans w-[330px] sm:w-[370px] max-w-[92vw] select-text flex flex-col max-h-[min(410px,calc(100vh-195px))] overflow-y-auto custom-scrollbar">
       <!-- 1. Encabezado Fijo con Botón de Cierre Claro -->
-      <div class="flex items-start justify-between gap-2.5 border-b border-space-800 pb-2 mb-2 shrink-0">
+      <div class="flex items-start justify-between gap-2 border-b border-space-800 pb-1.5 mb-1.5 shrink-0">
         <div class="flex items-start gap-2 flex-1 min-w-0">
-          <span class="text-base sm:text-lg shrink-0 mt-0.5">🏭</span>
+          <span class="text-base shrink-0 mt-0.5">🏭</span>
           <div class="min-w-0 flex-1">
-            <h4 class="font-bold text-xs sm:text-[13px] text-white tracking-wide leading-snug break-words">
+            <h4 class="font-bold text-xs sm:text-[13px] text-white tracking-wide leading-tight break-words">
               ${gatewayData.localidad} Gateway Hub
             </h4>
-            <div class="text-[8.5px] font-mono text-cyan-400/90 leading-normal break-words mt-0.5">
+            <div class="text-[8.5px] font-mono text-cyan-400/90 leading-snug break-words mt-0.5">
               ${gatewayData.hardware_modelo || 'MultiTech Conduit AEP (MTCDT)'}
             </div>
           </div>
@@ -4859,12 +4859,12 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
       </div>
 
       <!-- 2. Bloques Superiores Fijos (Resumen de Cobertura y Frecuencia) -->
-      <div class="grid grid-cols-2 gap-1.5 mb-2 shrink-0">
-        <div class="bg-space-900/90 p-2 rounded-lg border border-cyan-900/40 flex flex-col justify-between min-h-[62px]">
+      <div class="grid grid-cols-2 gap-1.5 mb-1.5 shrink-0">
+        <div class="bg-space-900/90 p-1.5 rounded-lg border border-cyan-900/40 flex flex-col justify-between min-h-[54px]">
           <span class="text-[8px] text-slate-400 uppercase font-mono font-medium tracking-normal leading-tight truncate block">
             Sensores en Cobertura
           </span>
-          <div class="text-sm font-bold text-cyan-300 font-mono flex items-baseline gap-1 my-0.5">
+          <div class="text-xs sm:text-sm font-bold text-cyan-300 font-mono flex items-baseline gap-1 my-0.5">
             <span>📡</span>
             <span>${gatewayData.nodos_asociados_count !== undefined ? gatewayData.nodos_asociados_count : perifericos.length}</span>
             <span class="text-[9px] text-slate-400 font-normal">nodos</span>
@@ -4874,11 +4874,11 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
           </span>
         </div>
 
-        <div class="bg-space-900/90 p-2 rounded-lg border border-cyan-900/40 flex flex-col justify-between min-h-[62px]">
+        <div class="bg-space-900/90 p-1.5 rounded-lg border border-cyan-900/40 flex flex-col justify-between min-h-[54px]">
           <span class="text-[8px] text-slate-400 uppercase font-mono font-medium tracking-normal leading-tight truncate block">
             Frecuencia / Canales
           </span>
-          <div class="text-sm font-bold text-blue-400 font-mono my-0.5 truncate">
+          <div class="text-xs sm:text-sm font-bold text-blue-400 font-mono my-0.5 truncate">
             ${gatewayData.frecuencia_mhz || 915.3} MHz
           </div>
           <span class="text-[8px] text-slate-400 font-mono truncate block">
@@ -4888,7 +4888,7 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
       </div>
 
       <!-- 3. Bloque Fijo de Métricas de Radioenlace LoRa -->
-      <div class="bg-space-900/80 p-2 rounded-lg border border-space-800 space-y-1 text-[9.5px] font-mono mb-2 shrink-0">
+      <div class="bg-space-900/80 p-1.5 rounded-lg border border-space-800 space-y-0.5 text-[9.5px] font-mono mb-1.5 shrink-0">
         <div class="flex items-center justify-between text-slate-300">
           <span class="text-slate-400">Intensidad Señal (RSSI):</span>
           <span class="text-cyan-300 font-bold">${Math.round(gatewayData.rssi)} dBm</span>
@@ -4907,14 +4907,14 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
           <span class="text-slate-400">Retardo Propagación:</span>
           <span class="text-cyan-300 font-bold">${gatewayData.velocidad_propagacion_ms || 12.4} ms</span>
         </div>
-        <div class="flex items-center justify-between text-slate-300 pt-1 border-t border-space-800/80">
+        <div class="flex items-center justify-between text-slate-300 pt-0.5 border-t border-space-800/80">
           <span class="text-slate-400">Modulación / Rate:</span>
           <span class="text-slate-200 text-[8.5px] font-semibold">${gatewayData.velocidad_retransmision || 'SF7 / 125 kHz @ 5.4 kbps'}</span>
         </div>
       </div>
 
       <!-- 3.5. Subsistema LoRaWAN Profesional & Edge Computing MultiTech -->
-      <div class="bg-gradient-to-r from-space-950 to-space-900 p-2 rounded-lg border border-cyan-500/30 text-[9px] font-mono mb-2 shrink-0 space-y-1">
+      <div class="bg-gradient-to-r from-space-950 to-space-900 p-1.5 rounded-lg border border-cyan-500/30 text-[9px] font-mono mb-1.5 shrink-0 space-y-0.5">
         <div class="flex items-center justify-between">
           <span class="text-cyan-300 font-bold flex items-center gap-1">
             <span>🛡️</span> LNS ChirpStack v4:
@@ -4935,19 +4935,19 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
         </div>
       </div>
 
-      <!-- 4. ÚNICO Contenedor Interno con Desplazamiento Scroll: Sensores de Campo en Radio -->
-      <div class="flex-1 min-h-0 flex flex-col mb-1.5">
+      <!-- 4. Sensores de Campo en Radio -->
+      <div class="flex flex-col mb-1 shrink-0">
         <div class="text-[9px] font-mono uppercase text-slate-400 font-semibold tracking-wider flex items-center justify-between mb-1 shrink-0">
           <span>Sensores de Campo en Radio:</span>
           <span class="text-cyan-400 font-mono">${perifericos.length} activos</span>
         </div>
-        <div class="max-h-24 sm:max-h-28 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+        <div class="space-y-1">
           ${perifericosHtml}
         </div>
       </div>
 
       <!-- 5. Pie Fijo con Timestamp y Jurisdicción -->
-      <div class="pt-1.5 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-500 shrink-0">
+      <div class="pt-1 border-t border-space-800/80 flex items-center justify-between text-[8px] font-mono text-slate-500 shrink-0">
         <span>Santiago del Estero • LoRa Red</span>
         <span class="text-cyan-400">${gatewayData.fecha_local || '2026-11-15'} ${gatewayData.hora_local || ''}</span>
       </div>
@@ -5492,6 +5492,12 @@ function renderSentinelMarkers() {
                   </svg>
                 </div>
               </div>
+
+              <!-- Etiqueta visible del nodo periférico (Nombre + RSSI) -->
+              <div class="pointer-events-none absolute top-full mt-0.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded border border-cyan-500/45 shadow-md text-[8.5px] font-mono leading-none flex items-center gap-1 z-10" style="background: rgba(4, 8, 20, 0.9); color: #F1F5F9;">
+                <span class="font-semibold">${sensorLabel}</span>
+                <span class="font-bold" style="color: #38BDF8;">${rssiVal}dBm</span>
+              </div>
             </div>
           `;
         }
@@ -5529,27 +5535,32 @@ function renderSentinelMarkers() {
 
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (item.originalNode) {
-          selectNode(item.id);
-        }
-        
-        if (isLora && item.isGateway && item.loraData) {
-          // Fijar Gateway activo y resaltar exclusivamente sus enlaces periféricos con animación de flujo
+        if (isLora && isGateway && item.loraData) {
+          // Fijar Gateway activo ANTES de renderizar marcadores y resaltar enlaces periféricos
           const gwKey = normalizeGatewayKey(item.id || item.loraData.node_id);
           pinnedLoraGatewayId = gwKey;
           hoveredLoraGatewayId = null;
+
+          if (item.originalNode) {
+            selectNode(item.id);
+          }
           highlightLoraGatewayLinks(gwKey);
 
-          // Desplazar mapa suavemente con margen de seguridad vertical para que el popup quede holgado y visible
+          // Acercar al hub y sus nodos periféricos con espacio superior para el popup y lateral para el HUD
+          const targetZoom = Math.max(map ? map.getZoom() : 8.2, item.originalNode?.zoom || 8.2, 8.2);
           if (map) {
             map.easeTo({
               center: item.coords,
-              offset: [0, 80],
-              duration: 350
+              zoom: targetZoom,
+              offset: [90, 155],
+              duration: 700
             });
           }
           showGatewayTelemetryPopup(item.loraData, item.coords);
         } else {
+          if (item.originalNode) {
+            selectNode(item.id);
+          }
           // Si hace clic en un sensor o nodo normal, cerrar popup flotante previo y restaurar enlaces atenuados
           if (activeGatewayPopup) {
             activeGatewayPopup.remove();
@@ -6703,11 +6714,12 @@ function selectNode(nodeId) {
     } else {
       const isLora = state.dataSource === 'lora';
       const isGateway = ['quimili', 'anatuya', 'bandera', 'termas'].includes(nodeId);
+      const targetZoom = (isLora && isGateway) ? Math.max(node.zoom || 8.2, 8.2) : (node.zoom || 8.0);
       map.flyTo({
         center: node.coords,
-        offset: (isLora && isGateway) ? [0, 80] : [0, 0],
-        zoom: node.zoom || 8.0,
-        duration: 1300
+        offset: (isLora && isGateway) ? [90, 155] : [0, 0],
+        zoom: targetZoom,
+        duration: (isLora && isGateway) ? 900 : 1300
       });
     }
   }
