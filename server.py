@@ -4,10 +4,10 @@ NASA Space Apps Challenge 2026
 API Backend FastAPI: Integración Google Earth Engine (GEE), LightGBM y Random Forest con SHAP
 """
 
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import math
 import numpy as np
 import os
@@ -15,10 +15,17 @@ import json
 import time
 import uuid
 import smtplib
+import random
+import logging
+from datetime import datetime
 import urllib.request
 import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+# Configuración de logging para telemetría LoRa e IoT
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("climate_lora")
 
 # Importar gestor de Google Earth Engine
 from gee_service import gee_manager, GEE_CATALOG
@@ -68,6 +75,95 @@ class TelemetryPayload(BaseModel):
 class GEEConfigRequest(BaseModel):
     project_id: Optional[str] = None
     service_account_json: Optional[str] = None
+
+# ================= MODELO DE DATOS LORA (ESP32-C3 + Ra-02 / SX1262) =================
+class LoraTelemetry(BaseModel):
+    node_id: str
+    localidad: str
+    provincia: str
+    latitud: float
+    longitud: float
+    altitud_m: Optional[float] = None
+    fecha_local: str
+    hora_local: str
+    fuente_id: str = "LORA_DIY_CAMPO"
+    tipo_dato: str = "OBSERVACION_IN_SITU"
+    temp_max_C: float
+    temp_min_C: float
+    temp_media_C: float
+    humedad_relativa_media_pct: float
+    humedad_relativa_min_pct: float
+    humedad_suelo_0_7cm_m3m3: float
+    bateria_v: float
+    rssi: float
+    snr: float
+
+# Almacén en memoria de la última telemetría in-situ recibida por nodo
+LATEST_LORA_STORE: Dict[str, Dict[str, Any]] = {}
+
+# Configuración geográfica fija de los 5 Nodos Centinela LoRa Trinacionales
+LORA_SENTINEL_NODES_CONFIG = [
+    {
+        "node_id": "QUIMILI_NODO_01",
+        "localidad": "Quimilí",
+        "provincia": "Santiago del Estero",
+        "latitud": -27.6460,
+        "longitud": -62.4160,
+        "altitud_m": 145.0,
+        "temp_base": 25.4,
+        "suelo_base": 0.22,
+        "rssi_base": -82.0,
+        "snr_base": 8.5
+    },
+    {
+        "node_id": "FILADELFIA_NODO_02",
+        "localidad": "Filadelfia",
+        "provincia": "Boquerón (Paraguay)",
+        "latitud": -22.3500,
+        "longitud": -60.0300,
+        "altitud_m": 135.0,
+        "temp_base": 27.8,
+        "suelo_base": 0.16,
+        "rssi_base": -96.0,
+        "snr_base": 5.2
+    },
+    {
+        "node_id": "VILLAMONTES_NODO_03",
+        "localidad": "Villa Montes",
+        "provincia": "Tarija (Bolivia)",
+        "latitud": -21.2600,
+        "longitud": -63.4600,
+        "altitud_m": 390.0,
+        "temp_base": 24.1,
+        "suelo_base": 0.29,
+        "rssi_base": -104.0,
+        "snr_base": 2.8
+    },
+    {
+        "node_id": "SAENZPENA_NODO_04",
+        "localidad": "Sáenz Peña",
+        "provincia": "Chaco",
+        "latitud": -26.7900,
+        "longitud": -60.4400,
+        "altitud_m": 90.0,
+        "temp_base": 26.0,
+        "suelo_base": 0.24,
+        "rssi_base": -88.0,
+        "snr_base": 7.1
+    },
+    {
+        "node_id": "RESISTENCIA_NODO_05",
+        "localidad": "Resistencia",
+        "provincia": "Chaco",
+        "latitud": -27.4500,
+        "longitud": -58.9800,
+        "altitud_m": 52.0,
+        "temp_base": 26.8,
+        "suelo_base": 0.35,
+        "rssi_base": -84.0,
+        "snr_base": 9.4
+    }
+]
 
 @app.get("/")
 def read_root():
@@ -133,6 +229,90 @@ def configure_gee(config: GEEConfigRequest):
     # Reintentar inicialización
     gee_manager._try_initialize()
     return gee_manager.get_status()
+
+# ================= ENDPOINTS LORA CENTINELA (ESP32-C3 / Ra-02 / SX1262) =================
+@app.post("/api/nodes/telemetry", status_code=status.HTTP_201_CREATED)
+def ingest_lora_telemetry(telemetry: LoraTelemetry):
+    """
+    Endpoint de Ingesta Real para Nodos Centinela LoRa de campo (ESP32-C3 + Ra-02 / SX1262).
+    Valida la estructura recibida, registra en consola/logger y devuelve confirmación 201.
+    """
+    log_msg = (
+        f"[LoRa Ingesta Real] Nodo={telemetry.node_id} ({telemetry.localidad}, {telemetry.provincia}) | "
+        f"Suelo={telemetry.humedad_suelo_0_7cm_m3m3:.2f} m³/m³ | Batería={telemetry.bateria_v:.2f}V | "
+        f"RSSI={telemetry.rssi:.1f} dBm | SNR={telemetry.snr:.1f} dB | "
+        f"Temp={telemetry.temp_media_C:.1f}°C (Min: {telemetry.temp_min_C:.1f}, Max: {telemetry.temp_max_C:.1f}) | "
+        f"RH={telemetry.humedad_relativa_media_pct:.1f}% | Fecha={telemetry.fecha_local} {telemetry.hora_local}"
+    )
+    logger.info(log_msg)
+    print(log_msg)
+    
+    # Almacenar en el almacén de última telemetría in-situ recibida
+    LATEST_LORA_STORE[telemetry.node_id] = telemetry.model_dump() if hasattr(telemetry, "model_dump") else telemetry.dict()
+    
+    return {"status": "success"}
+
+@app.get("/api/nodes/telemetry/simulate", response_model=List[LoraTelemetry])
+def simulate_lora_telemetry():
+    """
+    Mock dinámico que genera y devuelve una lista coherente de objetos LoraTelemetry
+    para los 5 Nodos Centinela Trinacionales (Quimilí, Filadelfia, Villa Montes, Sáenz Peña, Resistencia).
+    Aplica fluctuaciones físicas realistas en cada llamada.
+    """
+    now = datetime.now()
+    fecha_str = now.strftime("%Y-%m-%d")
+    hora_str = now.strftime("%H:%M:%S")
+
+    simulated_list: List[LoraTelemetry] = []
+
+    for cfg in LORA_SENTINEL_NODES_CONFIG:
+        # 1. Fluctuaciones realistas de hardware
+        # Voltaje de batería entre 3.6 y 4.2 V
+        bateria_v = round(random.uniform(3.60, 4.20), 2)
+        
+        # Intensidad de señal RSSI entre -120 y -80 dBm
+        rssi = round(random.uniform(-120.0, -80.0), 1)
+        
+        # Relación señal/ruido SNR entre -5.0 y 12.0 dB
+        snr = round(random.uniform(-5.0, 12.0), 1)
+        
+        # Humedad del suelo in-situ entre 0.10 y 0.40 m³/m³
+        humedad_suelo = round(random.uniform(0.10, 0.40), 2)
+
+        # 2. Temperaturas y humedad coherentes entre sí
+        t_base = cfg["temp_base"] + random.uniform(-1.2, 1.2)
+        temp_min = round(t_base - random.uniform(5.0, 7.5), 1)
+        temp_max = round(t_base + random.uniform(6.5, 9.5), 1)
+        temp_media = round((temp_min * 0.45 + temp_max * 0.55) + random.uniform(-0.3, 0.3), 1)
+
+        # Humedad relativa coherente: min <= media
+        rh_min = round(random.uniform(28.0, 42.0), 1)
+        rh_med = round(min(96.0, rh_min + random.uniform(18.0, 32.0)), 1)
+
+        node_data = LoraTelemetry(
+            node_id=cfg["node_id"],
+            localidad=cfg["localidad"],
+            provincia=cfg["provincia"],
+            latitud=cfg["latitud"],
+            longitud=cfg["longitud"],
+            altitud_m=cfg["altitud_m"],
+            fecha_local=fecha_str,
+            hora_local=hora_str,
+            fuente_id="LORA_DIY_CAMPO",
+            tipo_dato="OBSERVACION_IN_SITU",
+            temp_max_C=temp_max,
+            temp_min_C=temp_min,
+            temp_media_C=temp_media,
+            humedad_relativa_media_pct=rh_med,
+            humedad_relativa_min_pct=rh_min,
+            humedad_suelo_0_7cm_m3m3=humedad_suelo,
+            bateria_v=bateria_v,
+            rssi=rssi,
+            snr=snr
+        )
+        simulated_list.append(node_data)
+
+    return simulated_list
 
 # ================= MOTOR DE MACHINE LEARNING HÍBRIDO =================
 @app.post("/api/predict")

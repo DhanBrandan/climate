@@ -3602,12 +3602,15 @@ const state = {
   activeMapStyle: 'dark',
   mapLoaded: false,
   inspectedLngLat: null, // Coordenadas del punto inspeccionado dinámico
-  dataSource: 'baseline', // 'baseline' (Planilla Demo Calibrada) | 'gee' (Google Earth Engine en Vivo)
+  dataSource: 'baseline', // 'baseline' (Planilla Demo Calibrada) | 'gee' (Google Earth Engine en Vivo) | 'lora' (Campo ESP32-C3)
   geeData: null,          // Telemetría satelital y predicción obtenidas de GEE
-  isGeeLoading: false
+  isGeeLoading: false,
+  loraData: null,         // Telemetría in-situ de Nodos Centinela LoRa
+  isLoraLoading: false
 };
 
 let map = null;
+let sentinelMarkersList = [];
 let projectionChart = null;
 let shapChart = null;
 
@@ -4073,28 +4076,151 @@ function showRegionPopup(lngLat, props) {
   handleMapPointClick(lngLat);
 }
 
-function setupSentinelMarkers() {
+function updateLoraRfLinksLayer(show) {
+  if (!map || !state.mapLoaded) return;
+  const sourceId = 'lora-rf-links';
+  const lineLayerId = 'lora-rf-links-line';
+  const glowLayerId = 'lora-rf-links-glow';
+
+  const loraLinksGeoJson = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { name: 'Enlace LoRa Quimilí - Filadelfia' },
+        geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.filadelfia.coords] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Enlace LoRa Quimilí - Villa Montes' },
+        geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.villamontes.coords] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Enlace LoRa Quimilí - Sáenz Peña' },
+        geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.saenzpena.coords] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Enlace LoRa Quimilí - Resistencia' },
+        geometry: { type: 'LineString', coordinates: [SENTINEL_NODES.quimili.coords, SENTINEL_NODES.resistencia.coords] }
+      }
+    ]
+  };
+
+  try {
+    if (!map.getSource(sourceId)) {
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data: loraLinksGeoJson
+      });
+
+      map.addLayer({
+        id: glowLayerId,
+        type: 'line',
+        source: sourceId,
+        layout: { 'visibility': show ? 'visible' : 'none' },
+        paint: {
+          'line-color': '#06B6D4',
+          'line-width': 5.0,
+          'line-opacity': 0.35
+        }
+      });
+
+      map.addLayer({
+        id: lineLayerId,
+        type: 'line',
+        source: sourceId,
+        layout: { 'visibility': show ? 'visible' : 'none' },
+        paint: {
+          'line-color': '#22D3EE',
+          'line-width': 2.5,
+          'line-opacity': 0.9,
+          'line-dasharray': [3, 4]
+        }
+      });
+    } else {
+      map.setLayoutProperty(lineLayerId, 'visibility', show ? 'visible' : 'none');
+      map.setLayoutProperty(glowLayerId, 'visibility', show ? 'visible' : 'none');
+    }
+  } catch (err) {
+    console.warn('Error gestionando capa de enlaces LoRa RF en el mapa:', err);
+  }
+}
+
+function renderSentinelMarkers() {
   try {
     const mapLib = window.maplibregl || window.mapboxgl;
+    if (!map || !mapLib) return;
+
+    // Limpiar marcadores previos
+    if (sentinelMarkersList && sentinelMarkersList.length) {
+      sentinelMarkersList.forEach(m => m.remove());
+      sentinelMarkersList = [];
+    }
 
     const nodeEntries = Object.values(SENTINEL_NODES).filter(n => n.id !== 'gran_chaco');
+    const isLora = state.dataSource === 'lora';
+
+    // Actualizar enlaces RF en el mapa
+    updateLoraRfLinksLayer(isLora);
 
     nodeEntries.forEach(node => {
       const el = document.createElement('div');
       el.className = 'cursor-pointer';
-      
       const isSelected = state.activeNode === node.id;
-      const pulseColor = isSelected ? '#38BDF8' : '#EF4444';
 
-      el.innerHTML = `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center;" title="${node.name}">
-          <div class="sentinel-pulse" style="position: absolute; width: 30px; height: 30px; border-radius: 50%; color: ${pulseColor};"></div>
-          <div style="width: 14px; height: 14px; border-radius: 50%; background: ${pulseColor}; border: 2px solid #FFFFFF; box-shadow: 0 0 12px ${pulseColor}; z-index: 10;"></div>
-          <div style="position: absolute; top: -28px; padding: 2px 6px; border-radius: 5px; background: rgba(11, 15, 25, 0.96); color: #38BDF8; font-family: monospace; font-size: 10px; font-weight: bold; border: 1.5px solid rgba(56, 189, 248, 0.6); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.85); z-index: 30; pointer-events: none;">
-            ${node.name.replace('Nodo ', '').split('(')[0].trim()}
+      if (isLora) {
+        // Modo LoRa Campo: Antena con ondas de radio y etiqueta de RSSI en tiempo real
+        const loraItem = getLoraTelemetryForNode(node.id);
+        const rssiVal = loraItem ? Math.round(loraItem.rssi) : -82;
+        const isGateway = node.id === 'quimili';
+        const nodeLabel = isGateway 
+          ? 'Quimilí ★ Gateway Hub' 
+          : node.name.replace('Nodo ', '').split('(')[0].trim();
+        const borderColor = isSelected ? '#38BDF8' : '#06B6D4';
+
+        el.innerHTML = `
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;" title="${node.name} • Enlace LoRa: ${rssiVal} dBm">
+            <!-- Etiqueta superior del nodo -->
+            <div style="margin-bottom: 5px; padding: 2px 6px; border-radius: 5px; background: rgba(11, 15, 25, 0.96); color: ${isSelected ? '#38BDF8' : '#E2E8F0'}; font-family: monospace; font-size: 10px; font-weight: bold; border: 1.5px solid ${borderColor}; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.85); z-index: 30; pointer-events: none;">
+              ${nodeLabel}
+            </div>
+            
+            <!-- Baliza de Antena con Ondas de Radio Pulsantes -->
+            <div class="lora-radio-beacon" style="position: relative; width: 34px; height: 34px;">
+              <div class="lora-radio-wave"></div>
+              <div class="lora-radio-wave delay-1"></div>
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: #0891B2; border: 2.5px solid #22D3EE; box-shadow: 0 0 16px #06B6D4; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path>
+                  <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path>
+                  <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"></path>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Etiqueta flotante inferior con valor RSSI -->
+            <div style="margin-top: 5px; padding: 1.5px 6px; border-radius: 5px; background: rgba(6, 182, 212, 0.25); color: #22D3EE; font-family: monospace; font-size: 9.5px; font-weight: bold; border: 1px solid rgba(34, 211, 238, 0.7); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); white-space: nowrap; z-index: 25; pointer-events: none;">
+              📶 ${rssiVal} dBm
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        // Modo Estándar / Satelital
+        const pulseColor = isSelected ? '#38BDF8' : '#EF4444';
+        el.innerHTML = `
+          <div style="position: relative; display: flex; align-items: center; justify-content: center;" title="${node.name}">
+            <div class="sentinel-pulse" style="position: absolute; width: 30px; height: 30px; border-radius: 50%; color: ${pulseColor};"></div>
+            <div style="width: 14px; height: 14px; border-radius: 50%; background: ${pulseColor}; border: 2px solid #FFFFFF; box-shadow: 0 0 12px ${pulseColor}; z-index: 10;"></div>
+            <div style="position: absolute; top: -28px; padding: 2px 6px; border-radius: 5px; background: rgba(11, 15, 25, 0.96); color: #38BDF8; font-family: monospace; font-size: 10px; font-weight: bold; border: 1.5px solid rgba(56, 189, 248, 0.6); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.85); z-index: 30; pointer-events: none;">
+              ${node.name.replace('Nodo ', '').split('(')[0].trim()}
+            </div>
+          </div>
+        `;
+      }
 
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -4102,14 +4228,20 @@ function setupSentinelMarkers() {
         handleMapPointClick({ lng: node.coords[0], lat: node.coords[1] });
       });
 
-      new mapLib.Marker({ element: el })
+      const markerInstance = new mapLib.Marker({ element: el })
         .setLngLat(node.coords)
         .addTo(map);
+
+      sentinelMarkersList.push(markerInstance);
     });
 
   } catch (err) {
     console.error('Error creando la red de marcadores centinela:', err);
   }
+}
+
+function setupSentinelMarkers() {
+  renderSentinelMarkers();
 }
 
 function updateMapData() {
@@ -4791,33 +4923,96 @@ async function loadGeeLiveSimulation(forceNode) {
   }
 }
 
-function setDataSource(source) {
+function getLoraTelemetryForNode(nodeId) {
+  if (!state.loraData || !state.loraData.length) return null;
+  const keyMap = {
+    quimili: 'QUIMILI_NODO_01',
+    filadelfia: 'FILADELFIA_NODO_02',
+    villamontes: 'VILLAMONTES_NODO_03',
+    saenzpena: 'SAENZPENA_NODO_04',
+    resistencia: 'RESISTENCIA_NODO_05',
+    gran_chaco: 'QUIMILI_NODO_01'
+  };
+  const targetId = keyMap[nodeId] || 'QUIMILI_NODO_01';
+  return state.loraData.find(item => item.node_id === targetId) || state.loraData[0];
+}
+
+async function fetchLoraTelemetrySimulation() {
+  state.isLoraLoading = true;
+  updateSourceToggleUI();
+  try {
+    const res = await fetch('http://localhost:8000/api/nodes/telemetry/simulate');
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      state.loraData = data;
+    }
+  } catch (err) {
+    console.warn('[LoRa] Error al conectar con /api/nodes/telemetry/simulate, usando fallback local:', err);
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const dateStr = now.toISOString().split('T')[0];
+    state.loraData = [
+      { node_id: "QUIMILI_NODO_01", localidad: "Quimilí", provincia: "Santiago del Estero", latitud: -27.6460, longitud: -62.4160, altitud_m: 145, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 32.5, temp_min_C: 18.2, temp_media_C: 25.4, humedad_relativa_media_pct: 52.0, humedad_relativa_min_pct: 35.0, humedad_suelo_0_7cm_m3m3: 0.22, bateria_v: 4.12, rssi: -82.0, snr: 8.5 },
+      { node_id: "FILADELFIA_NODO_02", localidad: "Filadelfia", provincia: "Boquerón (Paraguay)", latitud: -22.3500, longitud: -60.0300, altitud_m: 135, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 34.1, temp_min_C: 20.5, temp_media_C: 27.8, humedad_relativa_media_pct: 46.0, humedad_relativa_min_pct: 29.0, humedad_suelo_0_7cm_m3m3: 0.16, bateria_v: 3.98, rssi: -96.0, snr: 5.2 },
+      { node_id: "VILLAMONTES_NODO_03", localidad: "Villa Montes", provincia: "Tarija (Bolivia)", latitud: -21.2600, longitud: -63.4600, altitud_m: 390, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 30.2, temp_min_C: 17.0, temp_media_C: 24.1, humedad_relativa_media_pct: 58.0, humedad_relativa_min_pct: 38.0, humedad_suelo_0_7cm_m3m3: 0.29, bateria_v: 4.05, rssi: -104.0, snr: 2.8 },
+      { node_id: "SAENZPENA_NODO_04", localidad: "Sáenz Peña", provincia: "Chaco", latitud: -26.7900, longitud: -60.4400, altitud_m: 90, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 33.0, temp_min_C: 19.4, temp_media_C: 26.0, humedad_relativa_media_pct: 54.0, humedad_relativa_min_pct: 34.0, humedad_suelo_0_7cm_m3m3: 0.24, bateria_v: 4.15, rssi: -88.0, snr: 7.1 },
+      { node_id: "RESISTENCIA_NODO_05", localidad: "Resistencia", provincia: "Chaco", latitud: -27.4500, longitud: -58.9800, altitud_m: 52, fecha_local: dateStr, hora_local: timeStr, fuente_id: "LORA_DIY_CAMPO", tipo_dato: "OBSERVACION_IN_SITU", temp_max_C: 31.8, temp_min_C: 21.0, temp_media_C: 26.8, humedad_relativa_media_pct: 68.0, humedad_relativa_min_pct: 45.0, humedad_suelo_0_7cm_m3m3: 0.35, bateria_v: 3.88, rssi: -84.0, snr: 9.4 }
+    ];
+  } finally {
+    state.isLoraLoading = false;
+    updateSourceToggleUI();
+  }
+}
+
+async function setDataSource(source) {
+  if (state.dataSource === source && source === 'lora' && state.loraData) {
+    // Si ya está activo y vuelve a tocar, refrescar simulación LoRa
+    await fetchLoraTelemetrySimulation();
+    renderSentinelMarkers();
+    updateUI();
+    return;
+  }
   if (state.dataSource === source && state.geeData) return;
   state.dataSource = source;
   updateSourceToggleUI();
 
   if (source === 'gee') {
     if (!state.geeData) {
-      loadGeeLiveSimulation();
+      await loadGeeLiveSimulation();
     } else {
       updateUI();
     }
+  } else if (source === 'lora') {
+    await fetchLoraTelemetrySimulation();
+    updateUI();
   } else {
     updateUI();
   }
+  renderSentinelMarkers();
 }
 
 function updateSourceToggleUI() {
   const btnBaseline = document.getElementById('btn-source-baseline');
   const btnGee = document.getElementById('btn-source-gee');
+  const btnLora = document.getElementById('btn-source-lora');
   const badge = document.getElementById('telemetry-source-badge');
 
+  const inactiveBtnClass = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
+
+  if (btnBaseline) btnBaseline.className = inactiveBtnClass;
+  if (btnGee) {
+    btnGee.className = inactiveBtnClass.replace('text-slate-400', 'text-emerald-400');
+    btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
+  }
+  if (btnLora) {
+    btnLora.className = inactiveBtnClass.replace('text-slate-400', 'text-cyan-400');
+    btnLora.innerHTML = '<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">📡 LoRa (Campo)</span>';
+  }
+
   if (state.dataSource === 'gee') {
-    if (btnBaseline) {
-      btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
-    }
     if (btnGee) {
-      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0';
+      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0 border border-emerald-400/50';
       btnGee.innerHTML = state.isGeeLoading 
         ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
         : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
@@ -4827,13 +5022,21 @@ function updateSourceToggleUI() {
       badge.textContent = '🛰️ GEE EN VIVO';
       badge.title = 'Datos satelitales en tiempo real obtenidos de Google Earth Engine';
     }
+  } else if (state.dataSource === 'lora') {
+    if (btnLora) {
+      btnLora.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
+      btnLora.innerHTML = state.isLoraLoading
+        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando LoRa...</span>'
+        : '<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">📡 LoRa (Campo)</span>';
+    }
+    if (badge) {
+      badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-400 animate-pulse whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.5)]';
+      badge.textContent = '📡 LORA CAMPO';
+      badge.title = 'Telemetría in-situ de Nodos Centinela LoRa (ESP32-C3 + Ra-02 / SX1262)';
+    }
   } else {
     if (btnBaseline) {
       btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
-    }
-    if (btnGee) {
-      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-emerald-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
-      btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
@@ -4841,6 +5044,7 @@ function updateSourceToggleUI() {
       badge.title = 'Serie temporal histórica calibrada con benchmark NASA (13 meses)';
     }
   }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function updateComparisonModal(data) {
@@ -4927,6 +5131,7 @@ function selectNode(nodeId) {
   } else {
     updateUI();
   }
+  renderSentinelMarkers();
 }
 
 // ================= ACTUALIZACIÓN DE TELEMETRÍA Y UI =================
@@ -5153,7 +5358,7 @@ function updateUI() {
     if (window.lucide) lucide.createIcons();
   }
 
-  // 4. Métricas Satelitales Acopladas
+  // 4. Telemetría (Satelital Acoplada vs LoRa en Campo)
   const siteLabel = document.getElementById('telemetry-site-label');
   if (siteLabel) {
     if (activeNode.id === 'gran_chaco') {
@@ -5167,35 +5372,124 @@ function updateUI() {
     }
   }
 
-  const precEl = document.getElementById('metric-precip');
-  if (precEl) precEl.textContent = (currentStepData.precip * (spiFactor > 1.1 ? 1.25 : 0.95)).toFixed(1);
+  const isLoraMode = state.dataSource === 'lora';
+  const satellitePanel = document.getElementById('telemetry-satellite-panel');
+  const loraPanel = document.getElementById('telemetry-lora-panel');
+  const telemetryTitle = document.getElementById('telemetry-card-title');
+  const telemetryIcon = document.getElementById('telemetry-card-icon');
 
-  const precAnomEl = document.getElementById('metric-precip-anom');
-  if (precAnomEl) {
-    precAnomEl.textContent = `${currentStepData.precipAnom >= 0 ? '+' : ''}${currentStepData.precipAnom}% vs climatología (μ)`;
-    precAnomEl.className = currentStepData.precipAnom < -30 ? 'text-[10px] font-mono text-red-400 mt-0.5' : 'text-[10px] font-mono text-cyan-400 mt-0.5';
-  }
+  if (isLoraMode) {
+    if (satellitePanel) satellitePanel.classList.add('hidden');
+    if (loraPanel) loraPanel.classList.remove('hidden');
+    if (telemetryTitle) telemetryTitle.textContent = 'TELEMETRÍA LORA EN TIEMPO REAL';
+    if (telemetryIcon) telemetryIcon.setAttribute('data-lucide', 'radio');
 
-  const gwetEl = document.getElementById('metric-gwetroot');
-  if (gwetEl) gwetEl.textContent = currentGwet;
+    // Cargar telemetría del nodo activo
+    const loraTelemetry = getLoraTelemetryForNode(activeNode.id || state.activeNode);
+    if (loraTelemetry) {
+      // 1. Humedad de suelo (In-Situ)
+      const soilEl = document.getElementById('lora-metric-soil');
+      if (soilEl) soilEl.textContent = loraTelemetry.humedad_suelo_0_7cm_m3m3.toFixed(2);
+      const soilStatusEl = document.getElementById('lora-metric-soil-status');
+      if (soilStatusEl) {
+        const val = loraTelemetry.humedad_suelo_0_7cm_m3m3;
+        if (val >= 0.25) {
+          soilStatusEl.textContent = 'Óptima';
+          soilStatusEl.className = 'text-[9px] font-mono text-emerald-400 font-bold';
+        } else if (val >= 0.18) {
+          soilStatusEl.textContent = 'Seco (Vigilancia)';
+          soilStatusEl.className = 'text-[9px] font-mono text-amber-400 font-bold';
+        } else {
+          soilStatusEl.textContent = 'Crítica (Déficit)';
+          soilStatusEl.className = 'text-[9px] font-mono text-red-400 font-bold';
+        }
+      }
 
-  const gwetAnomEl = document.getElementById('metric-gwetroot-anom');
-  if (gwetAnomEl) gwetAnomEl.textContent = `Z-score: ${currentStepData.gwetrootZ >= 0 ? '+' : ''}${currentStepData.gwetrootZ.toFixed(2)} σ`;
+      // 2. Batería del Nodo (Solar DIY)
+      const batEl = document.getElementById('lora-metric-bat');
+      if (batEl) batEl.textContent = loraTelemetry.bateria_v.toFixed(2);
+      const batPctEl = document.getElementById('lora-metric-bat-pct');
+      if (batPctEl) {
+        const pct = Math.min(100, Math.max(0, Math.round(((loraTelemetry.bateria_v - 3.60) / 0.60) * 100)));
+        batPctEl.textContent = `${pct}% est.`;
+      }
 
-  const ndviEl = document.getElementById('metric-ndvi');
-  if (ndviEl) ndviEl.textContent = currentNdvi;
+      // 3. Fuerza de Señal (RSSI)
+      const rssiEl = document.getElementById('lora-metric-rssi');
+      if (rssiEl) rssiEl.textContent = Math.round(loraTelemetry.rssi);
+      const rssiVal = loraTelemetry.rssi;
+      const b1 = document.getElementById('rssi-bar-1');
+      const b2 = document.getElementById('rssi-bar-2');
+      const b3 = document.getElementById('rssi-bar-3');
+      const b4 = document.getElementById('rssi-bar-4');
+      const rssiLvl = document.getElementById('lora-metric-rssi-level');
 
-  const ndviAnomEl = document.getElementById('metric-ndvi-anom');
-  if (ndviAnomEl) ndviAnomEl.textContent = Number(currentNdvi) < 0.28 ? 'Estrés fotosintético severo' : (Number(currentNdvi) < 0.45 ? 'Vigor medio' : 'Biomasa óptima');
+      if (b1 && b2 && b3 && b4 && rssiLvl) {
+        const resetBars = () => {
+          [b1, b2, b3, b4].forEach(b => { b.className = 'w-1 rounded-xs bg-space-800'; });
+        };
+        resetBars();
+        if (rssiVal >= -85) {
+          [b1, b2, b3, b4].forEach(b => { b.className = 'w-1 rounded-xs bg-emerald-400'; });
+          rssiLvl.textContent = 'Excelente';
+          rssiLvl.className = 'text-[8.5px] font-mono text-emerald-400 font-semibold';
+        } else if (rssiVal >= -100) {
+          [b1, b2, b3].forEach(b => { b.className = 'w-1 rounded-xs bg-cyan-400'; });
+          rssiLvl.textContent = 'Buena';
+          rssiLvl.className = 'text-[8.5px] font-mono text-cyan-400 font-semibold';
+        } else if (rssiVal >= -112) {
+          [b1, b2].forEach(b => { b.className = 'w-1 rounded-xs bg-amber-400'; });
+          rssiLvl.textContent = 'Marginal';
+          rssiLvl.className = 'text-[8.5px] font-mono text-amber-400 font-semibold';
+        } else {
+          b1.className = 'w-1 rounded-xs bg-red-400';
+          rssiLvl.textContent = 'Crítica';
+          rssiLvl.className = 'text-[8.5px] font-mono text-red-400 font-semibold';
+        }
+      }
 
-  // ONI Observado en Telemetría vs Contribución SHAP
-  const oniEl = document.getElementById('metric-oni');
-  if (oniEl) oniEl.textContent = `${currentStepData.oni >= 0 ? '+' : ''}${currentStepData.oni.toFixed(2)}`;
+      // 4. Calidad de Enlace (SNR)
+      const snrEl = document.getElementById('lora-metric-snr');
+      if (snrEl) snrEl.textContent = `${loraTelemetry.snr >= 0 ? '+' : ''}${loraTelemetry.snr.toFixed(1)}`;
+      const timeEl = document.getElementById('lora-metric-time');
+      if (timeEl) timeEl.textContent = loraTelemetry.hora_local;
+    }
+  } else {
+    if (satellitePanel) satellitePanel.classList.remove('hidden');
+    if (loraPanel) loraPanel.classList.add('hidden');
+    if (telemetryTitle) telemetryTitle.textContent = 'Telemetría Satelital Acoplada';
+    if (telemetryIcon) telemetryIcon.setAttribute('data-lucide', 'satellite');
 
-  const oniPhaseEl = document.getElementById('metric-oni-phase');
-  if (oniPhaseEl) {
-    const rawVal = currentStepData.oni;
-    oniPhaseEl.textContent = rawVal >= 0.5 ? `Fase "El Niño" (+${rawVal.toFixed(2)} °C)` : (rawVal <= -0.5 ? `Fase "La Niña" (${rawVal.toFixed(2)} °C)` : `Fase Neutral (${rawVal.toFixed(2)} °C)`);
+    const precEl = document.getElementById('metric-precip');
+    if (precEl) precEl.textContent = (currentStepData.precip * (spiFactor > 1.1 ? 1.25 : 0.95)).toFixed(1);
+
+    const precAnomEl = document.getElementById('metric-precip-anom');
+    if (precAnomEl) {
+      precAnomEl.textContent = `${currentStepData.precipAnom >= 0 ? '+' : ''}${currentStepData.precipAnom}% vs climatología (μ)`;
+      precAnomEl.className = currentStepData.precipAnom < -30 ? 'text-[10px] font-mono text-red-400 mt-0.5' : 'text-[10px] font-mono text-cyan-400 mt-0.5';
+    }
+
+    const gwetEl = document.getElementById('metric-gwetroot');
+    if (gwetEl) gwetEl.textContent = currentGwet;
+
+    const gwetAnomEl = document.getElementById('metric-gwetroot-anom');
+    if (gwetAnomEl) gwetAnomEl.textContent = `Z-score: ${currentStepData.gwetrootZ >= 0 ? '+' : ''}${currentStepData.gwetrootZ.toFixed(2)} σ`;
+
+    const ndviEl = document.getElementById('metric-ndvi');
+    if (ndviEl) ndviEl.textContent = currentNdvi;
+
+    const ndviAnomEl = document.getElementById('metric-ndvi-anom');
+    if (ndviAnomEl) ndviAnomEl.textContent = Number(currentNdvi) < 0.28 ? 'Estrés fotosintético severo' : (Number(currentNdvi) < 0.45 ? 'Vigor medio' : 'Biomasa óptima');
+
+    // ONI Observado en Telemetría vs Contribución SHAP
+    const oniEl = document.getElementById('metric-oni');
+    if (oniEl) oniEl.textContent = `${currentStepData.oni >= 0 ? '+' : ''}${currentStepData.oni.toFixed(2)}`;
+
+    const oniPhaseEl = document.getElementById('metric-oni-phase');
+    if (oniPhaseEl) {
+      const rawVal = currentStepData.oni;
+      oniPhaseEl.textContent = rawVal >= 0.5 ? `Fase "El Niño" (+${rawVal.toFixed(2)} °C)` : (rawVal <= -0.5 ? `Fase "La Niña" (${rawVal.toFixed(2)} °C)` : `Fase Neutral (${rawVal.toFixed(2)} °C)`);
+    }
   }
 
   // 5. Texto SHAP: Distingue explícitamente ONI Observado vs Contribución SHAP del ONI
@@ -5640,9 +5934,10 @@ function setupEventHandlers() {
     btnCloseDocs.addEventListener('click', () => modalDocs.classList.add('hidden'));
   }
 
-  // Conmutador de Fuente de Datos: Planilla Demo vs GEE en Vivo & Modal Comparativa
+  // Conmutador de Fuente de Datos: Planilla Demo vs GEE en Vivo vs LoRa Campo & Modal Comparativa
   const btnSourceBaseline = document.getElementById('btn-source-baseline');
   const btnSourceGee = document.getElementById('btn-source-gee');
+  const btnSourceLora = document.getElementById('btn-source-lora');
   const btnModalCompare = document.getElementById('btn-modal-compare-data');
   const modalCompare = document.getElementById('modal-compare-data');
   const btnCloseCompare = document.getElementById('btn-close-compare');
@@ -5654,6 +5949,9 @@ function setupEventHandlers() {
   }
   if (btnSourceGee) {
     btnSourceGee.addEventListener('click', () => setDataSource('gee'));
+  }
+  if (btnSourceLora) {
+    btnSourceLora.addEventListener('click', () => setDataSource('lora'));
   }
   if (btnModalCompare && modalCompare) {
     btnModalCompare.addEventListener('click', () => {
