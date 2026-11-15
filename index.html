@@ -830,6 +830,18 @@
       <!-- Divisor -->
       <div class="h-3.5 w-px bg-space-800 shrink-0 hidden sm:block"></div>
 
+      <!-- Interactive Guided Live Demo Trigger -->
+      <button id="btn-run-demo" class="h-7 flex items-center space-x-1 px-2 sm:px-2.5 rounded-lg text-[10.5px] sm:text-xs font-semibold bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white shadow-sm shadow-emerald-950 transition whitespace-nowrap shrink-0 cursor-pointer" title="Ejecutar Demo Guiado Interactivo de CLIMATE">
+        <i data-lucide="play" class="w-3.5 h-3.5 fill-current shrink-0"></i>
+        <span data-i18n="btn_demo" class="whitespace-nowrap">Demo</span>
+      </button>
+
+      <!-- Intro Showcase Modal Trigger (Equipo 1-7 & Video Prototipo) -->
+      <button id="btn-open-intro" class="h-7 hidden md:flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700 text-cyan-300 border border-space-700 transition whitespace-nowrap shrink-0 cursor-pointer" title="Ver Equipo (1–7), Prototipo en Video e Impacto">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+        <span data-i18n="btn_intro" class="hidden xl:inline text-[10.5px] font-semibold whitespace-nowrap">Intro</span>
+      </button>
+
       <!-- Ficha Técnica & Ecuaciones Modal Trigger -->
       <button id="btn-modal-docs" class="h-7 hidden sm:flex items-center space-x-1 px-1.5 sm:px-2 rounded-lg text-xs font-medium bg-space-800/80 hover:bg-space-700 text-purple-300 border border-space-700 transition whitespace-nowrap shrink-0" title="Ver Ficha Técnica y Ecuaciones Matemáticas">
         <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400 shrink-0"></i>
@@ -2350,6 +2362,9 @@
 
   <!-- jsPDF Library CDN for Client-Side PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Intro Showcase & Guided Live Demo Module -->
+  <script src="intro-showcase.js"></script>
 
   <!-- Main Application Script -->
   <script src="app.js"></script>

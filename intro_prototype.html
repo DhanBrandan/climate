@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="es" class="dark h-full">
+<html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Introducción: Proyecto CLIMATE (NASA Space Apps)</title>
-
-  <!-- Tailwind CSS CDN -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLIMATE · Intro Oficial, Equipo (1–7), Prototipo & Impacto</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -14,569 +12,57 @@
         extend: {
           colors: {
             space: {
-              950: '#060913',
-              900: '#0B0F19',
-              850: '#0F172A',
-              800: '#1E293B',
-              700: '#334155'
+              950: '#040814',
+              900: '#091124',
+              850: '#0D1730',
+              800: '#13203E',
+              700: '#1E3159'
             }
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace']
           }
         }
       }
-    }
+    };
   </script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-
-  <style>
-    /* Transiciones suaves y estables (Sin vibraciones ni saltos bruscos) */
-    .fade-step {
-      transition: opacity 0.72s cubic-bezier(.2,.75,.25,1), transform 0.78s cubic-bezier(.2,.75,.25,1), filter 0.72s ease, visibility 0s linear .78s;
-    }
-    .fade-step.hidden-step {
-      opacity: 0;
-      transform: scale(.94) translateY(24px);
-      filter: blur(8px);
-      pointer-events: none;
-      position: absolute;
-      visibility: hidden;
-    }
-    .fade-step.active-step {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      filter: blur(0);
-      pointer-events: auto;
-      position: relative;
-      visibility: visible;
-    }
-
-    .member-spotlight { transform-origin: center; will-change: transform, opacity, filter; }
-    .member-spotlight.member-exit { animation: memberExit 220ms ease-in both; pointer-events: none; }
-    .member-spotlight.member-enter { animation: memberEnter 520ms cubic-bezier(.2,.75,.25,1) both; }
-    .fade-step.active-step { transition: opacity 0.72s cubic-bezier(.2,.75,.25,1), transform 0.78s cubic-bezier(.2,.75,.25,1), filter 0.72s ease, visibility 0s; }
-    .scene-zoom-in { animation: sceneZoomIn 760ms cubic-bezier(.16,1,.3,1) both; }
-    @keyframes sceneZoomIn { from { opacity: 0; transform: scale(.86) translateY(18px); filter: blur(10px); } 72% { opacity: 1; transform: scale(1.015) translateY(0); filter: blur(0); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
-    .member-dot { width: 8px; height: 8px; border-radius: 999px; background: #334155; transition: width .25s ease, background-color .25s ease; }
-    .member-dot[aria-current="true"] { width: 24px; background: #22d3ee; box-shadow: 0 0 14px rgba(34,211,238,.45); }
-    @keyframes memberExit { to { opacity: 0; transform: scale(.975) translateY(-8px); filter: blur(3px); } }
-    @keyframes memberEnter {
-      from { opacity: 0; transform: scale(1.025) translateY(10px); filter: blur(3px); }
-      75% { opacity: 1; transform: scale(.995) translateY(0); filter: blur(0); }
-      to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
-    }
-    .intro-atmosphere { background: radial-gradient(circle at 14% 20%, rgba(6,182,212,.2), transparent 30%), radial-gradient(circle at 84% 78%, rgba(139,92,246,.2), transparent 34%), radial-gradient(circle at 60% 8%, rgba(59,130,246,.13), transparent 28%); animation: atmosphereZoom 18s ease-in-out infinite alternate; }
-    @keyframes atmosphereZoom { from { transform: scale(.92) rotate(-1deg); opacity: .65; } to { transform: scale(1.12) rotate(1deg); opacity: 1; } }
-    .team-overview-card { animation: overviewCardIn 620ms cubic-bezier(.16,1,.3,1) both; }
-    .team-overview-card:nth-child(2) { animation-delay: 70ms; }
-    .team-overview-card:nth-child(3) { animation-delay: 140ms; }
-    .team-overview-card:nth-child(4) { animation-delay: 210ms; }
-    .team-overview-card:nth-child(5) { animation-delay: 280ms; }
-    .team-overview-card:nth-child(6) { animation-delay: 350ms; }
-    @keyframes overviewCardIn { from { opacity: 0; transform: scale(.9) translateY(16px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-    }
-
-    /* Fondo de cristal limpio */
-    .clean-glass {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-  </style>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 </head>
-
-<body class="bg-space-950 text-slate-100 min-h-screen font-sans antialiased overflow-x-hidden">
-
-  <!-- ================= DASHBOARD PRINCIPAL SIMULADO ================= -->
-  <div id="main-app" class="min-h-screen flex flex-col">
-    
-    <!-- Barra Superior -->
-    <header class="h-16 border-b border-space-800 bg-space-900/95 px-4 flex items-center justify-between sticky top-0 z-20">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold">
-          <i data-lucide="satellite" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="font-extrabold text-sm sm:text-base text-white tracking-wider">PROYECTO CLIMATE</span>
-            <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">NASA Space Apps</span>
-          </div>
-          <p class="text-[11px] text-slate-400 font-mono">Gran Chaco Americano • Monitoreo Predictivo</p>
-        </div>
-      </div>
-
-      <!-- BOTÓN PARA VOLVER A ABRIR LA INTRODUCCIÓN -->
-      <button id="btn-reopen-intro" class="h-9 px-4 rounded-xl font-mono text-xs font-semibold bg-space-800 hover:bg-space-700 text-cyan-300 border border-cyan-700/60 transition flex items-center gap-2">
-        <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400"></i>
-        <span>Ver Equipo & Beneficios</span>
-      </button>
-    </header>
-
-    <!-- Vista de la Plataforma (Fondo) -->
-    <main class="flex-1 p-6 flex flex-col items-center justify-center text-center space-y-4 max-w-3xl mx-auto">
-      <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-        <i data-lucide="globe" class="w-8 h-8"></i>
-      </div>
-      <h2 class="text-2xl font-bold text-white">Plataforma Operativa Activa</h2>
-      <p class="text-sm text-slate-400">
-        Has ingresado a la consola de CLIMATE. Haz clic en el botón superior en cualquier momento para volver a revisar el equipo o los beneficios del proyecto.
-      </p>
-      <button id="btn-trigger-intro" class="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold transition flex items-center gap-2">
-        <i data-lucide="users" class="w-4 h-4"></i>
-        <span>Volver a Ver la Introducción</span>
-      </button>
-    </main>
-
-  </div>
-
-  <!-- ================= INTRODUCCIÓN LIMPIA Y PASO A PASO ================= -->
-  <div id="intro-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-space-950/90 backdrop-blur-xl transition-opacity duration-300">
-    <div class="intro-atmosphere pointer-events-none absolute inset-0" aria-hidden="true"></div>
-    <div class="relative w-full max-w-5xl clean-glass rounded-3xl p-6 sm:p-8 flex flex-col min-h-[580px] max-h-[92vh] overflow-hidden justify-between shadow-2xl border border-cyan-500/30">
-      
-      <!-- ================= CABECERA & NAVEGACIÓN PASO A PASO ================= -->
-      <div class="flex items-center justify-between pb-4 border-b border-space-800">
-        
-        <!-- Logo y Título -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center text-white shadow-md">
-            <i data-lucide="satellite" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-base sm:text-lg font-black text-white tracking-wide">PROYECTO CLIMATE</h1>
-              <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">NASA Space Apps 2026</span>
-            </div>
-            <p class="text-xs text-slate-400">Sistema Híbrido de Proyección Climática y Alerta Temprana</p>
-          </div>
-        </div>
-
-        <!-- Indicador de Paso (Paso 1 de 2) -->
-        <div class="flex items-center space-x-2">
-          <button id="step-btn-1" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition bg-cyan-600 text-white flex items-center gap-1.5">
-            <span>1. El Equipo</span>
-          </button>
-          <button id="step-btn-2" class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition bg-space-800 text-slate-400 hover:text-white flex items-center gap-1.5">
-            <span>2. Beneficios & Impacto</span>
-          </button>
-          <button id="btn-close-modal-x" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-space-800 transition ml-2" title="Cerrar e ir a la plataforma">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-      </div>
-
-      <!-- ================= CONTENEDOR DE PASOS ================= -->
-      <div class="relative flex-1 py-4 overflow-y-auto">
-
-        <!-- ================= PASO 1: EL EQUIPO (LOS 6 INTEGRANTES) ================= -->
-        <div id="view-step-1" class="fade-step active-step space-y-4">
-          
-          <div class="text-center sm:text-left">
-            <span class="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400">
-              CLIMATE · ANTICIPACIÓN CLIMÁTICA PARA EL GRAN CHACO
-            </span>
-            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">
-              Más tiempo para decidir. Una visión clara del riesgo.
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-300">
-              CLIMATE combina datos satelitales, proyección climática y alertas explicables. Conoce al equipo detrás de la solución.
-            </p>
-          </div>
-
-          <!-- Carrusel individual de los seis integrantes -->
-          <div id="member-carousel" class="relative flex min-h-[320px] flex-col items-center justify-center px-2 sm:px-8">
-            <div class="absolute inset-0 pointer-events-none rounded-3xl bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,.12),transparent_65%)]"></div>
-            <article id="member-spotlight" class="member-spotlight relative z-10 w-full max-w-2xl rounded-3xl border border-cyan-500/30 bg-space-900/85 p-7 sm:p-10 text-center shadow-2xl shadow-cyan-950/30">
-              <div class="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-3xl border border-cyan-400/40 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/30 font-mono text-3xl font-black text-cyan-200 shadow-lg shadow-cyan-950/40">
-                <span id="member-initials">01</span>
-              </div>
-              <p id="member-number" class="text-[10px] font-mono uppercase tracking-[.25em] text-cyan-400">INTEGRANTE 01 / 06</p>
-              <h3 id="member-name" class="mt-2 text-2xl sm:text-3xl font-black text-white">Integrante 1</h3>
-              <p id="member-role" class="mt-2 font-mono text-sm text-cyan-300">Rol por definir</p>
-              <p id="member-bio" class="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-slate-300">Este espacio queda listo para sumar una presentación breve del integrante.</p>
-            </article>
-            <div class="relative z-10 mt-6 flex items-center gap-3">
-              <button id="member-prev" type="button" class="flex h-10 w-10 items-center justify-center rounded-xl border border-space-700 bg-space-900 text-slate-300 transition hover:border-cyan-400 hover:text-white" aria-label="Integrante anterior">
-                <i data-lucide="chevron-left" class="h-5 w-5"></i>
-              </button>
-              <div id="member-dot-nav" class="flex items-center gap-2" aria-label="Elegir integrante">
-                <button type="button" data-member-index="0" class="member-dot" aria-label="Ver integrante 1"></button>
-                <button type="button" data-member-index="1" class="member-dot" aria-label="Ver integrante 2"></button>
-                <button type="button" data-member-index="2" class="member-dot" aria-label="Ver integrante 3"></button>
-                <button type="button" data-member-index="3" class="member-dot" aria-label="Ver integrante 4"></button>
-                <button type="button" data-member-index="4" class="member-dot" aria-label="Ver integrante 5"></button>
-                <button type="button" data-member-index="5" class="member-dot" aria-label="Ver integrante 6"></button>
-              </div>
-              <button id="member-next" type="button" class="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-950/60 text-cyan-300 transition hover:bg-cyan-900/70 hover:text-white" aria-label="Siguiente integrante">
-                <i data-lucide="chevron-right" class="h-5 w-5"></i>
-              </button>
-            </div>
-          </div>
-
-          <div id="member-caption" class="rounded-xl border border-space-800 bg-space-950/70 p-3 text-center text-xs text-slate-400">
-            Perfil <span id="member-caption-number" class="font-mono text-cyan-300">1 de 6</span> · usa las flechas o deja que la presentación avance.
-          </div>
-
-          <section id="team-overview" class="hidden space-y-4">
-            <div class="text-center">
-              <span class="text-xs font-mono uppercase tracking-[.25em] text-cyan-400">Un solo equipo · seis integrantes</span>
-              <h3 class="mt-1 text-2xl sm:text-3xl font-black text-white">Juntos, listos para anticipar.</h3>
-              <p class="mt-1 text-sm text-slate-300">El equipo de CLIMATE, trabajando por la resiliencia del Gran Chaco.</p>
-            </div>
-            <div id="team-overview-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-          </section>
-        </div>
-
-        <!-- ================= PASO 2: BENEFICIOS E IMPACTO ================= -->
-        <div id="view-step-2" class="fade-step hidden-step space-y-4">
-          
-          <div class="text-center sm:text-left">
-            <span class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-              Propuesta de Valor
-            </span>
-            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">
-              Anticípate al riesgo. Gana tiempo para actuar.
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-300">
-              Al incorporar CLIMATE, tu equipo reúne proyecciones, señales satelitales y alertas en un mismo flujo de decisión.
-            </p>
-          </div>
-
-          <!-- Comparación Antes vs Después -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div class="p-3.5 rounded-xl bg-red-950/20 border border-red-500/30 text-xs space-y-1">
-              <span class="font-bold text-red-400 font-mono">SIN UNA VISIÓN INTEGRADA</span>
-              <p class="text-slate-300">Señales dispersas y decisiones que pueden llegar cuando el riesgo ya afecta la producción o los servicios locales.</p>
-            </div>
-            <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-xs space-y-1">
-              <span class="font-bold text-emerald-400 font-mono">CON CLIMATE · MÁS PREPARACIÓN</span>
-              <p class="text-slate-300">Consulta proyecciones de hasta seis meses, revisa las variables detrás de cada alerta y organiza medidas preventivas.</p>
-            </div>
-          </div>
-
-          <!-- Cuadrícula de 4 Beneficios Principales -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            
-            <div class="p-4 rounded-2xl bg-space-900/90 border border-space-800 space-y-1.5">
-              <div class="flex items-center space-x-2 text-emerald-400">
-                <i data-lucide="trending-down" class="w-5 h-5"></i>
-                <h4 class="font-bold text-white text-sm">Más tiempo para prepararse</h4>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                Las proyecciones del índice SPI ofrecen un horizonte de hasta seis meses para planificar medidas preventivas.
-              </p>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-space-900/90 border border-space-800 space-y-1.5">
-              <div class="flex items-center space-x-2 text-purple-400">
-                <i data-lucide="shield-check" class="w-5 h-5"></i>
-                <h4 class="font-bold text-white text-sm">Entiende por qué se activa una alerta</h4>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                Las explicaciones SHAP muestran qué variables, como lluvia y humedad del suelo, influyen en cada alerta.
-              </p>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-space-900/90 border border-space-800 space-y-1.5">
-              <div class="flex items-center space-x-2 text-cyan-400">
-                <i data-lucide="cloud" class="w-5 h-5"></i>
-                <h4 class="font-bold text-white text-sm">Lee el territorio como un sistema</h4>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                La telemetría de NASA y NOAA combina información de precipitación, humedad del suelo, vegetación y clima.
-              </p>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-space-900/90 border border-space-800 space-y-1.5">
-              <div class="flex items-center space-x-2 text-amber-400">
-                <i data-lucide="bell" class="w-5 h-5"></i>
-                <h4 class="font-bold text-white text-sm">Acción Directa en Territorio</h4>
-              </div>
-              <p class="text-xs text-slate-300 leading-relaxed">
-                Los reportes PDF y las alertas por correo o Telegram ayudan a compartir la información con los equipos en territorio.
-              </p>
-            </div>
-
-          </div>
-
-          <section class="rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-cyan-950/50 via-space-900/80 to-emerald-950/40 p-4 sm:p-5">
-            <h3 class="text-sm font-bold text-white">Impacto en decisiones reales</h3>
-            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div><span class="font-mono font-bold text-cyan-300">PRODUCCIÓN</span><p class="mt-1 text-slate-300">Preparar calendario agrícola y revisar disponibilidad de agua con más contexto.</p></div>
-              <div><span class="font-mono font-bold text-emerald-300">GESTIÓN LOCAL</span><p class="mt-1 text-slate-300">Priorizar zonas y organizar recursos ante señales de sequía o exceso de agua.</p></div>
-              <div><span class="font-mono font-bold text-purple-300">PROTECCIÓN CIVIL</span><p class="mt-1 text-slate-300">Compartir alertas y reportes para coordinar acciones con actores del territorio.</p></div>
-            </div>
-            <p class="mt-3 border-t border-white/10 pt-3 text-[10px] text-slate-400">El impacto depende de la implementación local, la calidad de los datos y la respuesta de cada organización.</p>
-          </section>
-
-        </div>
-
-      </div>
-
-      <!-- ================= PIE DE PÁGINA / CONTROLES DE AVANCE ================= -->
-      <div class="pt-4 border-t border-space-800 space-y-3">
-
-        <div class="flex items-center gap-3" aria-label="Progreso de la presentación">
-          <div class="grid grid-cols-2 gap-1.5 flex-1" aria-hidden="true">
-            <span class="h-1 rounded-full bg-space-800 overflow-hidden"><span id="progress-fill-1" class="block h-full rounded-full bg-cyan-400 transition-[width] duration-100" style="width:0%"></span></span>
-            <span class="h-1 rounded-full bg-space-800 overflow-hidden"><span id="progress-fill-2" class="block h-full rounded-full bg-emerald-400 transition-[width] duration-100" style="width:0%"></span></span>
-          </div>
-          <span id="progress-label" class="text-[10px] font-mono text-slate-400 tabular-nums">01 / 02</span>
-          <button id="btn-toggle-playback" type="button" class="px-2.5 py-1 rounded-lg border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 text-[10px] font-mono transition" aria-pressed="true" aria-label="Pausar presentación">Ⅱ Pausar</button>
-        </div>
-
-        <div class="flex items-center justify-between">
-        
-        <!-- Botón Atrás -->
-        <button id="btn-back" class="px-4 py-2 rounded-xl text-xs font-mono font-semibold text-slate-400 hover:text-white hover:bg-space-800 transition disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5" disabled>
-          <i data-lucide="arrow-left" class="w-4 h-4"></i>
-          <span>Volver al Equipo</span>
-        </button>
-
-        <!-- Botón Siguiente / Entrar a la Plataforma -->
-        <div class="flex items-center space-x-3">
-          <button id="btn-next-step" class="px-5 py-2.5 rounded-xl text-xs font-mono font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition flex items-center gap-2">
-            <span>Ver Beneficios e Impacto</span>
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          </button>
-
-          <button id="btn-enter-app" class="hidden px-5 py-2.5 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white transition flex items-center gap-2 shadow-lg shadow-cyan-950">
-            <span>🚀 Entrar a la Plataforma</span>
-            <i data-lucide="check" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        </div>
-      </div>
-
+<body class="min-h-screen bg-space-950 text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+  <noscript>
+    <div class="max-w-lg mx-auto mt-16 p-6 rounded-2xl border border-cyan-500/40 bg-space-900 text-center">
+      <h1 class="text-lg font-bold text-white mb-2">CLIMATE · Showcase Interactivo</h1>
+      <p class="text-sm text-slate-300">Activa JavaScript para visualizar la presentación del equipo (1–7), el prototipo en video y el demo guiado.</p>
     </div>
+  </noscript>
 
-  </div>
-
-  <!-- ================= LÓGICA JAVASCRIPT SIMPLE Y ROBUSTA ================= -->
+  <script src="intro-showcase.js"></script>
   <script>
-    let currentStep = 1;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let isPlaying = !prefersReducedMotion.matches;
-    let stepStartedAt = Date.now();
-    let elapsedBeforePause = 0;
-    const memberDurationMs = 3500;
-    const teamOverviewDurationMs = 6500;
-    const totalMembers = 6;
-    let currentMemberIndex = 0;
-    let teamOverviewShown = false;
-    let memberTransitionToken = 0;
+    (function () {
+      let savedTheme = 'dark';
+      let savedLang = 'es';
+      try {
+        savedTheme = localStorage.getItem('quimili_theme') || 'dark';
+        savedLang = localStorage.getItem('quimili_lang') || 'es';
+      } catch (e) {}
 
-    const view1 = document.getElementById('view-step-1');
-    const view2 = document.getElementById('view-step-2');
-    const stepBtn1 = document.getElementById('step-btn-1');
-    const stepBtn2 = document.getElementById('step-btn-2');
-    const btnBack = document.getElementById('btn-back');
-    const btnNext = document.getElementById('btn-next-step');
-    const btnEnter = document.getElementById('btn-enter-app');
-    const introOverlay = document.getElementById('intro-overlay');
-    const progressFill1 = document.getElementById('progress-fill-1');
-    const progressFill2 = document.getElementById('progress-fill-2');
-    const progressLabel = document.getElementById('progress-label');
-    const playbackButton = document.getElementById('btn-toggle-playback');
-    const memberSpotlight = document.getElementById('member-spotlight');
-    const memberCarousel = document.getElementById('member-carousel');
-    const memberCaption = document.getElementById('member-caption');
-    const teamOverview = document.getElementById('team-overview');
-    const teamOverviewGrid = document.getElementById('team-overview-grid');
-    const memberDots = Array.from(document.querySelectorAll('[data-member-index]'));
-
-    function showMember(index) {
-      const targetIndex = Math.max(0, Math.min(totalMembers - 1, index));
-      const transitionToken = ++memberTransitionToken;
-      currentMemberIndex = targetIndex;
-      teamOverviewShown = false;
-      memberCarousel.classList.remove('hidden');
-      memberCaption.classList.remove('hidden');
-      teamOverview.classList.add('hidden');
-      stepStartedAt = Date.now();
-      elapsedBeforePause = 0;
-
-      const renderMember = () => {
-        if (transitionToken !== memberTransitionToken) return;
-        const number = String(currentMemberIndex + 1).padStart(2, '0');
-        document.getElementById('member-initials').textContent = number;
-        document.getElementById('member-number').textContent = `INTEGRANTE ${number} / 06`;
-        document.getElementById('member-name').textContent = `Integrante ${currentMemberIndex + 1}`;
-        document.getElementById('member-role').textContent = 'Rol por definir';
-        document.getElementById('member-bio').textContent = 'Este espacio queda listo para sumar una presentación breve del integrante.';
-        document.getElementById('member-caption-number').textContent = `${currentMemberIndex + 1} de ${totalMembers}`;
-        memberDots.forEach((dot, dotIndex) => dot.setAttribute('aria-current', String(dotIndex === currentMemberIndex)));
-        const nextLabel = btnNext.querySelector('span');
-        if (nextLabel) nextLabel.textContent = currentMemberIndex === totalMembers - 1 ? 'Ver equipo completo' : 'Siguiente integrante';
-        memberSpotlight.classList.remove('member-exit');
-        void memberSpotlight.offsetWidth;
-        memberSpotlight.classList.add('member-enter');
-        if (window.lucide) window.lucide.createIcons();
-      };
-
-      memberSpotlight.classList.remove('member-enter', 'member-exit');
-      if (prefersReducedMotion.matches) {
-        renderMember();
+      if (savedTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
       } else {
-        memberSpotlight.classList.add('member-exit');
-        window.setTimeout(renderMember, 220);
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
       }
-    }
+      document.documentElement.lang = savedLang === 'en' ? 'en' : 'es';
 
-    function showTeamOverview() {
-      teamOverviewShown = true;
-      memberCarousel.classList.add('hidden');
-      memberCaption.classList.add('hidden');
-      teamOverview.classList.remove('hidden');
-      teamOverview.classList.remove('scene-zoom-in');
-      void teamOverview.offsetWidth;
-      teamOverview.classList.add('scene-zoom-in');
-      teamOverviewGrid.innerHTML = Array.from({ length: totalMembers }, (_, index) => {
-        const number = String(index + 1).padStart(2, '0');
-        return `<article class="team-overview-card flex items-center gap-3 rounded-2xl border border-cyan-500/20 bg-space-900/85 p-3.5 shadow-lg shadow-cyan-950/10">
-          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 font-mono font-bold text-cyan-200">${number}</div>
-          <div><h4 class="font-bold text-white">Integrante ${index + 1}</h4><p class="mt-0.5 text-xs font-mono text-cyan-300">Rol por definir</p></div>
-        </article>`;
-      }).join('');
-      const nextLabel = btnNext.querySelector('span');
-      if (nextLabel) nextLabel.textContent = 'Ver Beneficios e Impacto';
-      stepStartedAt = Date.now();
-      elapsedBeforePause = 0;
-    }
-
-    function updatePlaybackControl() {
-      playbackButton.textContent = isPlaying ? 'Ⅱ Pausar' : '▶ Reanudar';
-      playbackButton.setAttribute('aria-pressed', String(isPlaying));
-      playbackButton.setAttribute('aria-label', isPlaying ? 'Pausar presentación' : 'Reanudar presentación');
-    }
-
-    function updatePlaybackProgress() {
-      const elapsed = isPlaying ? Date.now() - stepStartedAt : elapsedBeforePause;
-      if (isPlaying && currentStep === 1) {
-        if (teamOverviewShown && elapsed >= teamOverviewDurationMs) goToStep(2);
-        else if (!teamOverviewShown && elapsed >= memberDurationMs) {
-          if (currentMemberIndex < totalMembers - 1) showMember(currentMemberIndex + 1);
-          else showTeamOverview();
-        }
+      if (window.ClimateIntroShowcase && typeof window.ClimateIntroShowcase.init === 'function') {
+        window.ClimateIntroShowcase.init({
+          standalone: true,
+          autoOpen: true,
+          language: savedLang === 'en' ? 'en' : 'es'
+        });
       }
-      const sceneElapsed = isPlaying ? Date.now() - stepStartedAt : elapsedBeforePause;
-      const teamElapsed = teamOverviewShown
-        ? totalMembers * memberDurationMs + sceneElapsed
-        : currentMemberIndex * memberDurationMs + sceneElapsed;
-      const firstSceneProgress = currentStep === 1
-        ? Math.min(100, (teamElapsed / (totalMembers * memberDurationMs + teamOverviewDurationMs)) * 100)
-        : 100;
-      progressFill1.style.width = `${firstSceneProgress}%`;
-      progressFill2.style.width = currentStep === 2 ? '100%' : '0%';
-      progressLabel.textContent = currentStep === 1
-        ? `01 / 02 · ${teamOverviewShown ? '06 / 06' : `${String(currentMemberIndex + 1).padStart(2, '0')} / 06`}`
-        : '02 / 02';
-      window.setTimeout(updatePlaybackProgress, 100);
-    }
-
-    function goToStep(step) {
-      currentStep = step;
-      stepStartedAt = Date.now();
-      elapsedBeforePause = 0;
-
-      if (step === 1) {
-        // Mostrar Paso 1
-        view1.classList.remove('hidden-step');
-        view1.classList.add('active-step');
-        view2.classList.remove('active-step');
-        view2.classList.add('hidden-step');
-
-        stepBtn1.className = "px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition bg-cyan-600 text-white flex items-center gap-1.5";
-        stepBtn2.className = "px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition bg-space-800 text-slate-400 hover:text-white flex items-center gap-1.5";
-
-        btnBack.disabled = true;
-        btnNext.classList.remove('hidden');
-        btnEnter.classList.add('hidden');
-      } else {
-        // Mostrar Paso 2
-        view1.classList.remove('active-step');
-        view1.classList.add('hidden-step');
-        view2.classList.remove('hidden-step');
-        view2.classList.add('active-step');
-
-        stepBtn1.className = "px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition bg-space-800 text-slate-400 hover:text-white flex items-center gap-1.5";
-        stepBtn2.className = "px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition bg-emerald-600 text-white flex items-center gap-1.5";
-
-        btnBack.disabled = false;
-        btnNext.classList.add('hidden');
-        btnEnter.classList.remove('hidden');
+      if (window.lucide) {
+        window.lucide.createIcons();
       }
-
-      if (window.lucide) window.lucide.createIcons();
-    }
-
-    // Botones de navegación
-    stepBtn1.addEventListener('click', () => {
-      goToStep(1);
-      showMember(0);
-    });
-    stepBtn2.addEventListener('click', () => goToStep(2));
-    btnNext.addEventListener('click', () => {
-      if (currentStep !== 1 || teamOverviewShown) goToStep(2);
-      else if (currentMemberIndex < totalMembers - 1) showMember(currentMemberIndex + 1);
-      else showTeamOverview();
-    });
-    btnBack.addEventListener('click', () => goToStep(1));
-    document.getElementById('member-prev').addEventListener('click', () => showMember(currentMemberIndex - 1));
-    document.getElementById('member-next').addEventListener('click', () => {
-      if (currentMemberIndex < totalMembers - 1) showMember(currentMemberIndex + 1);
-      else showTeamOverview();
-    });
-    memberDots.forEach(dot => dot.addEventListener('click', () => showMember(Number(dot.dataset.memberIndex))));
-
-    // Cerrar / Abrir la Intro
-    function closeIntro() {
-      introOverlay.classList.add('hidden');
-      if (isPlaying && currentStep === 1) elapsedBeforePause = Date.now() - stepStartedAt;
-      isPlaying = false;
-      updatePlaybackControl();
-    }
-
-    function openIntro() {
-      introOverlay.classList.remove('hidden');
-      isPlaying = !prefersReducedMotion.matches;
-      currentMemberIndex = 0;
-      showMember(0);
-      goToStep(1);
-      updatePlaybackControl();
-    }
-
-    playbackButton.addEventListener('click', () => {
-      if (isPlaying) {
-        if (currentStep === 1) elapsedBeforePause = Date.now() - stepStartedAt;
-        isPlaying = false;
-      } else {
-        stepStartedAt = Date.now() - elapsedBeforePause;
-        isPlaying = true;
-      }
-      updatePlaybackControl();
-    });
-
-    btnEnter.addEventListener('click', closeIntro);
-    document.getElementById('btn-close-modal-x').addEventListener('click', closeIntro);
-    document.getElementById('btn-reopen-intro').addEventListener('click', openIntro);
-    document.getElementById('btn-trigger-intro').addEventListener('click', openIntro);
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) window.lucide.createIcons();
-      showMember(0);
-      updatePlaybackControl();
-      updatePlaybackProgress();
-    });
+    })();
   </script>
 </body>
 </html>

@@ -3690,6 +3690,8 @@ const TRANSLATIONS = {
     btn_style_light: 'Claro',
     btn_style_sat: 'Satélite',
     btn_style_osm: 'OSM',
+    btn_demo: 'Demo',
+    btn_intro: 'Intro',
     btn_docs: 'Ficha',
     btn_alerts: 'Alertas',
     btn_report: 'Reporte',
@@ -3828,6 +3830,8 @@ const TRANSLATIONS = {
     btn_style_light: 'Light',
     btn_style_sat: 'Satellite',
     btn_style_osm: 'OSM',
+    btn_demo: 'Demo',
+    btn_intro: 'Intro',
     btn_docs: 'Specs',
     btn_alerts: 'Alerts',
     btn_report: 'Report',
@@ -4028,6 +4032,9 @@ function setLanguage(lang) {
   updateLegend();
   if (state.dataSource === 'lora') {
     updateLoraFieldsUI();
+  }
+  if (window.ClimateIntro && typeof window.ClimateIntro.setLanguage === 'function') {
+    window.ClimateIntro.setLanguage(lang);
   }
 }
 
@@ -7833,6 +7840,26 @@ function setupEventHandlers() {
       window.open('/excel-analysis.html', '_blank');
     });
   }
+
+  // Botón de Demo Guiado Interactivo
+  const btnRunDemo = document.getElementById('btn-run-demo');
+  if (btnRunDemo) {
+    btnRunDemo.addEventListener('click', () => {
+      if (window.ClimateIntro && typeof window.ClimateIntro.startDemo === 'function') {
+        window.ClimateIntro.startDemo(0);
+      }
+    });
+  }
+
+  // Botón de Intro / Equipo & Prototipo
+  const btnOpenIntro = document.getElementById('btn-open-intro');
+  if (btnOpenIntro) {
+    btnOpenIntro.addEventListener('click', () => {
+      if (window.ClimateIntro && typeof window.ClimateIntro.open === 'function') {
+        window.ClimateIntro.open(1);
+      }
+    });
+  }
 }
 
 // ================= GESTIÓN DE SUSCRIPCIÓN A ALERTAS TEMPRANAS =================
@@ -8943,6 +8970,18 @@ function startApp() {
     updateLegend();
   } catch (e) {
     console.error('updateLegend error:', e);
+  }
+
+  const isDemoUrl = new URLSearchParams(window.location.search).get('demo') === '1';
+  if (window.ClimateIntroShowcase && typeof window.ClimateIntroShowcase.init === 'function') {
+    window.ClimateIntroShowcase.init({
+      standalone: false,
+      autoOpen: !isDemoUrl,
+      language: state.language
+    });
+  }
+  if (isDemoUrl && window.ClimateIntro && typeof window.ClimateIntro.startDemo === 'function') {
+    setTimeout(() => window.ClimateIntro.startDemo(0), 700);
   }
 
   try {
