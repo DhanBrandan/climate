@@ -1,66 +1,73 @@
-# Proyecto CLIMATE — Gran Chaco
-### Sistema Híbrido de Proyección Climática y Alerta Temprana
+# 🛰️ Proyecto CLIMATE — Gran Chaco Americano
+### Sistema Híbrido de Proyección Climática, Alerta Temprana y Explicabilidad Satelital
 **NASA Space Apps Challenge 2026** — Documentación Técnica, Científica y Operativa
 
----
+[![GitHub repo](https://img.shields.io/badge/GitHub-Repository-181717?logo=github)](https://github.com/DhanBrandan/climate)
+[![Status](https://img.shields.io/badge/Status-Prototipo%20Operativo-10B981)](#)
+[![Python](https://img.shields.io/badge/Backend-FastAPI%20%7C%20GEE%20SDK-06B6D4)](#)
+[![Frontend](https://img.shields.io/badge/Frontend-MapLibre%20%7C%20Tailwind-3B82F6)](#)
 
-## 🛰️ 1. Resumen del Proyecto
-
-El **Gran Chaco Americano** experimenta ciclos acoplados extremos: sequías prolongadas que diezman la humedad del suelo y la biomasa, seguidas por pulsos severos de precipitación modulados por el fenómeno ENSO (El Niño) que causan anegamientos por la pérdida de infiltración del suelo sedimentario.
-
-Este sistema cubre el **Gran Chaco Americano en su totalidad (~1.100.000 km² a lo largo de Argentina, Bolivia y Paraguay)** y desacopla la baja resolución de los modelos globales mediante una **red de nodos centinela transfronterizos** (Quimilí, Filadelfia, Villa Montes, Sáenz Peña, Resistencia) acoplados a una **arquitectura híbrida de dos niveles**:
-
-1. **Nivel 1 (LightGBM):** Proyección continua multivariable con lags temporales ($t-1$ a $t-6$) e intervalos empíricos de incertidumbre ($p10, p50, p90$).
-2. **Nivel 2 (Random Forest Classifier + SHAP):** Motor de alerta categórica (**Verde, Amarillo, Naranja, Rojo**) con explicabilidad transparente de cada variable que detona la decisión.
+> 📘 **¿Trabajando en equipo?** Consulta la [**Guía Completa de Transferencia y Continuidad Técnica (MANUAL_COMPLETO_PROYECTO.md)**](MANUAL_COMPLETO_PROYECTO.md) para conocer la arquitectura a fondo, cómo instalarlo y nuevas ideas para sumar al proyecto.
 
 ---
 
-## 🗺️ 2. Arquitectura de Visualización (Mapbox GL JS)
+## 🗺️ 1. Resumen Ejecutivo
 
-La interfaz gráfica implementa **Mapbox / MapLibre GL JS (WebGL)**:
+El **Gran Chaco Americano** es un ecosistema transfronterizo de más de 1.100.000 km² distribuido entre **Argentina, Bolivia y Paraguay**. Sufre ciclos acoplados extremos de sequías prolongadas seguidas de inundaciones repentinas provocadas por teleconexiones oceánicas (El Niño/ENSO).
 
-* **Cobertura Ecorregional Completa:** 7 macro-regiones que cubren Argentina, Bolivia y Paraguay (Chaco Seco Austral, Chaco Central, Chaco Húmedo, Chaco Boreal, Chaco Septentrional, Chaco Boliviano y Chaco Serrano).
-* **Red de Nodos Centinela Trinacional:** Marcadores interactivos con balizas de pulso sincronizadas en tiempo real con el nivel de alerta para Quimilí (ARG), Filadelfia (PRY), Villa Montes (BOL), Sáenz Peña (ARG) y Resistencia (ARG).
-* **Capas Satelitales Intercambiables:**
-  * **SPI Sequía:** Índice estandarizado de sequía ajustado con distribución Gamma acumulada.
-  * **Humedad Radicular (SMAP/GLDAS):** Variable crítica `GWETROOT` para prevenir colapso agropecuario antes de que se seque la superficie.
-  * **Biomasa NDVI (MODIS Terra/Aqua):** Vigor fotosintético del Chaco Seco.
-  * **Riesgo de Anegamiento:** Acoplamiento no lineal de sellado del suelo y pulso de precipitación pronosticada.
-* **Línea de Tiempo Predictiva:** Scrubber interactivo con modo reproducción automática (1x, 2x) que recorre desde $t-6$ meses (histórico observado) hasta $t+6$ meses (proyección cuantílica).
-* **Gráficos Dinámicos:** Cono de incertidumbre $p10-p90$ y gráfico de barras de impacto **SHAP**.
-* **Accionabilidad Computada:** Recomendaciones específicas para municipios (gestión de reservorios y canales) y productores (fechas de siembra diferida).
+**CLIMATE** es una plataforma operativa que combina **telemetría satelital en tiempo real de la NASA y NOAA** con **modelos de Machine Learning de dos niveles**:
+1. **Nivel 1 (LightGBM Cuantílico):** Proyección continua a 6 meses del índice de sequía SPI con conos de incertidumbre $[p10, p50, p90]$.
+2. **Nivel 2 (Random Forest Classifier + SHAP):** Motor de alerta temprana en 4 niveles (**Verde, Amarillo, Naranja, Rojo**) con explicabilidad transparente de variables satelitales.
 
 ---
 
-## 🚀 3. Cómo Ejecutar la Aplicación
+## 🚀 2. Inicio Rápido (Cómo Ejecutarlo)
 
-### Opción A: Interfaz Web (Inmediato)
-Puedes abrir directamente el archivo `index.html` en tu navegador o servirlo con el servidor HTTP de Python:
-
+### Opción A: Frontend (Visualizador Web)
+Solo necesitas un servidor HTTP simple para servir los archivos locales:
 ```bash
-cd proyecto-climate
-python3 -m http.server 3000
+python3 -m http.server 3005
 ```
+Abre en tu navegador: **`http://localhost:3005`**
 
-Luego abre tu navegador en:
-👉 `http://localhost:3000`
-
-### Opción B: Backend API FastAPI (Opcional)
-Para correr la API matemática en Python:
-
+### Opción B: Backend Completo (FastAPI + Google Earth Engine)
+Para activar la inferencia y telemetría satelital en tiempo real:
 ```bash
-cd proyecto-climate
+# 1. Crear entorno virtual e instalar dependencias
+python3 -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python3 -m uvicorn server:app --reload --port 8000
-```
 
-Documentación interactiva Swagger:
-👉 `http://localhost:8000/docs`
+# 2. Iniciar el servidor backend
+python3 server.py
+```
+Accede a la documentación interactiva Swagger: **`http://localhost:8000/docs`**
 
 ---
 
-## 📊 4. Misiones Satelitales Acopladas
-* **Atmosféricas:** NASA POWER / MERRA-2 (`T2M`, `T2M_MAX`, `ALLSKY_SFC_SW_DWN`, `RH2M`).
-* **Balance Hídrico:** GPM IMERG (`PRECTOTCORR`) y SMAP/GLDAS (`GWETROOT`).
-* **Biomasa:** MODIS Terra/Aqua (`MOD13C2` NDVI).
-* **Forzante Oceánico:** NOAA CPC (Índice `ONI` con rezago de 0 a 6 meses).
+## 🛰️ 3. Misiones Satelitales Acopladas
+
+* **Precipitación:** NASA GPM IMERG V07 (`PRECTOTCORR`).
+* **Humedad del Suelo Profunda:** NASA SMAP L4 Root-Zone Soil Moisture (`GWETROOT`, 0–100 cm).
+* **Vigor y Biomasa:** NASA MODIS Terra/Aqua (`MOD13A2` NDVI).
+* **Teleconexión Oceánica:** NOAA Climate Prediction Center (`ONI` Niño 3.4).
+* **Térmica y Radiación:** NASA MERRA-2 (`T2M_MAX`, radiación de onda corta incidente).
+
+---
+
+## 🌟 4. Funcionalidades Principales
+
+* **Conmutador de Fuentes:** Alterna entre la **Planilla Calibrada (13 meses de serie temporal)** y **Google Earth Engine en Tiempo Real**.
+* **Modal Comparativo (`[ ⇄ Comparar ]`):** Contraste cara a cara de la telemetría satelital y su impacto en las decisiones del modelo.
+* **Inspector Puntual:** Haz clic en cualquier coordenada del mapa para obtener una predicción instantánea con sparkline de 12 meses.
+* **Años Análogos Históricos:** Superpón las grandes sequías del Gran Chaco (2008-09, 2018, 2022-23) sobre la proyección activa.
+* **Reporte Ejecutivo PDF:** Generación de un reporte completo con mapa, gráficos de proyección, análisis SHAP y recomendaciones de mitigación.
+* **Sistema de Suscripciones:** Suscripción a alertas tempranas de cuenca por correo electrónico o Telegram.
+
+---
+
+## 👥 5. Para el Equipo y Colaboradores
+
+- **Repositorio:** [https://github.com/DhanBrandan/climate](https://github.com/DhanBrandan/climate)
+- **Manual Maestro para el equipo:** [MANUAL_COMPLETO_PROYECTO.md](MANUAL_COMPLETO_PROYECTO.md)
+- **Contacto:** Desarrollado para el NASA Space Apps Challenge.
