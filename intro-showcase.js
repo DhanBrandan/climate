@@ -307,7 +307,8 @@
       border-color: #CBD5E1 !important;
     }
     html.light #climate-demo-hud .text-cyan-400,
-    html.light #climate-demo-hud .text-cyan-300 {
+    html.light #climate-demo-hud .text-cyan-300,
+    html.light #climate-demo-hud .text-cyan-200 {
       color: #0369A1 !important;
     }
     html.light #climate-demo-hud .text-emerald-300 {
@@ -1164,21 +1165,51 @@
       slider.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
+    function closeGatewayPopupIfOpen() {
+      const closeBtn = document.getElementById('btn-close-gateway-popup');
+      if (closeBtn && typeof closeBtn.click === 'function') {
+        closeBtn.click();
+      }
+    }
+
+    let activeDemoGatewayId = 'quimili';
+
+    function triggerLoraGatewayHub(hubId, attempt) {
+      const tries = attempt || 0;
+      activeDemoGatewayId = hubId;
+      const btnLora = document.getElementById('btn-source-lora');
+      if (btnLora && !btnLora.classList.contains('bg-cyan-600')) {
+        btnLora.click();
+      }
+      const marker = document.querySelector(`.lora-marker-gateway[data-lora-node-id="${hubId}"]`)
+        || document.querySelector(`[data-lora-node-id="${hubId}"]`);
+      if (marker) {
+        marker.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        highlightElements(['#btn-source-lora', '#lora-santiago-gateway-banner', '#telemetry-lora-panel']);
+        renderDemoHud();
+      } else if (tries < 12) {
+        scheduleDemoSubTimer(() => triggerLoraGatewayHub(hubId, tries + 1), 220);
+      } else if (typeof global.selectNode === 'function') {
+        global.selectNode(hubId);
+      }
+    }
+
     const DEMO_STAGES = [
       {
         id: 'chaco-overview',
         durationMs: 7000,
         badgeEs: 'PASO 01 / 06 · TERRITORIO TRINACIONAL',
         badgeEn: 'STEP 01 / 06 · TRINATIONAL TERRITORY',
-        titleEs: 'Monitoreo Gran Chaco & Planilla Calibrada 30Y',
-        titleEn: 'Gran Chaco Monitoring & 30Y Calibrated Baseline',
+        titleEs: 'Monitoreo Gran Chaco & Serie Histórica Calibrada',
+        titleEn: 'Gran Chaco Monitoring & Calibrated 30Y Series',
         descEs: 'Consolidamos Argentina, Paraguay y Bolivia en un mapa coroplético de riesgo con clasificación instantánea de sequía y exceso hídrico.',
         descEn: 'We unify Argentina, Paraguay, and Bolivia into a live risk choropleth map with instant drought and excess-water alert levels.',
-        tagEs: 'Baseline 30 Años · HOY',
+        tagEs: 'Climatología 30 Años · HOY',
         tagEn: '30-Year Baseline · TODAY',
         highlights: ['#card-alert', '#card-telemetry'],
         onEnter: () => {
           ensureSidebarOpen();
+          closeGatewayPopupIfOpen();
           if (typeof global.closePointInspector === 'function') global.closePointInspector();
           clickSelector('#btn-style-dark');
           clickSelector('#btn-source-baseline');
@@ -1201,6 +1232,7 @@
         highlights: ['.layer-btn[data-layer="gwetroot"]', '#btn-style-sat', '#card-telemetry'],
         onEnter: () => {
           ensureSidebarOpen();
+          closeGatewayPopupIfOpen();
           if (typeof global.closePointInspector === 'function') global.closePointInspector();
           clickSelector('#btn-style-sat');
           clickSelector('.layer-btn[data-layer="gwetroot"]');
@@ -1211,24 +1243,25 @@
         }
       },
       {
-        id: 'lorawan-edge',
+        id: 'gee-validation',
         durationMs: 7500,
-        badgeEs: 'PASO 03 / 06 · HARDWARE IN-SITU & EDGE',
-        badgeEn: 'STEP 03 / 06 · FIELD HARDWARE & EDGE',
-        titleEs: 'Red Rural LoRaWAN (Cero Celular) + Gateway MultiTech',
-        titleEn: 'Cellular-Free Rural LoRaWAN + MultiTech Gateway',
-        descEs: 'Activamos LoRa (Campo): los nodos solares en Santiago del Estero transmiten hasta 15 km sin chips 4G y con failover autónomo en tormentas.',
-        descEn: 'Activating LoRa (Field): solar nodes transmit up to 15 km without cellular SIMs, running autonomous local Edge inference during outages.',
-        tagEs: '915 MHz · ESP32-C3 + ChirpStack',
-        tagEn: '915 MHz · ESP32-C3 + ChirpStack',
-        highlights: ['#btn-source-lora', '#card-telemetry'],
+        badgeEs: 'PASO 03 / 06 · GOOGLE EARTH ENGINE EN VIVO',
+        badgeEn: 'STEP 03 / 06 · LIVE GOOGLE EARTH ENGINE',
+        titleEs: 'Fusión Satelital GEE en Tiempo Real & Validación',
+        titleEn: 'Real-Time GEE Satellite Fusion & Validation',
+        descEs: 'Conectamos Google Earth Engine con lluvia GPM, temperatura de suelo y validación cruzada multicapa (RMSE/MAE) para calibrar cada departamento.',
+        descEn: 'We integrate Google Earth Engine rainfall (GPM), land temperature, and multi-layer cross-validation (RMSE/MAE) across every department.',
+        tagEs: 'GPM · SMAP · Validación IA',
+        tagEn: 'GPM · SMAP · AI Validation',
+        highlights: ['#btn-source-gee', '#card-telemetry', '#card-validation-metrics'],
         onEnter: () => {
           ensureSidebarOpen();
+          closeGatewayPopupIfOpen();
           if (typeof global.closePointInspector === 'function') global.closePointInspector();
           clickSelector('#btn-style-dark');
           clickSelector('.layer-btn[data-layer="spi"]');
-          clickSelector('#btn-source-lora');
-          if (typeof global.selectNode === 'function') global.selectNode('quimili');
+          clickSelector('#btn-source-gee');
+          if (typeof global.selectNode === 'function') global.selectNode('gran_chaco');
         }
       },
       {
@@ -1244,6 +1277,7 @@
         tagEn: 'Unrestricted Spatial Querying',
         highlights: ['#map-point-inspector'],
         onEnter: () => {
+          closeGatewayPopupIfOpen();
           clickSelector('#btn-source-baseline');
           if (typeof global.handleMapPointClick === 'function') {
             global.handleMapPointClick({ lng: -62.42, lat: -27.64 }, true);
@@ -1270,6 +1304,7 @@
         highlights: ['#card-projection-container', '#card-shap-container', '#timeline-slider'],
         onEnter: () => {
           ensureSidebarOpen();
+          closeGatewayPopupIfOpen();
           if (typeof global.closePointInspector === 'function') global.closePointInspector();
           clickSelector('#btn-source-baseline');
           if (typeof global.selectNode === 'function') global.selectNode('gran_chaco');
@@ -1279,22 +1314,27 @@
         }
       },
       {
-        id: 'actionability-export',
-        durationMs: 9000,
-        badgeEs: 'PASO 06 / 06 · DECISIÓN & REPORTES',
-        badgeEn: 'STEP 06 / 06 · DECISION & REPORTING',
-        titleEs: 'Excel 30 Años, Alertas Automáticas & Reporte PDF',
-        titleEn: '30-Year Excel Analytics, Alerts & PDF Briefing',
-        descEs: 'Cierra el ciclo enviando avisos tempranos por Telegram/Email, analizando planillas históricas de campo o generando el Reporte Ejecutivo PDF.',
-        descEn: 'Close the loop with automated Telegram/Email early warnings, 30-year field Excel diagnostics, and instant PDF crisis reports.',
-        tagEs: 'Listo para Campo e Instituciones',
-        tagEn: 'Field & Institutional Ready',
-        highlights: ['#card-actions', '#btn-export-report'],
+        id: 'lora-central-nodes',
+        durationMs: 11000,
+        badgeEs: 'PASO 06 / 06 · ARQUITECTURA LORA: CENTRAL & NODOS',
+        badgeEn: 'STEP 06 / 06 · LORA ARCHITECTURE: CENTRAL & NODES',
+        titleEs: 'Cómo Trabaja LoRa: Central Gateway, Nodos & Alertas',
+        titleEn: 'How LoRa Works: Central Gateway, Field Nodes & Alerts',
+        descEs: 'Los Nodos Solares de cada lote transmiten humedad, batería y RSSI por radio 915 MHz (hasta 15 km sin celular) hacia su Central Gateway MultiTech, que ilumina enlaces, procesa Edge offline y dispara alertas/PDF.',
+        descEn: 'Solar field nodes transmit soil moisture, battery, and RSSI over 915 MHz radio (15 km without cellular) to their MultiTech Central Gateway, highlighting radio links, running Edge inference, and issuing alerts/PDF.',
+        tagEs: 'Nodos Campo ➔ Central Hub ➔ Alerta',
+        tagEn: 'Field Nodes ➔ Central Hub ➔ Alert',
+        highlights: ['#btn-source-lora', '#lora-santiago-gateway-banner', '#telemetry-lora-panel'],
         isFinal: true,
         onEnter: () => {
           ensureSidebarOpen();
+          if (typeof global.closePointInspector === 'function') global.closePointInspector();
           setTimelineStep(6);
-          if (typeof global.selectNode === 'function') global.selectNode('quimili');
+          clickSelector('#btn-style-dark');
+          clickSelector('.layer-btn[data-layer="spi"]');
+          clickSelector('#btn-source-lora');
+          scheduleDemoSubTimer(() => triggerLoraGatewayHub('quimili', 0), 320);
+          scheduleDemoSubTimer(() => triggerLoraGatewayHub('anatuya', 0), 5400);
         }
       }
     ];
@@ -1360,8 +1400,32 @@
         return `<button type="button" data-demo-jump="${idx}" class="h-6 min-w-[26px] px-1.5 rounded-md border text-[10px] font-mono transition cursor-pointer ${cls}">${idx + 1}</button>`;
       }).join('');
 
+      const gatewayStripHtml = stage.isFinal ? `
+        <div class="mt-2.5 pt-2 border-t border-space-800/80">
+          <div class="text-[9.5px] font-mono text-slate-400 mb-1.5 flex items-center justify-between">
+            <span>${isEn ? 'Inspect Central Gateway -> Field Nodes:' : 'Inspeccionar Central Gateway ➔ Nodos:'}</span>
+            <span class="text-cyan-400 font-semibold">4 Hubs SGO</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-2">
+            ${[
+              { id: 'quimili', label: 'Quimilí' },
+              { id: 'anatuya', label: 'Añatuya' },
+              { id: 'bandera', label: 'Bandera' },
+              { id: 'termas', label: 'Termas' }
+            ].map(gw => {
+              const activeGw = activeDemoGatewayId === gw.id;
+              const cls = activeGw
+                ? 'bg-cyan-500/25 text-cyan-200 border-cyan-400 shadow-sm shadow-cyan-500/30 font-bold'
+                : 'demo-hud-btn-idle bg-space-800/90 hover:bg-space-700 text-slate-300 border-space-700';
+              return `<button type="button" data-demo-gw="${gw.id}" class="px-2 py-1 rounded-lg text-[10px] font-mono border transition flex items-center gap-1 cursor-pointer ${cls}"><span>🏭</span><span>${gw.label}</span></button>`;
+            }).join('')}
+          </div>
+        </div>
+      ` : '';
+
       const finalActionsHtml = stage.isFinal ? `
-        <div class="mt-2.5 pt-2.5 border-t border-space-800/80 flex flex-wrap gap-1.5">
+        ${gatewayStripHtml}
+        <div class="pt-2 border-t border-space-800/80 flex flex-wrap gap-1.5">
           <button id="demo-hud-open-video" type="button" class="px-2.5 py-1.5 rounded-lg text-[10.5px] font-mono font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition flex items-center gap-1 cursor-pointer">
             <i data-lucide="film" class="w-3 h-3"></i>
             <span>${isEn ? 'Prototype Video' : 'Prototipo Video'}</span>
@@ -1437,6 +1501,14 @@
       hud.querySelector('#demo-hud-playpause')?.addEventListener('click', toggleDemoPause);
       hud.querySelectorAll('[data-demo-jump]').forEach(btn => {
         btn.addEventListener('click', () => goToDemoStage(Number(btn.getAttribute('data-demo-jump'))));
+      });
+      hud.querySelectorAll('[data-demo-gw]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          clearDemoSubTimers();
+          demoPaused = true;
+          const gwId = btn.getAttribute('data-demo-gw');
+          if (gwId) triggerLoraGatewayHub(gwId, 0);
+        });
       });
       hud.querySelector('#demo-hud-restart')?.addEventListener('click', () => goToDemoStage(0));
       hud.querySelector('#demo-hud-open-video')?.addEventListener('click', () => {

@@ -5403,6 +5403,7 @@ function renderSentinelMarkers() {
 
       // Usar estrictamente lora-marker-container con tamaño fijo (MapLibre GL posiciona con position: absolute y transform)
       el.className = `lora-marker-container ${sizeClass} group`;
+      el.setAttribute('data-lora-node-id', item.id);
       el.style.width = `${markerSize}px`;
       el.style.height = `${markerSize}px`;
 
