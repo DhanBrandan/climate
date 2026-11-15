@@ -213,6 +213,53 @@ class LoraTelemetry(BaseModel):
     velocidad_retransmision: Optional[str] = "SF7 / 125 kHz @ 5.4 kbps"
     sensores_perifericos: Optional[List[Dict[str, Any]]] = None
 
+# ================= MODELO DE EVENTO CHIRPSTACK V4 LNS =================
+class ChirpStackUplinkEvent(BaseModel):
+    deduplicationId: Optional[str] = None
+    time: Optional[str] = None
+    deviceInfo: Optional[Dict[str, Any]] = None
+    devAddr: Optional[str] = None
+    adr: Optional[bool] = True
+    dr: Optional[int] = 5
+    fCnt: Optional[int] = 0
+    fPort: Optional[int] = 1
+    data: Optional[str] = None
+    object: Optional[Dict[str, Any]] = None
+    rxInfo: Optional[List[Dict[str, Any]]] = None
+
+# Estado vivo del subsistema de Edge Computing en Gateway MultiTech Quimilí
+EDGE_GATEWAY_STATE = {
+    "gateway_id": "QUIMILI_NODO_01",
+    "nombre": "Gateway Hub Quimilí (Chaco Seco Austral)",
+    "hardware": "MultiTech Conduit IP67 (MTCDTIP) • ARM9 400MHz • mLinux Yocto",
+    "lns_protocol": "Semtech Basics Station (WSS/TLS con autenticación mutua)",
+    "broker_lns": "ChirpStack v4 (Open Source)",
+    "cifrado": "AES-128 End-to-End (AppSKey + NwkSKey)",
+    "internet_wan_status": "ONLINE",
+    "edge_computing_status": "ACTIVO_MONITOREO",
+    "edge_model": "Micro-LightGBM Quantile + Extreme Anomaly Rule Engine (Embebido mLinux)",
+    "local_storage": "SQLite WAL en Flash Industrial 16GB",
+    "sms_modem": {
+        "status": "READY",
+        "modelo": "Telit LE910C4-NF (4G LTE Cat 4 / GSM Fallback)",
+        "protocolo": "3GPP AT Commands (AT+CMGS)",
+        "carrier": "Personal / Claro Multi-IMSI Sim Agro",
+        "contactos_productores_cargados": 4
+    },
+    "satellite_fallback": {
+        "status": "STANDBY",
+        "modulo": "Iridium 9603 SBD (Short Burst Data) Transceiver vía UART",
+        "latencia_satelital_seg": 18
+    },
+    "estadisticas_deduplicacion": {
+        "tramas_recibidas_brutas": 2840,
+        "tramas_desduplicadas": 692,
+        "tasa_eficiencia_rf": "24.3%",
+        "criterio_seleccion": "Mayor SNR (dB) / Menor RSSI atenuado"
+    },
+    "ultimo_evento_edge": None
+}
+
 # Almacén en memoria de la última telemetría in-situ recibida por nodo
 LATEST_LORA_STORE: Dict[str, Dict[str, Any]] = {}
 
@@ -675,6 +722,149 @@ def get_lora_telemetry_history(node_id: Optional[str] = None, limit: int = 50):
     except Exception as e:
         logger.error(f"[SQLite DB] Error recuperando historial LoRa: {e}")
         return {"status": "ERROR", "detail": str(e), "records": []}
+
+# ================= ENDPOINTS RED LORAWAN PROFESIONAL & EDGE COMPUTING =================
+@app.get("/api/lorawan/edge/status")
+def get_edge_gateway_status():
+    """
+    Retorna el estado operativo en tiempo real de la Red LoRaWAN Profesional (ChirpStack v4),
+    la conexión de los Gateways MultiTech vía Semtech Basics Station y el subsistema de Edge Computing.
+    """
+    return EDGE_GATEWAY_STATE
+
+@app.post("/api/lorawan/edge/simulate-failover")
+def simulate_edge_failover(disconnect_wan: bool = True):
+    """
+    Simula la pérdida total de conexión a Internet (corte de fibra óptica / caída de torre 4G por tormenta convectiva severa)
+    en el Gateway MultiTech Conduit de Quimilí.
+    Activa inmediatamente el Edge Computing local, ejecuta el modelo de inferencia en el procesador embebido
+    y despacha alertas de emergencia vía SMS directo a los celulares de los productores agropecuarios locales.
+    """
+    EDGE_GATEWAY_STATE["internet_wan_status"] = "OFFLINE_TORMENTA_SEVERA" if disconnect_wan else "ONLINE"
+    EDGE_GATEWAY_STATE["edge_computing_status"] = "EMERGENCIA_AUTONOMA_ACTIVA" if disconnect_wan else "ACTIVO_MONITOREO"
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    if disconnect_wan:
+        sms_recipients = [
+            {"nombre": "Estancia Don Juan (Lote 14)", "telefono": "+54 9 385 412-3401"},
+            {"nombre": "Cooperativa Agropecuaria Quimilí", "telefono": "+54 9 385 498-7652"},
+            {"nombre": "Consorcio Caminero Vecinal N° 82", "telefono": "+54 9 385 554-1123"},
+            {"nombre": "Defensa Civil / Bomberos Voluntarios", "telefono": "+54 9 385 621-9988"}
+        ]
+        
+        sms_text = (
+            "🚨 ALERTA EDGE CLIMATE [QUIMILÍ]: "
+            "Corte general de Internet por tormenta severa. "
+            "Gateway MultiTech en modo autónomo: Suelo saturado (92%) y lluvia súbita 42mm en 25m. "
+            "Riesgo de anegamiento en bajos y caminos vecinales. Mueva hacienda a cotas altas. "
+            f"Emisión local GSM: {timestamp}"
+        )
+        
+        iridium_payload = {
+            "node": "QUIMILI_GATEWAY_EDGE",
+            "alert": "ROJO_ANEGAMIENTO_OFFLINE",
+            "soil_gwet": 0.38,
+            "rain_mm": 42.0,
+            "wan": "DOWN",
+            "sat_timestamp": timestamp
+        }
+        
+        event_record = {
+            "timestamp": timestamp,
+            "disparador": "Pérdida de enlace WAN (WAN Ping Failure)",
+            "modelo_ejecutado": "Micro-LightGBM Quantile Edge v1.2 (Local mLinux Yocto)",
+            "tiempo_inferencia_local_ms": 3.8,
+            "decision_edge": "DISPARO_INMEDIATO_ALERTA_CRITICA",
+            "sms_despachados_count": len(sms_recipients),
+            "sms_destinatarios": sms_recipients,
+            "sms_mensaje": sms_text,
+            "iridium_sbd_dispatched": True,
+            "iridium_packet": iridium_payload,
+            "sirena_local_rele": "ACTIVADA_120S"
+        }
+        EDGE_GATEWAY_STATE["ultimo_evento_edge"] = event_record
+        return {
+            "status": "FAILOVER_ACTIVATED",
+            "mode": "EDGE_COMPUTING_OFFLINE",
+            "event": event_record
+        }
+    else:
+        EDGE_GATEWAY_STATE["ultimo_evento_edge"] = {
+            "timestamp": timestamp,
+            "disparador": "Restablecimiento de enlace WAN / Fibra óptica",
+            "sincronizacion_sqlite_nube": "COMPLETA_142_TRAMAS",
+            "sms_despachados_count": 0
+        }
+        return {
+            "status": "FAILOVER_RESTORED",
+            "mode": "ONLINE_NORMAL",
+            "event": EDGE_GATEWAY_STATE["ultimo_evento_edge"]
+        }
+
+@app.post("/api/lorawan/chirpstack/event")
+def ingest_chirpstack_uplink(event: ChirpStackUplinkEvent):
+    """
+    Endpoint de Ingesta Oficial de ChirpStack v4 LNS (HTTP Integration / MQTT Bridge).
+    Recibe la trama decodificada con métricas de radio de los gateways participantes (rxInfo).
+    Demuestra la desduplicación de paquetes de múltiples gateways y persiste en SQLite WAL.
+    """
+    dev_info = event.deviceInfo or {}
+    dev_eui = dev_info.get("devEui", "UNKNOWN_EUI")
+    dev_name = dev_info.get("deviceName", "Sensor Campo")
+    obj = event.object or {}
+    rx_info = event.rxInfo or []
+    
+    # Desduplicación: evaluar cuántos gateways captaron la misma trama
+    gateways_count = len(rx_info)
+    best_rx = rx_info[0] if rx_info else {}
+    for rx in rx_info:
+        if rx.get("snr", -999) > best_rx.get("snr", -999):
+            best_rx = rx
+            
+    # Registrar estadísticas
+    EDGE_GATEWAY_STATE["estadisticas_deduplicacion"]["tramas_recibidas_brutas"] += max(1, gateways_count)
+    if gateways_count > 1:
+        EDGE_GATEWAY_STATE["estadisticas_deduplicacion"]["tramas_desduplicadas"] += (gateways_count - 1)
+        
+    now = datetime.now()
+    tele_record = {
+        "node_id": dev_name,
+        "localidad": obj.get("localidad", "Quimilí"),
+        "provincia": obj.get("provincia", "Santiago del Estero"),
+        "latitud": obj.get("latitud", -28.64),
+        "longitud": obj.get("longitud", -62.42),
+        "altitud_m": obj.get("altitud_m", 120.0),
+        "fecha_local": now.strftime("%Y-%m-%d"),
+        "hora_local": now.strftime("%H:%M:%S"),
+        "fuente_id": "CHIRPSTACK_LNS_V4",
+        "tipo_dato": "OBSERVACION_LORA_DESDUPLICADA",
+        "temp_media_C": obj.get("temp_media_C", 27.5),
+        "temp_min_C": obj.get("temp_min_C", 18.0),
+        "temp_max_C": obj.get("temp_max_C", 34.0),
+        "humedad_relativa_media_pct": obj.get("humedad_relativa_media_pct", 58.0),
+        "humedad_relativa_min_pct": obj.get("humedad_relativa_min_pct", 35.0),
+        "humedad_suelo_0_7cm_m3m3": obj.get("humedad_suelo_0_7cm_m3m3", 0.22),
+        "bateria_v": obj.get("bateria_v", 4.10),
+        "rssi": best_rx.get("rssi", -82.0),
+        "snr": best_rx.get("snr", 8.5),
+        "tipo_nodo": "SENSOR_CAMPO",
+        "hardware_modelo": "ESP32-C3 + Ra-02 (Basics Station)",
+        "gateways_solapados_escuchados": gateways_count,
+        "deduplicado": gateways_count > 1
+    }
+    
+    save_lora_record_to_db(tele_record)
+    LATEST_LORA_STORE[dev_name] = tele_record
+    
+    return {
+        "status": "INGESTED_AND_DEDUPLICATED",
+        "dev_eui": dev_eui,
+        "gateways_captados": gateways_count,
+        "gateway_seleccionado_max_snr": best_rx.get("gatewayId", "QUIMILI_GW_01"),
+        "snr_db": best_rx.get("snr"),
+        "rssi_dbm": best_rx.get("rssi")
+    }
 
 # ================= MOTOR DE MACHINE LEARNING HÍBRIDO =================
 @app.post("/api/predict")

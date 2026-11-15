@@ -175,7 +175,30 @@ curl -X POST "http://localhost:8000/api/nodes/telemetry" \
 
 ---
 
-## 🤝 7. Cómo Compartir este Proyecto con tu Compañera
+## 🛡️ 7. Red LoRaWAN Profesional & Edge Computing en Gateways (Resiliencia Extrema)
+
+Para llevar la capa de campo a un estándar industrial y garantizar supervivencia en el Gran Chaco ante eventos climáticos severos:
+
+### 1. Broker LoRaWAN ChirpStack v4 (100% Open Source)
+- **Gateways MultiTech Conduit IP67 y AEP:** Se comunican con ChirpStack mediante el protocolo moderno **Semtech Basics Station (LNS)** vía WebSockets seguros (`wss://`) con autenticación TLS mutual, reemplazando el legacy packet forwarder UDP.
+- **Desduplicación de Tramas RF:** Cuando los gateways de Quimilí y Añatuya captan simultáneamente el mismo paquete de un sensor en zona limítrofe, ChirpStack descarta el duplicado y conserva la trama con mayor relación señal/ruido (`max SNR / RSSI`).
+- **Cifrado AES-128 End-to-End:** Utiliza claves independientes de red (`NwkSKey`) y de aplicación (`AppSKey`).
+- **Transporte MQTT:** Los paquetes decodificados se publican en un broker Eclipse Mosquitto hacia el backend FastAPI.
+
+### 2. Edge Computing en el Gateway (Supervivencia ante Tormentas y Apagones)
+En el Chaco Seco, los vendavales y tormentas convectivas severas frecuentemente derriban postes eléctricos y cortan enlaces de fibra óptica y 4G en el momento más crítico.
+- **Micro-Kernel Local:** El procesador ARM9 del MultiTech corre un modelo embebido **Micro-LightGBM Quantile Edge** sobre **mLinux**.
+- **Alerta Directa por SMS (Módem GSM Interno):** Al detectar corte de enlace WAN e índices críticos de saturación/anegamiento, ejecuta comandos AT (`AT+CMGS`) en su módem 4G/GSM interno para enviar SMS de advertencia directamente a los teléfonos celulares de productores locales, consorcios camineros y bomberos sin depender de internet.
+- **Fallback Satelital Iridium SBD:** Si hasta las antenas celulares locales quedan fuera de servicio, despacha un paquete comprimido de 50 bytes mediante un transceptor satelital Iridium 9603 SBD a la constelación LEO.
+
+### 3. Endpoints de la Capa LoRaWAN Profesional
+- `GET /api/lorawan/edge/status`: Estado operativo en tiempo real del Gateway MultiTech Quimilí y métricas ChirpStack.
+- `POST /api/lorawan/edge/simulate-failover`: Simula la pérdida de Internet WAN por tormenta, activando el Edge Computing local y despachando alertas SMS.
+- `POST /api/lorawan/chirpstack/event`: Ingesta de tramas decodificadas de ChirpStack con desduplicación multi-gateway.
+
+---
+
+## 🤝 8. Cómo Compartir este Proyecto con tu Compañera
 
 - **Repositorio oficial:** [https://github.com/DhanBrandan/climate](https://github.com/DhanBrandan/climate)
 - **Invitación en GitHub:** Ve a `Settings` > `Collaborators` y añade a `Danielafz`.

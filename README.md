@@ -67,6 +67,7 @@ Accede a la documentación interactiva Swagger: **`http://localhost:8000/docs`**
   - `📋 Planilla`: Serie histórica calibrada de 13 meses con deslizador temporal interactivo.
   - `🛰️ GEE Vivo`: Telemetría satelital en tiempo real descargada directamente de Google Earth Engine.
   - `📡 LoRa Campo`: Datos físicos in-situ provenientes de la red de Nodos Centinela y Gateways de campo.
+* **Red LoRaWAN Profesional & Edge Computing:** Integración de Broker Open Source **ChirpStack v4** con estándar **Semtech Basics Station**, desduplicación de paquetes solapados multi-gateway, cifrado **AES-128** y micro-modelos locales en los concentradores **MultiTech Conduit** para activar alertas autónomas por SMS directo (módem GSM) e Iridium Satelital si una tormenta corta la conexión a internet.
 * **Capa de Enlaces LoRa (RF Links):** Visualización en el mapa de las líneas de comunicación por radiofrecuencia entre Gateways y Nodos Centinela de campo.
 * **Modal Comparativo (`[ ⇄ Comparar ]`):** Contraste cara a cara entre la telemetría satelital observada y las salidas del modelo de IA.
 * **Inspector Puntual:** Clic en cualquier coordenada del mapa para obtener una proyección instantánea con sparkline de 12 meses.

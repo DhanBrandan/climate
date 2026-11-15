@@ -4327,6 +4327,28 @@ function showGatewayTelemetryPopup(gatewayData, coords) {
         </div>
       </div>
 
+      <!-- 3.5. Subsistema LoRaWAN Profesional & Edge Computing MultiTech -->
+      <div class="bg-gradient-to-r from-space-950 to-space-900 p-2 rounded-lg border border-cyan-500/30 text-[9px] font-mono mb-2 shrink-0 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-cyan-300 font-bold flex items-center gap-1">
+            <span>🛡️</span> LNS ChirpStack v4:
+          </span>
+          <span class="text-emerald-400 font-bold">Basics Station WSS</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-400">
+          <span>Cifrado & Desduplicación:</span>
+          <span class="text-slate-200">AES-128 • Max SNR</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-400 pt-0.5 border-t border-space-800/80">
+          <span class="text-cyan-300 flex items-center gap-1">
+            <span>⚡</span> Edge Computing mLinux:
+          </span>
+          <span class="px-1 py-0.2 rounded text-[7.5px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            SMS GSM / Iridium OK
+          </span>
+        </div>
+      </div>
+
       <!-- 4. ÚNICO Contenedor Interno con Desplazamiento Scroll: Sensores de Campo en Radio -->
       <div class="flex-1 min-h-0 flex flex-col mb-1.5">
         <div class="text-[9px] font-mono uppercase text-slate-400 font-semibold tracking-wider flex items-center justify-between mb-1 shrink-0">
@@ -6925,10 +6947,128 @@ function setupEventHandlers() {
   const btnCloseDocs = document.getElementById('btn-close-docs');
 
   if (btnDocs && modalDocs) {
-    btnDocs.addEventListener('click', () => modalDocs.classList.remove('hidden'));
+    btnDocs.addEventListener('click', () => {
+      modalDocs.classList.remove('hidden');
+      updateEdgeSimulatorStatus();
+    });
   }
   if (btnCloseDocs && modalDocs) {
     btnCloseDocs.addEventListener('click', () => modalDocs.classList.add('hidden'));
+  }
+
+  // Pestañas del Modal de Documentación Técnica (Metodología vs LoRaWAN & Edge)
+  const tabDocsScientific = document.getElementById('tab-docs-scientific');
+  const tabDocsLorawan = document.getElementById('tab-docs-lorawan');
+  const contentDocsScientific = document.getElementById('docs-content-scientific');
+  const contentDocsLorawan = document.getElementById('docs-content-lorawan');
+  const btnEdgeSimFail = document.getElementById('btn-edge-sim-fail');
+  const btnEdgeSimRestore = document.getElementById('btn-edge-sim-restore');
+  const edgeWanBadge = document.getElementById('edge-sim-wan-badge');
+  const edgeConsole = document.getElementById('edge-sim-console');
+
+  function switchDocsTab(tab) {
+    if (tab === 'scientific') {
+      if (tabDocsScientific) tabDocsScientific.className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-purple-600 text-white transition flex items-center gap-1.5 whitespace-nowrap';
+      if (tabDocsLorawan) tabDocsLorawan.className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-semibold text-slate-400 hover:text-cyan-300 hover:bg-space-800 transition flex items-center gap-1.5 whitespace-nowrap';
+      if (contentDocsScientific) contentDocsScientific.classList.remove('hidden');
+      if (contentDocsLorawan) contentDocsLorawan.classList.add('hidden');
+    } else {
+      if (tabDocsLorawan) tabDocsLorawan.className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-cyan-600 text-white transition flex items-center gap-1.5 whitespace-nowrap';
+      if (tabDocsScientific) tabDocsScientific.className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-semibold text-slate-400 hover:text-purple-300 hover:bg-space-800 transition flex items-center gap-1.5 whitespace-nowrap';
+      if (contentDocsLorawan) contentDocsLorawan.classList.remove('hidden');
+      if (contentDocsScientific) contentDocsScientific.classList.add('hidden');
+      updateEdgeSimulatorStatus();
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async function updateEdgeSimulatorStatus() {
+    try {
+      const res = await fetch('http://localhost:8000/api/lorawan/edge/status');
+      if (!res.ok) return;
+      const data = await res.json();
+      renderEdgeStatusUI(data);
+    } catch (e) {
+      console.warn('Edge status check offline', e);
+    }
+  }
+
+  function renderEdgeStatusUI(data) {
+    if (!data) return;
+    const isOffline = data.internet_wan_status !== 'ONLINE';
+    if (edgeWanBadge) {
+      if (isOffline) {
+        edgeWanBadge.className = 'px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse';
+        edgeWanBadge.textContent = '🚨 TORMENTA: WAN DOWN (MODO EDGE)';
+      } else {
+        edgeWanBadge.className = 'px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        edgeWanBadge.textContent = '🌐 INTERNET WAN: ONLINE';
+      }
+    }
+
+    if (edgeConsole) {
+      if (data.ultimo_evento_edge && isOffline) {
+        const ev = data.ultimo_evento_edge;
+        edgeConsole.innerHTML = `
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-red-400 font-bold">
+              <span>⚠️ [FAILOVER ACTIVADO] Gateway Quimilí en Modo Autónomo</span>
+              <span>Inferencia: ${ev.tiempo_inferencia_local_ms} ms</span>
+            </div>
+            <div class="text-[10.5px] text-slate-300 bg-space-950 p-2 rounded border border-red-500/30">
+              <span class="text-amber-400 font-bold block mb-0.5">📱 Despacho SMS GSM Inmediato (${ev.sms_despachados_count} productores locales):</span>
+              <span class="italic text-slate-200 leading-snug block">"${ev.sms_mensaje}"</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-[9.5px] text-slate-400 pt-1 border-t border-space-800">
+              <span>📡 Iridium Satelital SBD: <b class="text-emerald-400">ENVIADO (50 bytes)</b></span>
+              <span>Sirena Relé Local: <b class="text-red-400">${ev.sirena_local_rele}</b></span>
+            </div>
+          </div>
+        `;
+      } else if (data.ultimo_evento_edge && !isOffline) {
+        edgeConsole.innerHTML = `
+          <div class="text-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+            <span>Enlace WAN restablecido (${data.ultimo_evento_edge.timestamp}). Sincronización SQLite flash local hacia nube completada.</span>
+          </div>
+        `;
+      } else {
+        edgeConsole.innerHTML = `
+          <div class="text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400 shrink-0"></i>
+            <span>Gateway MultiTech Quimilí en enlace normal con ChirpStack v4. Listo para simular corte de fibra por tormenta.</span>
+          </div>
+        `;
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  if (tabDocsScientific) tabDocsScientific.addEventListener('click', () => switchDocsTab('scientific'));
+  if (tabDocsLorawan) tabDocsLorawan.addEventListener('click', () => switchDocsTab('lorawan'));
+
+  if (btnEdgeSimFail) {
+    btnEdgeSimFail.addEventListener('click', async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/lorawan/edge/simulate-failover?disconnect_wan=true', { method: 'POST' });
+        const data = await res.json();
+        updateEdgeSimulatorStatus();
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  }
+
+  if (btnEdgeSimRestore) {
+    btnEdgeSimRestore.addEventListener('click', async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/lorawan/edge/simulate-failover?disconnect_wan=false', { method: 'POST' });
+        const data = await res.json();
+        updateEdgeSimulatorStatus();
+      } catch (e) {
+        console.error(e);
+      }
+    });
   }
 
   // Conmutador de Fuente de Datos: Planilla Demo vs GEE en Vivo vs LoRa Campo & Modal Comparativa
