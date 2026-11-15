@@ -126,8 +126,9 @@ const QUIMILI_COORDS = SENTINEL_NODES.quimili.coords;
 const CHACO_CENTER = GRAN_CHACO_CENTER;
 
 // Open high-resolution tile styles (NO REQUIEREN API KEY NI TIENEN MARCA DE AGUA)
-const TILE_STYLES = {
-  dark: {
+function getMasterMapStyle(initialTheme) {
+  const isLight = initialTheme === 'light';
+  return {
     version: 8,
     sources: {
       'esri-dark': {
@@ -138,37 +139,28 @@ const TILE_STYLES = {
         tileSize: 256,
         attribution: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap'
       },
-      'esri-labels': {
+      'esri-labels-dark': {
         type: 'raster',
         tiles: [
           'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
         ],
         tileSize: 256
-      }
-    },
-    layers: [
-      {
-        id: 'esri-dark-layer',
-        type: 'raster',
-        source: 'esri-dark',
-        minzoom: 0,
-        maxzoom: 19
       },
-      {
-        id: 'esri-labels-layer',
+      'esri-light': {
         type: 'raster',
-        source: 'esri-labels',
-        minzoom: 0,
-        maxzoom: 19,
-        paint: {
-          'raster-opacity': 0.30
-        }
-      }
-    ]
-  },
-  satellite: {
-    version: 8,
-    sources: {
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '&copy; Esri, HERE, Garmin, &copy; OpenStreetMap'
+      },
+      'esri-labels-light': {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256
+      },
       'esri-sat': {
         type: 'raster',
         tiles: [
@@ -176,21 +168,7 @@ const TILE_STYLES = {
         ],
         tileSize: 256,
         attribution: '&copy; Esri, Maxar, Earthstar Geographics'
-      }
-    },
-    layers: [
-      {
-        id: 'esri-sat-layer',
-        type: 'raster',
-        source: 'esri-sat',
-        minzoom: 0,
-        maxzoom: 19
-      }
-    ]
-  },
-  osm: {
-    version: 8,
-    sources: {
+      },
       'osm-tiles': {
         type: 'raster',
         tiles: [
@@ -202,14 +180,64 @@ const TILE_STYLES = {
     },
     layers: [
       {
-        id: 'osm-layer',
+        id: 'basemap-dark-layer',
+        type: 'raster',
+        source: 'esri-dark',
+        minzoom: 0,
+        maxzoom: 19,
+        layout: { visibility: isLight ? 'none' : 'visible' }
+      },
+      {
+        id: 'basemap-dark-labels',
+        type: 'raster',
+        source: 'esri-labels-dark',
+        minzoom: 0,
+        maxzoom: 19,
+        paint: { 'raster-opacity': 0.30 },
+        layout: { visibility: isLight ? 'none' : 'visible' }
+      },
+      {
+        id: 'basemap-light-layer',
+        type: 'raster',
+        source: 'esri-light',
+        minzoom: 0,
+        maxzoom: 19,
+        layout: { visibility: isLight ? 'visible' : 'none' }
+      },
+      {
+        id: 'basemap-light-labels',
+        type: 'raster',
+        source: 'esri-labels-light',
+        minzoom: 0,
+        maxzoom: 19,
+        paint: { 'raster-opacity': 0.35 },
+        layout: { visibility: isLight ? 'visible' : 'none' }
+      },
+      {
+        id: 'basemap-sat-layer',
+        type: 'raster',
+        source: 'esri-sat',
+        minzoom: 0,
+        maxzoom: 19,
+        layout: { visibility: 'none' }
+      },
+      {
+        id: 'basemap-osm-layer',
         type: 'raster',
         source: 'osm-tiles',
         minzoom: 0,
-        maxzoom: 19
+        maxzoom: 19,
+        layout: { visibility: 'none' }
       }
     ]
-  }
+  };
+}
+
+const TILE_STYLES = {
+  dark: getMasterMapStyle('dark'),
+  light: getMasterMapStyle('light'),
+  satellite: getMasterMapStyle('dark'),
+  osm: getMasterMapStyle('dark')
 };
 
 // ================= TIMELINE STEPS (t-6 a t+6 meses) =================
@@ -227,6 +255,22 @@ const TIMELINE_STEPS = [
   { id: 10, label: 't+4 (Marzo 2027)', date: '2027-03', phase: 'projection', name: 'Mar 27' },
   { id: 11, label: 't+5 (Abril 2027)', date: '2027-04', phase: 'projection', name: 'Abr 27' },
   { id: 12, label: 't+6 (Mayo 2027)', date: '2027-05', phase: 'projection', name: 'May 27' }
+];
+
+const TIMELINE_STEPS_EN = [
+  { id: 0, label: 't-6 (May 2026)', date: '2026-05', phase: 'historical', name: 'May 26' },
+  { id: 1, label: 't-5 (June 2026)', date: '2026-06', phase: 'historical', name: 'Jun 26' },
+  { id: 2, label: 't-4 (July 2026)', date: '2026-07', phase: 'historical', name: 'Jul 26' },
+  { id: 3, label: 't-3 (August 2026)', date: '2026-08', phase: 'historical', name: 'Aug 26' },
+  { id: 4, label: 't-2 (September 2026)', date: '2026-09', phase: 'historical', name: 'Sep 26' },
+  { id: 5, label: 't-1 (October 2026)', date: '2026-10', phase: 'historical', name: 'Oct 26' },
+  { id: 6, label: 't0 (November 2026 - TODAY)', date: '2026-11', phase: 'current', name: 'Nov 26 (t0)' },
+  { id: 7, label: 't+1 (December 2026)', date: '2026-12', phase: 'projection', name: 'Dec 26' },
+  { id: 8, label: 't+2 (January 2027)', date: '2027-01', phase: 'projection', name: 'Jan 27' },
+  { id: 9, label: 't+3 (February 2027)', date: '2027-02', phase: 'projection', name: 'Feb 27' },
+  { id: 10, label: 't+4 (March 2027)', date: '2027-03', phase: 'projection', name: 'Mar 27' },
+  { id: 11, label: 't+5 (April 2027)', date: '2027-04', phase: 'projection', name: 'Apr 27' },
+  { id: 12, label: 't+6 (May 2027)', date: '2027-05', phase: 'projection', name: 'May 27' }
 ];
 
 // ================= MACRO-REGIONES DEL GRAN CHACO AMERICANO (GEOJSON) =================
@@ -3627,6 +3671,477 @@ const DEPT_VARIATIONS = {
   chaco_boliviano: { spiFactor: 0.96, gwetFactor: 1.04, ndviFactor: 1.08, floodBias: 0.12 }
 };
 
+// ================= DICCIONARIO BILINGÜE DE INTERNACIONALIZACIÓN (ES / EN) =================
+const TRANSLATIONS = {
+  es: {
+    // Marca & Cabecera
+    brand_title: 'CLIMATE',
+    brand_sub: 'Sistema Híbrido de Proyección & Alerta',
+    brand_region: 'Gran Chaco',
+    monitoring_label: 'Monitoreo:',
+    source_label: 'Fuente:',
+    source_baseline: 'Planilla',
+    source_gee: 'GEE Vivo',
+    source_lora: 'LoRa',
+    source_lora_full: 'LoRa (Campo)',
+    btn_compare: 'Comparar',
+    style_label: 'Mapa:',
+    btn_style_dark: 'Oscuro',
+    btn_style_light: 'Claro',
+    btn_style_sat: 'Satélite',
+    btn_style_osm: 'OSM',
+    btn_docs: 'Ficha',
+    btn_alerts: 'Alertas',
+    btn_report: 'Reporte',
+    btn_report_pdf: 'Reporte PDF',
+    btn_panel: 'Panel',
+    btn_theme_mode: 'Claro',
+
+    // Nodos Regionales
+    node_gran_chaco: '🌎 Gran Chaco',
+    node_quimili: '🇦🇷 Quimilí (Hub Sgo. del Estero)',
+    node_anatuya: '🇦🇷 Añatuya (Hub Sgo. del Estero)',
+    node_bandera: '🇦🇷 Bandera (Hub Sgo. del Estero)',
+    node_termas: '🇦🇷 Termas R.H. (Hub Sgo. del Estero)',
+    node_filadelfia: '🇵🇾 Filadelfia (Boreal PRY)',
+    node_villamontes: '🇧🇴 Villa Montes (Subandino)',
+    node_saenzpena: '🇦🇷 Sáenz Peña (Central)',
+    node_resistencia: '🇦🇷 Resistencia (Húmedo)',
+
+    // Alertas de Cabecera
+    alert_rojo: 'ALERTA ROJA: SEQUÍA SEVERA',
+    alert_naranja: 'ALERTA NARANJA: DÉFICIT SEVERO',
+    alert_amarillo: 'ALERTA AMARILLA: VULNERABILIDAD MODERADA',
+    alert_verde: 'ESTABLE: CONDICIÓN NORMAL',
+
+    // Capas del Mapa
+    layer_label: 'Capa:',
+    layer_spi: 'SPI Sequía',
+    layer_gwetroot: 'Humedad (SMAP)',
+    layer_ndvi: 'NDVI (MODIS)',
+    layer_flood: 'Anegamiento',
+    recenter_label: 'Enfocar Gran Chaco',
+    legend_spi: 'Escala SPI (Sequía)',
+    legend_gwet: 'Humedad Radicular SMAP (m³/m³)',
+    legend_ndvi: 'Índice de Vegetación NDVI',
+    legend_flood: 'Riesgo de Anegamiento / Inundación',
+
+    // Línea de Tiempo
+    timeline_step: 'Paso:',
+    timeline_historical: 'Histórico (t-6 a t-1)',
+    timeline_projection: 'Proyección IA (t+1 a t+6)',
+    timeline_play_title: 'Reproducir Simulación',
+    timeline_pause_title: 'Pausar Simulación',
+    timeline_prev_title: 'Mes Anterior',
+    timeline_next_title: 'Mes Siguiente',
+
+    // Pestañas Barra Lateral
+    tab_all: 'Todo (5)',
+    tab_summary: 'Telemetría',
+    tab_models: 'Modelos IA',
+
+    // Tarjeta 1: Motor de Alerta Categórica
+    card_alert_title: 'Nivel 2: Motor de Alerta Categórica',
+    rf_confidence: 'Confianza RF',
+    rf_pill_verde: 'VERDE',
+    rf_pill_amarillo: 'AMARILLO',
+    rf_pill_naranja: 'NARANJA',
+    rf_pill_rojo: 'ROJO',
+    alert_persistence_note: 'Nota hidrológica: Aunque la proyección repunte en meses estivales, el déficit hídrico en el perfil radicular profundo persiste. Mantener medidas de contingencia hasta consolidar recarga.',
+
+    // Tarjeta 2: Telemetría
+    card_telemetry_title: 'Telemetría Satelital Acoplada',
+    metric_precip: 'Lluvia Mensual (GPM)',
+    metric_gwetroot: 'Humedad Radicular (SMAP)',
+    metric_ndvi: 'Índice Vegetación (MODIS)',
+    metric_oni: 'Anomalía Oceánica (ONI / ENSO)',
+    online_status: 'ONLINE',
+    calibrated_status: 'CALIBRADO',
+    charging_status: 'CARGANDO',
+    link_ok_status: 'ENLACE OK',
+
+    // LoRa Gateways
+    lora_banner_title: 'Nodos Centrales Gateway en Santiago del Estero:',
+    lora_badge_active: 'Activos',
+    lora_hardware_model: 'MultiTech IP67 • Basics Station',
+    lora_edge_badge: '⚡ Edge mLinux',
+    lora_soil_title: 'Humedad Suelo (In-Situ)',
+    lora_bat_title: 'Batería Nodo (Solar DIY)',
+    lora_rssi_title: 'Fuerza Señal (RSSI)',
+    lora_snr_title: 'Calidad Enlace (SNR)',
+    lora_last_frame: 'Última trama:',
+    lora_optimal: 'Óptima',
+    lora_low: 'Baja',
+    lora_excellent: 'Excelente',
+    lora_good: 'Buena',
+
+    // Tarjeta 3: Proyección Continua
+    card_projection_title: 'Nivel 1: Proyección Continua',
+    card_projection_sub: 'LightGBM (Incertidumbre p10-p90)',
+    table_horizon: 'Horizonte',
+    table_lead: 'Plazo',
+    table_rmse: 'RMSE (SPI)',
+    table_corr: 'Corr (r)',
+    table_skill: 'Skill vs Clima',
+    table_validation: 'Validación cruzada K-Fold Temporal',
+    table_demo_ready: '[Estructura DEMO lista para sustitución]',
+
+    // Tarjeta 4: Explicabilidad SHAP
+    card_shap_title: 'Explicabilidad (Valores SHAP)',
+    card_shap_sub: 'Contribución al Riesgo',
+    shap_inc_risk: '[▲ + Sequía] Aumenta riesgo',
+    shap_dec_risk: '[▼ - Sequía] Reduce riesgo',
+
+    // Tarjeta 5: Accionabilidad
+    card_actions_title: 'Accionabilidad: Recomendaciones',
+    live_sync_text: 'En Vivo • hace 14 min',
+
+    // Tarjeta 6: Metodología
+    methodology_title: '¿Cómo se calcula? (Modelos y Límites)',
+    methodology_view: 'Ver explicación',
+    methodology_hide: 'Ocultar explicación',
+
+    // Modales
+    modal_gee_title: 'Google Earth Engine (GEE) Hub',
+    modal_gee_sub: 'Ingesta y Telemetría Satelital de Misiones NASA en Vivo',
+    modal_docs_title: 'Documentación Técnica y Ecuaciones',
+    modal_docs_sub: 'Métricas, Arquitectura del Ensamble y Especificaciones Matemáticas',
+    modal_alerts_title: 'Suscripción a Alertas Tempranas',
+    modal_alerts_sub: 'Recibe alertas automáticas vía Email o Telegram ante anomalías hídricas',
+    modal_compare_title: 'Comparativa: Planilla Demo vs Google Earth Engine',
+    modal_compare_sub: 'Validación cruzada entre datos calibrados de referencia y telemetría en vivo'
+  },
+  en: {
+    // Brand & Header
+    brand_title: 'CLIMATE',
+    brand_sub: 'Hybrid Projection & Early Warning System',
+    brand_region: 'Gran Chaco',
+    monitoring_label: 'Monitoring:',
+    source_label: 'Source:',
+    source_baseline: 'Spreadsheet',
+    source_gee: 'Live GEE',
+    source_lora: 'LoRa',
+    source_lora_full: 'LoRa (Field)',
+    btn_compare: 'Compare',
+    style_label: 'Map:',
+    btn_style_dark: 'Dark',
+    btn_style_light: 'Light',
+    btn_style_sat: 'Satellite',
+    btn_style_osm: 'OSM',
+    btn_docs: 'Specs',
+    btn_alerts: 'Alerts',
+    btn_report: 'Report',
+    btn_report_pdf: 'PDF Report',
+    btn_panel: 'Panel',
+    btn_theme_mode: 'Dark',
+
+    // Regional Sentinel Nodes
+    node_gran_chaco: '🌎 Gran Chaco',
+    node_quimili: '🇦🇷 Quimilí (Sgo. del Estero Hub)',
+    node_anatuya: '🇦🇷 Añatuya (Sgo. del Estero Hub)',
+    node_bandera: '🇦🇷 Bandera (Sgo. del Estero Hub)',
+    node_termas: '🇦🇷 Termas R.H. (Sgo. del Estero Hub)',
+    node_filadelfia: '🇵🇾 Filadelfia (Boreal PRY)',
+    node_villamontes: '🇧🇴 Villa Montes (Subandean)',
+    node_saenzpena: '🇦🇷 Sáenz Peña (Central)',
+    node_resistencia: '🇦🇷 Resistencia (Humid)',
+
+    // Alert Status Badges
+    alert_rojo: 'RED ALERT: SEVERE DROUGHT',
+    alert_naranja: 'ORANGE ALERT: SEVERE DEFICIT',
+    alert_amarillo: 'YELLOW ALERT: MODERATE VULNERABILITY',
+    alert_verde: 'STABLE: NORMAL CONDITION',
+
+    // Map Overlays & Layers
+    layer_label: 'Layer:',
+    layer_spi: 'SPI Drought',
+    layer_gwetroot: 'Soil Moisture (SMAP)',
+    layer_ndvi: 'NDVI (MODIS)',
+    layer_flood: 'Waterlogging',
+    recenter_label: 'Focus Gran Chaco',
+    legend_spi: 'SPI Scale (Drought)',
+    legend_gwet: 'SMAP Root Zone Soil Moisture (m³/m³)',
+    legend_ndvi: 'NDVI Vegetation Index',
+    legend_flood: 'Waterlogging / Flood Risk',
+
+    // Timeline Scrubber
+    timeline_step: 'Step:',
+    timeline_historical: 'Historical (t-6 to t-1)',
+    timeline_projection: 'AI Projection (t+1 to t+6)',
+    timeline_play_title: 'Play Simulation',
+    timeline_pause_title: 'Pause Simulation',
+    timeline_prev_title: 'Previous Month',
+    timeline_next_title: 'Next Month',
+
+    // Sidebar Tab Bar
+    tab_all: 'All (5)',
+    tab_summary: 'Telemetry',
+    tab_models: 'AI Models',
+
+    // Card 1: Alert Engine
+    card_alert_title: 'Level 2: Categorical Alert Engine',
+    rf_confidence: 'RF Confidence',
+    rf_pill_verde: 'GREEN',
+    rf_pill_amarillo: 'YELLOW',
+    rf_pill_naranja: 'ORANGE',
+    rf_pill_rojo: 'RED',
+    alert_persistence_note: 'Hydrological Note: Although AI projection recovers in summer months, root-zone moisture deficit persists. Maintain contingency measures until soil recharge is confirmed.',
+
+    // Card 2: Telemetry
+    card_telemetry_title: 'Coupled Satellite Telemetry',
+    metric_precip: 'Monthly Rainfall (GPM)',
+    metric_gwetroot: 'Root Zone Moisture (SMAP)',
+    metric_ndvi: 'Vegetation Index (MODIS)',
+    metric_oni: 'Oceanic Anomaly (ONI / ENSO)',
+    online_status: 'ONLINE',
+    calibrated_status: 'CALIBRATED',
+    charging_status: 'CHARGING',
+    link_ok_status: 'LINK OK',
+
+    // LoRa Gateways
+    lora_banner_title: 'Gateway Central Nodes in Santiago del Estero:',
+    lora_badge_active: 'Active',
+    lora_hardware_model: 'MultiTech IP67 • Basics Station',
+    lora_edge_badge: '⚡ Edge mLinux',
+    lora_soil_title: 'Soil Moisture (In-Situ)',
+    lora_bat_title: 'Node Battery (Solar DIY)',
+    lora_rssi_title: 'Signal Strength (RSSI)',
+    lora_snr_title: 'Link Quality (SNR)',
+    lora_last_frame: 'Last frame:',
+    lora_optimal: 'Optimal',
+    lora_low: 'Low',
+    lora_excellent: 'Excellent',
+    lora_good: 'Good',
+
+    // Card 3: Continuous Projection
+    card_projection_title: 'Level 1: Continuous Projection',
+    card_projection_sub: 'LightGBM (p10-p90 Uncertainty)',
+    table_horizon: 'Horizon',
+    table_lead: 'Lead Time',
+    table_rmse: 'RMSE (SPI)',
+    table_corr: 'Corr (r)',
+    table_skill: 'Skill vs Climate',
+    table_validation: 'Temporal K-Fold Cross-Validation',
+    table_demo_ready: '[DEMO structure ready for substitution]',
+
+    // Card 4: SHAP Explainability
+    card_shap_title: 'Explainability (SHAP Values)',
+    card_shap_sub: 'Risk Contribution',
+    shap_inc_risk: '[▲ + Drought] Increases risk',
+    shap_dec_risk: '[▼ - Drought] Reduces risk',
+
+    // Card 5: Actionability
+    card_actions_title: 'Actionability: Recommendations',
+    live_sync_text: 'Live • 14 min ago',
+
+    // Card 6: Methodology Accordion
+    methodology_title: 'How is it calculated? (Models & Limits)',
+    methodology_view: 'Show explanation',
+    methodology_hide: 'Hide explanation',
+
+    // Modals
+    modal_gee_title: 'Google Earth Engine (GEE) Hub',
+    modal_gee_sub: 'Live NASA Mission Satellite Ingestion and Telemetry',
+    modal_docs_title: 'Technical Documentation & Equations',
+    modal_docs_sub: 'Metrics, Ensemble Architecture & Mathematical Specs',
+    modal_alerts_title: 'Early Warning Subscription',
+    modal_alerts_sub: 'Receive automated alerts via Email or Telegram upon water anomalies',
+    modal_compare_title: 'Comparison: Benchmark Sheet vs Google Earth Engine',
+    modal_compare_sub: 'Cross-validation between calibrated reference data and live telemetry'
+  }
+};
+
+// ================= FUNCIONES DE INTERNACIONALIZACIÓN (i18n) =================
+function t(key, fallback = '') {
+  const lang = (state && state.language) ? state.language : 'es';
+  if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key] !== undefined) {
+    return TRANSLATIONS[lang][key];
+  }
+  if (TRANSLATIONS['es'] && TRANSLATIONS['es'][key] !== undefined) {
+    return TRANSLATIONS['es'][key];
+  }
+  return fallback || key;
+}
+
+function applyTranslations() {
+  const lang = (state && state.language) ? state.language : 'es';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const trans = t(key);
+    if (trans) {
+      el.textContent = trans;
+    }
+  });
+
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    const trans = t(key);
+    if (trans) {
+      el.title = trans;
+    }
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const trans = t(key);
+    if (trans) {
+      el.placeholder = trans;
+    }
+  });
+
+  // Actualizar estilo activo en botones de idioma
+  const btnEs = document.getElementById('btn-lang-es');
+  const btnEn = document.getElementById('btn-lang-en');
+  if (btnEs && btnEn) {
+    if (lang === 'es') {
+      btnEs.className = 'h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-bold font-mono bg-cyan-600 text-white transition';
+      btnEn.className = 'h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-bold font-mono text-slate-400 hover:text-white transition';
+    } else {
+      btnEn.className = 'h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-bold font-mono bg-cyan-600 text-white transition';
+      btnEs.className = 'h-6 px-1.5 sm:px-2 rounded text-[10px] sm:text-[11px] font-bold font-mono text-slate-400 hover:text-white transition';
+    }
+  }
+
+  // Actualizar etiqueta del conmutador de tema
+  const themeToggleLabel = document.getElementById('theme-toggle-label');
+  if (themeToggleLabel) {
+    if (state.currentTheme === 'light') {
+      themeToggleLabel.textContent = t('btn_style_dark', 'Oscuro');
+    } else {
+      themeToggleLabel.textContent = t('btn_style_light', 'Claro');
+    }
+  }
+}
+
+function setLanguage(lang) {
+  if (lang !== 'es' && lang !== 'en') lang = 'es';
+  state.language = lang;
+  try {
+    localStorage.setItem('quimili_lang', lang);
+  } catch (e) {}
+
+  document.documentElement.lang = lang;
+  applyTranslations();
+
+  // Re-renderizado de módulos reactivos con texto bilingüe
+  updateUI();
+  updateLegend();
+  if (state.dataSource === 'lora') {
+    updateLoraFieldsUI();
+  }
+}
+
+function initLanguage() {
+  let savedLang = 'es';
+  try {
+    savedLang = localStorage.getItem('quimili_lang') || 'es';
+  } catch (e) {}
+  setLanguage(savedLang);
+}
+
+// ================= GESTIÓN DE TEMAS (OSCURO / CLARO) =================
+function applyTheme(theme) {
+  if (theme !== 'light' && theme !== 'dark') theme = 'dark';
+  state.currentTheme = theme;
+  try {
+    localStorage.setItem('quimili_theme', theme);
+  } catch (e) {}
+
+  const htmlEl = document.documentElement;
+  const themeIcon = document.getElementById('theme-toggle-icon');
+  const themeLabel = document.getElementById('theme-toggle-label');
+
+  if (theme === 'light') {
+    htmlEl.classList.remove('dark');
+    htmlEl.classList.add('light');
+    if (themeIcon) {
+      themeIcon.setAttribute('data-lucide', 'moon');
+      themeIcon.className = 'w-3.5 h-3.5 text-indigo-500 shrink-0';
+    }
+    if (themeLabel) {
+      themeLabel.textContent = t('btn_style_dark', 'Oscuro');
+    }
+  } else {
+    htmlEl.classList.remove('light');
+    htmlEl.classList.add('dark');
+    if (themeIcon) {
+      themeIcon.setAttribute('data-lucide', 'sun');
+      themeIcon.className = 'w-3.5 h-3.5 text-amber-400 shrink-0';
+    }
+    if (themeLabel) {
+      themeLabel.textContent = t('btn_style_light', 'Claro');
+    }
+  }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+
+  if (typeof map !== 'undefined' && map && state.mapLoaded) {
+    if (state.activeMapStyle === 'dark' || state.activeMapStyle === 'light') {
+      const nextBasemap = theme === 'light' ? 'light' : 'dark';
+      switchMapBasemap(nextBasemap);
+      const btnDark = document.getElementById('btn-style-dark');
+      if (btnDark) {
+        btnDark.textContent = theme === 'light' ? t('btn_style_light', 'Claro') : t('btn_style_dark', 'Oscuro');
+      }
+    }
+  }
+
+  updateChartsTheme(theme);
+}
+
+function initTheme() {
+  let savedTheme = 'dark';
+  try {
+    savedTheme = localStorage.getItem('quimili_theme') || 'dark';
+  } catch (e) {}
+  applyTheme(savedTheme);
+}
+
+function updateChartsTheme(theme) {
+  const isLight = theme === 'light';
+  const gridColor = isLight ? 'rgba(100, 116, 139, 0.12)' : 'rgba(51, 65, 85, 0.25)';
+  const tickColor = isLight ? '#334155' : '#94A3B8';
+  const observedColor = isLight ? '#0F172A' : '#F8FAFC';
+  const p50Color = isLight ? '#0284C7' : '#06B6D4';
+  const p90Fill = isLight ? 'rgba(2, 132, 199, 0.16)' : 'rgba(6, 182, 212, 0.20)';
+
+  if (projectionChart) {
+    if (projectionChart.options.scales.x) {
+      projectionChart.options.scales.x.grid.color = gridColor;
+      projectionChart.options.scales.x.ticks.color = tickColor;
+    }
+    if (projectionChart.options.scales.y) {
+      projectionChart.options.scales.y.grid.color = gridColor;
+      projectionChart.options.scales.y.ticks.color = tickColor;
+    }
+    if (projectionChart.data.datasets && projectionChart.data.datasets[0]) {
+      projectionChart.data.datasets[0].borderColor = observedColor;
+      projectionChart.data.datasets[0].pointBackgroundColor = observedColor;
+    }
+    if (projectionChart.data.datasets && projectionChart.data.datasets[1]) {
+      projectionChart.data.datasets[1].borderColor = p50Color;
+      projectionChart.data.datasets[1].pointBackgroundColor = p50Color;
+    }
+    if (projectionChart.data.datasets && projectionChart.data.datasets[2]) {
+      projectionChart.data.datasets[2].backgroundColor = p90Fill;
+    }
+    projectionChart.update();
+  }
+
+  if (shapChart) {
+    if (shapChart.options.scales.x) {
+      shapChart.options.scales.x.grid.color = gridColor;
+      shapChart.options.scales.x.ticks.color = tickColor;
+    }
+    if (shapChart.options.scales.y) {
+      shapChart.options.scales.y.ticks.color = isLight ? '#0F172A' : '#E2E8F0';
+    }
+    shapChart.update();
+  }
+}
+
 // ================= ESTADO DE LA APLICACIÓN =================
 const state = {
   activeStep: 6, // t0
@@ -3636,6 +4151,8 @@ const state = {
   playSpeed: 1,
   playIntervalId: null,
   activeMapStyle: 'dark',
+  currentTheme: 'dark', // 'dark' | 'light'
+  language: 'es',       // 'es' | 'en'
   mapLoaded: false,
   inspectedLngLat: null, // Coordenadas del punto inspeccionado dinámico
   dataSource: 'baseline', // 'baseline' (Planilla Demo Calibrada) | 'gee' (Google Earth Engine en Vivo) | 'lora' (Campo ESP32-C3)
@@ -3737,7 +4254,7 @@ function initMap() {
 
     map = new mapLib.Map({
       container: 'map',
-      style: TILE_STYLES.dark,
+      style: getMasterMapStyle(state.currentTheme),
       center: GRAN_CHACO_CENTER,
       zoom: 5.2,
       attributionControl: false,
@@ -3791,8 +4308,9 @@ function setupMapLayers() {
         }
       });
 
-      // Cierre de popups o deselección al hacer clic en el fondo del mapa (sin crear marcador inspector azul)
-      map.on('click', () => {
+      // Clic en cualquier punto del mapa (dentro o fuera del Gran Chaco):
+      // Despliega el inspector puntual con telemetría agroclimática y coloca el marcador de mira
+      map.on('click', (e) => {
         if (activeGatewayPopup) {
           activeGatewayPopup.remove();
           activeGatewayPopup = null;
@@ -3800,7 +4318,7 @@ function setupMapLayers() {
         pinnedLoraGatewayId = null;
         hoveredLoraGatewayId = null;
         highlightLoraGatewayLinks(null);
-        closePointInspector();
+        handleMapPointClick(e.lngLat);
       });
     }
   } catch (err) {
@@ -3808,15 +4326,76 @@ function setupMapLayers() {
   }
 }
 
+// Conmutación atómica instantánea de mapas base sin destruir polígonos ni límites del Gran Chaco
+function switchMapBasemap(targetStyle) {
+  if (!map || !state.mapLoaded) return;
+  state.activeMapStyle = targetStyle;
+
+  const basemapLayers = [
+    { id: 'basemap-dark-layer', visible: targetStyle === 'dark' },
+    { id: 'basemap-dark-labels', visible: targetStyle === 'dark' },
+    { id: 'basemap-light-layer', visible: targetStyle === 'light' },
+    { id: 'basemap-light-labels', visible: targetStyle === 'light' },
+    { id: 'basemap-sat-layer', visible: targetStyle === 'satellite' },
+    { id: 'basemap-osm-layer', visible: targetStyle === 'osm' }
+  ];
+
+  basemapLayers.forEach(({ id, visible }) => {
+    if (map.getLayer(id)) {
+      map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+    }
+  });
+
+  // Calibración de contraste y nitidez del Gran Chaco según el mapa base
+  if (map.getLayer('chaco-regions-fill') && map.getLayer('chaco-regions-line')) {
+    if (targetStyle === 'satellite') {
+      // Satélite: borde cyan eléctrico de 2.5px y opacidad reducida a 0.42 para transparentar el terreno
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#22D3EE');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.5);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 1.0);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.42);
+    } else if (targetStyle === 'osm') {
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#0891B2');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.2);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 0.95);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.48);
+    } else if (targetStyle === 'light') {
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#0891B2');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.2);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 0.90);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.50);
+    } else {
+      // dark
+      map.setPaintProperty('chaco-regions-line', 'line-color', '#06B6D4');
+      map.setPaintProperty('chaco-regions-line', 'line-width', 2.0);
+      map.setPaintProperty('chaco-regions-line', 'line-opacity', 0.85);
+      map.setPaintProperty('chaco-regions-fill', 'fill-opacity', 0.55);
+    }
+  }
+}
+
 // ================= INSPECCIÓN PUNTUAL DINÁMICA DEL MAPA =================
 let pointInspectorMarker = null;
 
 function setPointInspectorMarker(lngLat) {
-  // Eliminado: no se renderizan círculos azules ni marcadores flotantes en clics generales
+  const mapLib = window.maplibregl || window.mapboxgl;
+  if (!mapLib || !map) return;
   if (pointInspectorMarker) {
     pointInspectorMarker.remove();
     pointInspectorMarker = null;
   }
+  const el = document.createElement('div');
+  el.className = 'point-inspector-marker pointer-events-none';
+  el.innerHTML = `
+    <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+      <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-cyan-400 opacity-75"></span>
+      <div style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: rgba(6, 182, 212, 0.45); border: 2px solid #38BDF8; box-shadow: 0 0 10px #06B6D4;"></div>
+      <div style="width: 5px; height: 5px; border-radius: 50%; background: #FFFFFF;"></div>
+    </div>
+  `;
+  const lng = Number(lngLat.lng != null ? lngLat.lng : lngLat[0]);
+  const lat = Number(lngLat.lat != null ? lngLat.lat : lngLat[1]);
+  pointInspectorMarker = new mapLib.Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(map);
 }
 
 function closePointInspector() {
@@ -5493,6 +6072,8 @@ function initProjectionChart() {
       }
     }
   });
+
+  updateChartsTheme(state.currentTheme);
 }
 
 // Helper: Generar y ordenar variables SHAP por magnitud absoluta
@@ -5575,13 +6156,15 @@ function initShapChart() {
           grid: { display: false },
           ticks: {
             autoSkip: false,
-            color: '#E2E8F0',
+            color: state.currentTheme === 'light' ? '#0F172A' : '#E2E8F0',
             font: { family: 'monospace', size: 9.5 }
           }
         }
       }
     }
   });
+
+  updateChartsTheme(state.currentTheme);
 }
 
 function updateCharts() {
@@ -5986,27 +6569,27 @@ function updateSourceToggleUI() {
   const btnLora = document.getElementById('btn-source-lora');
   const badge = document.getElementById('telemetry-source-badge');
 
-  const inactiveBtnClass = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
+  const inactiveBtnClass = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono text-slate-400 hover:text-white hover:bg-space-800/80 transition flex items-center gap-1 whitespace-nowrap shrink-0';
 
   if (btnBaseline) {
     btnBaseline.className = inactiveBtnClass;
-    btnBaseline.innerHTML = '<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">Planilla</span>';
+    btnBaseline.innerHTML = `<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">${t('source_baseline', 'Planilla')}</span>`;
   }
   if (btnGee) {
     btnGee.className = inactiveBtnClass.replace('text-slate-400', 'text-emerald-400');
-    btnGee.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
+    btnGee.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span><span class="whitespace-nowrap">${t('source_gee', 'GEE Vivo')}</span>`;
   }
   if (btnLora) {
     btnLora.className = inactiveBtnClass.replace('text-slate-400', 'text-cyan-400');
-    btnLora.innerHTML = '<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>';
+    btnLora.innerHTML = `<i data-lucide="radio" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">${t('source_lora', 'LoRa')}<span class="hidden xl:inline"> (${state.language === 'en' ? 'Field' : 'Campo'})</span></span>`;
   }
 
   if (state.dataSource === 'gee') {
     if (btnGee) {
-      btnGee.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm shadow-emerald-950 whitespace-nowrap shrink-0 border border-emerald-400/50';
+      btnGee.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono bg-emerald-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 border border-emerald-400/50';
       btnGee.innerHTML = state.isGeeLoading 
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
-        : '<span class="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">GEE Vivo</span>';
+        ? `<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">${state.language === 'en' ? 'Loading...' : 'Cargando...'}</span>`
+        : `<span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0"></span><span class="whitespace-nowrap">${t('source_gee', 'GEE Vivo')}</span>`;
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-600 animate-pulse whitespace-nowrap shrink-0';
@@ -6015,10 +6598,10 @@ function updateSourceToggleUI() {
     }
   } else if (state.dataSource === 'lora') {
     if (btnLora) {
-      btnLora.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
+      btnLora.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 border border-cyan-400/60 ring-1 ring-cyan-400/30';
       btnLora.innerHTML = state.isLoraLoading
-        ? '<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">Cargando...</span>'
-        : '<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">LoRa<span class="hidden 2xl:inline"> (Campo)</span></span>';
+        ? `<span class="w-2 h-2 rounded-full bg-white animate-spin shrink-0"></span><span class="whitespace-nowrap">${state.language === 'en' ? 'Loading...' : 'Cargando...'}</span>`
+        : `<i data-lucide="radio" class="w-3 h-3 shrink-0 text-white animate-pulse"></i><span class="whitespace-nowrap">${t('source_lora', 'LoRa')}<span class="hidden xl:inline"> (${state.language === 'en' ? 'Field' : 'Campo'})</span></span>`;
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-400 animate-pulse whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.5)]';
@@ -6027,8 +6610,8 @@ function updateSourceToggleUI() {
     }
   } else {
     if (btnBaseline) {
-      btnBaseline.className = 'h-7 px-1.5 sm:px-2 rounded-md text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm shadow-cyan-950 whitespace-nowrap shrink-0';
-      btnBaseline.innerHTML = '<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">Planilla</span>';
+      btnBaseline.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-semibold font-mono bg-cyan-600 text-white transition flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0';
+      btnBaseline.innerHTML = `<i data-lucide="table" class="w-3 h-3 shrink-0"></i><span class="whitespace-nowrap">${t('source_baseline', 'Planilla')}</span>`;
     }
     if (badge) {
       badge.className = 'px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800 whitespace-nowrap shrink-0';
@@ -6231,7 +6814,8 @@ function updateUI() {
 
   // 1. Etiqueta y deslizador
   const labelEl = document.getElementById('timeline-step-label');
-  if (labelEl) labelEl.textContent = stepInfo.label;
+  const stepLabel = state.language === 'en' ? (TIMELINE_STEPS_EN[state.activeStep] ? TIMELINE_STEPS_EN[state.activeStep].label : stepInfo.label) : stepInfo.label;
+  if (labelEl) labelEl.textContent = stepLabel;
   const sliderEl = document.getElementById('timeline-slider');
   if (sliderEl) sliderEl.value = state.activeStep;
 
@@ -6239,26 +6823,27 @@ function updateUI() {
   const headerBadge = document.getElementById('header-alert-badge');
   const headerPulseDot = document.getElementById('header-pulse-dot');
   const headerPulseBeacon = document.getElementById('header-pulse-beacon');
+  const isEn = state.language === 'en';
 
   if (headerBadge) {
     if (currentStepData.alert === 'ROJO') {
       headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse whitespace-nowrap shrink-0 flex items-center gap-1';
-      headerBadge.textContent = 'ALERTA ROJA: SEQUÍA SEVERA';
+      headerBadge.textContent = t('alert_rojo', 'ALERTA ROJA: SEQUÍA SEVERA');
       if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-red-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75';
     } else if (currentStepData.alert === 'NARANJA') {
       headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-orange-500/20 text-orange-400 border border-orange-500/40 whitespace-nowrap shrink-0 flex items-center gap-1';
-      headerBadge.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: ANEGAMIENTO' : 'ALERTA NARANJA: DÉFICIT';
+      headerBadge.textContent = currentFloodRisk > 0.6 ? (isEn ? 'ORANGE ALERT: WATERLOGGING' : 'ALERTA NARANJA: ANEGAMIENTO') : t('alert_naranja', 'ALERTA NARANJA: DÉFICIT SEVERO');
       if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-orange-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75';
     } else if (currentStepData.alert === 'AMARILLO') {
       headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/40 whitespace-nowrap shrink-0 flex items-center gap-1';
-      headerBadge.textContent = 'ALERTA AMARILLA: VIGILANCIA';
+      headerBadge.textContent = t('alert_amarillo', 'ALERTA AMARILLA: VULNERABILIDAD MODERADA');
       if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-amber-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75';
     } else {
       headerBadge.className = 'px-2 py-0.5 rounded-lg text-[10px] xl:text-[11px] font-bold font-mono tracking-wide bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 whitespace-nowrap shrink-0 flex items-center gap-1';
-      headerBadge.textContent = 'CONDICIONES NORMALES';
+      headerBadge.textContent = t('alert_verde', 'ESTABLE: CONDICIÓN NORMAL');
       if (headerPulseDot) headerPulseDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
       if (headerPulseBeacon) headerPulseBeacon.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-400';
     }
@@ -6288,41 +6873,46 @@ function updateUI() {
     if (pills[key]) pills[key].className = 'py-0.5 xl:py-1 rounded bg-space-800 text-slate-500';
   });
 
+  if (pills.VERDE) pills.VERDE.textContent = isEn ? 'GREEN' : 'VERDE';
+  if (pills.AMARILLO) pills.AMARILLO.textContent = isEn ? 'YELLOW' : 'AMARILLO';
+  if (pills.NARANJA) pills.NARANJA.textContent = isEn ? 'ORANGE' : 'NARANJA';
+  if (pills.ROJO) pills.ROJO.textContent = isEn ? 'RED' : 'ROJO';
+
   const nodeShortName = activeNode.name.split('(')[0].trim();
 
   if (currentStepData.alert === 'ROJO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-red-950/30 border-red-500/40 transition-all w-full overflow-hidden';
-    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = 'ALERTA ROJA: SEQUÍA SEVERA'; }
+    if (alertTitle) { alertTitle.className = 'font-bold text-red-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = t('alert_rojo', 'ALERTA ROJA: SEQUÍA SEVERA'); }
     if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-red-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
-    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-red-300/80 leading-tight break-words'; subLine2.textContent = 'Déficit hídrico crítico en cuenca'; }
-    if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • Déficit hídrico crítico en cuenca`;
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-red-300/80 leading-tight break-words'; subLine2.textContent = isEn ? 'Critical basin water deficit' : 'Déficit hídrico crítico en cuenca'; }
+    if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • ${isEn ? 'Critical basin water deficit' : 'Déficit hídrico crítico en cuenca'}`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '🚨'; }
     if (pills.ROJO) pills.ROJO.className = 'py-0.5 xl:py-1 rounded bg-red-500 text-white font-bold shadow-md shadow-red-950';
   } else if (currentStepData.alert === 'NARANJA') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-orange-950/30 border-orange-500/40 transition-all w-full overflow-hidden';
     if (alertTitle) {
       alertTitle.className = 'font-bold text-orange-400 text-xs xl:text-sm tracking-wide leading-tight break-words';
-      alertTitle.textContent = currentFloodRisk > 0.6 ? 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO' : 'ALERTA NARANJA: ESTRÉS HÍDRICO';
+      alertTitle.textContent = currentFloodRisk > 0.6 ? (isEn ? 'ORANGE ALERT: WATERLOGGING RISK' : 'ALERTA NARANJA: RIESGO DE ANEGAMIENTO') : t('alert_naranja', 'ALERTA NARANJA: DÉFICIT SEVERO');
     }
     if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-orange-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
-    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-orange-300/80 leading-tight break-words'; subLine2.textContent = currentFloodRisk > 0.6 ? 'Lluvia torrencial y suelo saturado' : 'Alerta preventiva hidroclimática'; }
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-orange-300/80 leading-tight break-words'; subLine2.textContent = currentFloodRisk > 0.6 ? (isEn ? 'Torrential rainfall and saturated soil' : 'Lluvia torrencial y suelo saturado') : (isEn ? 'Preventive hydroclimatic alert' : 'Alerta preventiva hidroclimática'); }
     if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • ${subLine2 ? subLine2.textContent : ''}`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '⚠️'; }
     if (pills.NARANJA) pills.NARANJA.className = 'py-0.5 xl:py-1 rounded bg-orange-500 text-white font-bold shadow-md shadow-orange-950';
   } else if (currentStepData.alert === 'AMARILLO') {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-amber-950/30 border-amber-500/40 transition-all w-full overflow-hidden';
-    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = 'ALERTA AMARILLA: VIGILANCIA AGROCLIMÁTICA'; }
+    if (alertTitle) { alertTitle.className = 'font-bold text-amber-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = t('alert_amarillo', 'ALERTA AMARILLA: VULNERABILIDAD MODERADA'); }
     if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-amber-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
-    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-amber-300/80 leading-tight break-words'; subLine2.textContent = 'Vigilancia continua de cuencas'; }
-    if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • Vigilancia continua`;
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-amber-300/80 leading-tight break-words'; subLine2.textContent = isEn ? 'Continuous basin surveillance' : 'Vigilancia continua de cuencas'; }
+    if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • ${isEn ? 'Continuous surveillance' : 'Vigilancia continua'}`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '⚡'; }
     if (pills.AMARILLO) pills.AMARILLO.className = 'py-0.5 xl:py-1 rounded bg-amber-500 text-white font-bold shadow-md shadow-amber-950';
   } else {
     if (alertCard) alertCard.className = 'rounded-xl border p-2.5 xl:p-3 bg-emerald-950/30 border-emerald-500/40 transition-all w-full overflow-hidden';
-    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = 'NIVEL VERDE: CONDICIONES NORMALES'; }
+    if (alertTitle) { alertTitle.className = 'font-bold text-emerald-400 text-xs xl:text-sm tracking-wide leading-tight break-words'; alertTitle.textContent = t('alert_verde', 'ESTABLE: CONDICIÓN NORMAL'); }
     if (subLine1) { subLine1.className = 'text-[10px] xl:text-[11px] font-semibold text-emerald-300 leading-tight mt-0.5 break-words'; subLine1.textContent = `${nodeShortName} • SPI 3M: ${currentSpi}`; }
-    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-emerald-300/80 leading-tight break-words'; subLine2.textContent = 'Parámetros hidroclimáticos estables'; }
-    if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • Índices estables`;
+    if (subLine2) { subLine2.className = 'text-[9.5px] xl:text-[10px] text-emerald-300/80 leading-tight break-words'; subLine2.textContent = isEn ? 'Stable hydroclimatic parameters' : 'Parámetros hidroclimáticos estables'; }
+    if (subContainer) subContainer.title = `${nodeShortName} • SPI 3M: ${currentSpi} • ${isEn ? 'Stable indices' : 'Índices estables'}`;
     if (alertIconBox) { alertIconBox.className = 'w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm xl:text-base shrink-0 mt-0.5'; alertIconBox.textContent = '✅'; }
     if (pills.VERDE) pills.VERDE.className = 'py-0.5 xl:py-1 rounded bg-emerald-500 text-white font-bold shadow-md shadow-emerald-950';
   }
@@ -6335,7 +6925,7 @@ function updateUI() {
       alertPersistenceBox.innerHTML = `
         <div class="flex items-start gap-1.5">
           <i data-lucide="info" class="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5"></i>
-          <span><b>Nota hidrológica:</b> Aunque la proyección multivariable repunta hacia valores positivos en los próximos meses (Ene–Feb 2027), <b>el déficit hídrico acumulado en el perfil radicular profundo persiste</b>. Mantener medidas de contingencia hasta consolidar recarga efectiva del suelo.</span>
+          <span><b>${isEn ? 'Hydrological Note:' : 'Nota hidrológica:'}</b> ${isEn ? 'Although multivariable projection rebounds to positive values in coming months (Jan–Feb 2027), <b>accumulated moisture deficit in deep root profile persists</b>. Maintain contingency measures until effective soil recharge is consolidated.' : 'Aunque la proyección multivariable repunta hacia valores positivos en los próximos meses (Ene–Feb 2027), <b>el déficit hídrico acumulado en el perfil radicular profundo persiste</b>. Mantener medidas de contingencia hasta consolidar recarga efectiva del suelo.'}</span>
         </div>
       `;
     } else if (currentStepData.step >= 8 && currentStepData.spi >= 0) {
@@ -6344,7 +6934,7 @@ function updateUI() {
       alertPersistenceBox.innerHTML = `
         <div class="flex items-start gap-1.5">
           <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5"></i>
-          <span><b>Recuperación hídrica en curso:</b> Aunque el SPI proyectado es positivo (+${currentStepData.spi.toFixed(2)}), <b>la recarga de acuíferos y humedad de fondo requiere 60-90 días adicionales</b>. No desarticular reservas hídricas prematuramente.</span>
+          <span><b>${isEn ? 'Water recovery in progress:' : 'Recuperación hídrica en curso:'}</b> ${isEn ? 'Although projected SPI is positive (+' + currentStepData.spi.toFixed(2) + '), <b>aquifer and root zone recharge requires 60–90 additional days</b>. Do not dismantle water reserves prematurely.' : 'Aunque el SPI proyectado es positivo (+' + currentStepData.spi.toFixed(2) + '), <b>la recarga de acuíferos y humedad de fondo requiere 60-90 días adicionales</b>. No desarticular reservas hídricas prematuramente.'}</span>
         </div>
       `;
     } else {
@@ -6543,43 +7133,45 @@ function renderActions(stepData, activeNode) {
   const container = document.getElementById('actions-container');
   if (!container) return;
   const node = activeNode || SENTINEL_NODES.gran_chaco;
+  const isEn = state.language === 'en';
+  const nodeShortName = node.name.split('(')[0].trim();
 
   let html = '';
 
   if (stepData.alert === 'ROJO') {
     html = `
       <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-red-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
-        <div class="font-bold text-red-400">🚨 Comisión Trinacional Pilcomayo / Bermejo:</div>
-        <p class="text-slate-300">Activar comités de emergencia de cuenca. Regular bombeo y preservar tajamares comunitarios ante sequía continental.</p>
+        <div class="font-bold text-red-400">🚨 ${isEn ? 'Pilcomayo / Bermejo Tri-National Commission:' : 'Comisión Trinacional Pilcomayo / Bermejo:'}</div>
+        <p class="text-slate-300">${isEn ? 'Activate basin emergency committees. Regulate surface pumping and preserve communal watering reservoirs facing continental drought.' : 'Activar comités de emergencia de cuenca. Regular bombeo y preservar tajamares comunitarios ante sequía continental.'}</p>
       </div>
       <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
-        <div class="font-bold text-amber-400">🚜 Sector Agropecuario (${node.name.split('(')[0].trim()}):</div>
-        <p class="text-slate-300">Retrasar siembra en Chaco Seco/Boreal. Ajustar carga animal en pasturas y mantener cobertura de rastrojo.</p>
+        <div class="font-bold text-amber-400">🚜 ${isEn ? `Agricultural Sector (${nodeShortName}):` : `Sector Agropecuario (${nodeShortName}):`}</div>
+        <p class="text-slate-300">${isEn ? 'Delay planting in Dry/Boreal Chaco. Adjust pasture stocking rates and maintain crop residue soil cover.' : 'Retrasar siembra en Chaco Seco/Boreal. Ajustar carga animal en pasturas y mantener cobertura de rastrojo.'}</p>
       </div>
     `;
   } else if (stepData.alert === 'NARANJA' && stepData.floodRisk > 0.6) {
     html = `
       <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-orange-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
-        <div class="font-bold text-orange-400">⚠️ Defensa Civil & Vialidad Regional:</div>
-        <p class="text-slate-300">Riesgo inminente de anegamiento en planicies aluviales de Chaco Húmedo. Monitorear terraplenes y rutas troncales.</p>
+        <div class="font-bold text-orange-400">⚠️ ${isEn ? 'Civil Defense & Regional Highway Agency:' : 'Defensa Civil & Vialidad Regional:'}</div>
+        <p class="text-slate-300">${isEn ? 'Imminent waterlogging risk in alluvial floodplains of Humid Chaco. Monitor dikes, embankments, and arterial routes.' : 'Riesgo inminente de anegamiento en planicies aluviales de Chaco Húmedo. Monitorear terraplenes y rutas troncales.'}</p>
       </div>
       <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-cyan-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
-        <div class="font-bold text-cyan-400">🚜 Productores Agropecuarios:</div>
-        <p class="text-slate-300">Evitar maquinaria pesada por riesgo de sellado de sedimentos. Mover hacienda a lomas altas.</p>
+        <div class="font-bold text-cyan-400">🚜 ${isEn ? 'Agricultural Producers:' : 'Productores Agropecuarios:'}</div>
+        <p class="text-slate-300">${isEn ? 'Avoid heavy field machinery due to sediment compaction risks. Move livestock to elevated topography.' : 'Evitar maquinaria pesada por riesgo de sellado de sedimentos. Mover hacienda a lomas altas.'}</p>
       </div>
     `;
   } else if (stepData.alert === 'AMARILLO') {
     html = `
       <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-amber-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
-        <div class="font-bold text-amber-400">⚡ Gestión de Recursos Hídricos:</div>
-        <p class="text-slate-300">Vigilancia de caudales orográficos en Tarija (Bolivia) y recarga de cuencas bajas. Planificar turnos de riego.</p>
+        <div class="font-bold text-amber-400">⚡ ${isEn ? 'Water Resource Management:' : 'Gestión de Recursos Hídricos:'}</div>
+        <p class="text-slate-300">${isEn ? 'Surveillance of orographic streamflows in Tarija (Bolivia) and lower basin recharge. Plan irrigation shifts.' : 'Vigilancia de caudales orográficos en Tarija (Bolivia) y recarga de cuencas bajas. Planificar turnos de riego.'}</p>
       </div>
     `;
   } else {
     html = `
       <div class="p-2 xl:p-2.5 rounded-xl bg-space-900 border border-emerald-500/40 text-[11px] xl:text-xs space-y-0.5 xl:space-y-1">
-        <div class="font-bold text-emerald-400">✅ Gran Chaco en Balance Favorable:</div>
-        <p class="text-slate-300">Humedad radicular adecuada en los tres países. Ventana propicia para labores agronómicas y recarga de acuíferos.</p>
+        <div class="font-bold text-emerald-400">✅ ${isEn ? 'Gran Chaco in Favorable Balance:' : 'Gran Chaco en Balance Favorable:'}</div>
+        <p class="text-slate-300">${isEn ? 'Adequate root-zone moisture across all three nations. Favorable window for agronomic operations and aquifer recharge.' : 'Humedad radicular adecuada en los tres países. Ventana propicia para labores agronómicas y recarga de acuíferos.'}</p>
       </div>
     `;
   }
@@ -6592,23 +7184,32 @@ function updateLegend() {
   const gradient = document.getElementById('legend-gradient');
   const labels = document.getElementById('legend-labels');
   if (!title || !gradient || !labels) return;
+  const isEn = state.language === 'en';
 
   if (state.activeLayer === 'spi') {
-    title.textContent = 'Escala SPI (Sequía)';
+    title.textContent = isEn ? 'SPI Scale (Drought)' : 'Escala SPI (Sequía)';
     gradient.style.background = 'linear-gradient(to right, #7F1D1D, #EF4444, #F97316, #FBBF24, #94A3B8, #38BDF8, #1D4ED8)';
-    labels.innerHTML = '<span>≤ -2.0 (Extrema)</span><span>0 (Normal)</span><span>≥ +2.0</span>';
+    labels.innerHTML = isEn
+      ? '<span>≤ -2.0 (Extreme)</span><span>0 (Normal)</span><span>≥ +2.0</span>'
+      : '<span>≤ -2.0 (Extrema)</span><span>0 (Normal)</span><span>≥ +2.0</span>';
   } else if (state.activeLayer === 'gwetroot') {
-    title.textContent = 'Humedad Radicular (SMAP)';
+    title.textContent = isEn ? 'Root Moisture (SMAP)' : 'Humedad Radicular (SMAP)';
     gradient.style.background = 'linear-gradient(to right, #DC2626, #EA580C, #F59E0B, #10B981, #06B6D4)';
-    labels.innerHTML = '<span>0% (Seco)</span><span>25%</span><span>≥ 50%</span>';
+    labels.innerHTML = isEn
+      ? '<span>0% (Dry)</span><span>25%</span><span>≥ 50%</span>'
+      : '<span>0% (Seco)</span><span>25%</span><span>≥ 50%</span>';
   } else if (state.activeLayer === 'ndvi') {
-    title.textContent = 'Biomasa NDVI (MODIS)';
+    title.textContent = isEn ? 'NDVI Biomass (MODIS)' : 'Biomasa NDVI (MODIS)';
     gradient.style.background = 'linear-gradient(to right, #B45309, #CA8A04, #84CC16, #22C55E, #15803D)';
-    labels.innerHTML = '<span>0.1 (Estrés)</span><span>0.4</span><span>0.8 (Vigor)</span>';
+    labels.innerHTML = isEn
+      ? '<span>0.1 (Stress)</span><span>0.4</span><span>0.8 (Vigor)</span>'
+      : '<span>0.1 (Estrés)</span><span>0.4</span><span>0.8 (Vigor)</span>';
   } else if (state.activeLayer === 'flood') {
-    title.textContent = 'Riesgo de Anegamiento';
+    title.textContent = isEn ? 'Waterlogging Risk' : 'Riesgo de Anegamiento';
     gradient.style.background = 'linear-gradient(to right, #1E293B, #0284C7, #EA580C, #DC2626)';
-    labels.innerHTML = '<span>Bajo</span><span>Moderado</span><span>Crítico</span>';
+    labels.innerHTML = isEn
+      ? '<span>Low</span><span>Moderate</span><span>Critical</span>'
+      : '<span>Bajo</span><span>Moderado</span><span>Crítico</span>';
   }
 }
 
@@ -6622,8 +7223,9 @@ function setupTimeline() {
   const ticksContainer = document.getElementById('timeline-ticks');
 
   if (ticksContainer) {
+    const stepsList = state.language === 'en' ? TIMELINE_STEPS_EN : TIMELINE_STEPS;
     let ticksHtml = '';
-    TIMELINE_STEPS.forEach(step => {
+    stepsList.forEach(step => {
       ticksHtml += `<span class="${step.phase === 'current' ? 'text-cyan-300 font-bold' : ''}">${step.name.split(' ')[0]}</span>`;
     });
     ticksContainer.innerHTML = ticksHtml;
@@ -6890,6 +7492,25 @@ function setupEventHandlers() {
     });
   }
 
+  // Conmutador de Idioma (ES / EN)
+  const btnLangEs = document.getElementById('btn-lang-es');
+  const btnLangEn = document.getElementById('btn-lang-en');
+  if (btnLangEs) {
+    btnLangEs.addEventListener('click', () => setLanguage('es'));
+  }
+  if (btnLangEn) {
+    btnLangEn.addEventListener('click', () => setLanguage('en'));
+  }
+
+  // Conmutador de Tema (Claro / Oscuro)
+  const btnTheme = document.getElementById('btn-theme-toggle');
+  if (btnTheme) {
+    btnTheme.addEventListener('click', () => {
+      const nextTheme = state.currentTheme === 'light' ? 'dark' : 'light';
+      applyTheme(nextTheme);
+    });
+  }
+
   // Estilo de mapa (Oscuro vs Satélite vs OSM)
   const btnDark = document.getElementById('btn-style-dark');
   const btnSat = document.getElementById('btn-style-sat');
@@ -6897,47 +7518,30 @@ function setupEventHandlers() {
 
   function setActiveStyleBtn(activeBtn) {
     [btnDark, btnSat, btnOsm].forEach(b => {
-      if (b) b.className = 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white transition';
+      if (b) b.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-white transition whitespace-nowrap shrink-0';
     });
-    if (activeBtn) activeBtn.className = 'px-2.5 py-1 rounded-md text-xs font-medium bg-space-800 text-cyan-300 transition';
+    if (activeBtn) activeBtn.className = 'h-6.5 px-2 rounded-lg text-[10px] sm:text-[11px] font-medium bg-space-800 text-cyan-300 transition whitespace-nowrap shrink-0';
   }
 
   if (btnDark) {
     btnDark.addEventListener('click', () => {
       setActiveStyleBtn(btnDark);
-      if (map) {
-        map.setStyle(TILE_STYLES.dark);
-        map.once('style.load', () => {
-          setupMapLayers();
-          updateMapData();
-        });
-      }
+      const targetStyle = state.currentTheme === 'light' ? 'light' : 'dark';
+      switchMapBasemap(targetStyle);
     });
   }
 
   if (btnSat) {
     btnSat.addEventListener('click', () => {
       setActiveStyleBtn(btnSat);
-      if (map) {
-        map.setStyle(TILE_STYLES.satellite);
-        map.once('style.load', () => {
-          setupMapLayers();
-          updateMapData();
-        });
-      }
+      switchMapBasemap('satellite');
     });
   }
 
   if (btnOsm) {
     btnOsm.addEventListener('click', () => {
       setActiveStyleBtn(btnOsm);
-      if (map) {
-        map.setStyle(TILE_STYLES.osm);
-        map.once('style.load', () => {
-          setupMapLayers();
-          updateMapData();
-        });
-      }
+      switchMapBasemap('osm');
     });
   }
 
@@ -8287,6 +8891,18 @@ function openPrintableReportWindow(data) {
 
 // ================= ARRANQUE CONTROLADO =================
 function startApp() {
+  try {
+    initTheme();
+  } catch (e) {
+    console.error('initTheme error:', e);
+  }
+
+  try {
+    initLanguage();
+  } catch (e) {
+    console.error('initLanguage error:', e);
+  }
+
   try {
     initMap();
   } catch (e) {
