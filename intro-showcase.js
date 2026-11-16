@@ -27,7 +27,7 @@
     {
       index: 2,
       total: 7,
-      image: 'assets/team/2.jpeg',
+      image: 'assets/team/2.jpeg?v=2',
       badge: '02 / 07 · TERRITORIO',
       badgeEn: '02 / 07 · TERRITORY',
       name: 'Integrante 02 · Gestión Climática',
@@ -36,7 +36,8 @@
       bioEs: 'Relevamiento de necesidades de productores rurales y gobiernos locales frente a sequías prolongadas y anegamientos, traduciendo la ciencia de datos en protocolos de acción claros.',
       bioEn: 'Assessment of rural producers and local governments facing severe droughts and floods, translating data science into clear action protocols.',
       tags: ['Riesgo Hídrico', 'Impacto Social', 'Defensa Civil'],
-      objectPos: '50% 28%',
+      objectPos: '50% 35%',
+      fitContain: true,
       isGroup: false
     },
     {
@@ -447,26 +448,27 @@
 
               <!-- Foto del Integrante / Grupo -->
               <div class="lg:col-span-6 relative rounded-2xl overflow-hidden climate-intro-media-stage border border-cyan-500/30 shadow-2xl flex items-center justify-center min-h-[240px] sm:min-h-[300px] lg:min-h-[340px]">
-                <img id="intro-member-img" src="assets/team/1.jpeg" alt="Integrante del equipo CLIMATE" class="w-full h-full max-h-[380px] object-cover object-[center_18%] transition-all duration-500" />
-                <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20"></div>
+                <img id="intro-member-backdrop" src="assets/team/1.jpeg" alt="" aria-hidden="true" class="hidden pointer-events-none absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-45" />
+                <img id="intro-member-img" src="assets/team/1.jpeg" alt="Integrante del equipo CLIMATE" class="relative z-[1] w-full h-full max-h-[380px] object-cover transition-all duration-500" />
+                <div class="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-black/75 via-transparent to-black/20"></div>
 
                 <!-- Badges sobre foto -->
-                <div class="absolute top-3 left-3 flex items-center gap-1.5">
+                <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5">
                   <span id="intro-member-badge" class="px-2.5 py-1 rounded-lg bg-space-950/85 backdrop-blur-md border border-cyan-400/40 text-[10px] font-mono font-bold text-cyan-300 tracking-wider">
                     01 / 07 · MENTORÍA
                   </span>
                 </div>
 
                 <!-- Botones flotantes sobre la foto para escritorio/táctil -->
-                <button id="intro-member-prev-overlay" type="button" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 hover:bg-cyan-600 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition cursor-pointer" aria-label="Anterior">
+                <button id="intro-member-prev-overlay" type="button" class="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/55 hover:bg-cyan-600 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition cursor-pointer" aria-label="Anterior">
                   <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </button>
-                <button id="intro-member-next-overlay" type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 hover:bg-cyan-600 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition cursor-pointer" aria-label="Siguiente">
+                <button id="intro-member-next-overlay" type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/55 hover:bg-cyan-600 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition cursor-pointer" aria-label="Siguiente">
                   <i data-lucide="chevron-right" class="w-5 h-5"></i>
                 </button>
 
                 <!-- Barra de progreso de slide -->
-                <div class="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
+                <div class="absolute bottom-0 left-0 right-0 z-10 h-1 bg-white/15">
                   <div id="intro-slide-progress" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-[width] duration-75" style="width: 0%"></div>
                 </div>
               </div>
@@ -744,6 +746,7 @@
     `;
 
     // DOM refs
+    const memberBackdropEl = document.getElementById('intro-member-backdrop');
     const memberImgEl = document.getElementById('intro-member-img');
     const memberBadgeEl = document.getElementById('intro-member-badge');
     const memberNameEl = document.getElementById('intro-member-name');
@@ -794,11 +797,17 @@
         void memberImgEl.offsetWidth;
         memberImgEl.src = slide.image;
         memberImgEl.alt = slide.name;
-        if (slide.isGroup) {
-          memberImgEl.className = 'w-full h-full max-h-[380px] object-contain bg-black transition-all duration-500 climate-photo-motion';
-          memberImgEl.style.objectPosition = slide.objectPos || '50% 50%';
+        if (slide.isGroup || slide.fitContain) {
+          if (memberBackdropEl) {
+            memberBackdropEl.src = slide.image;
+            memberBackdropEl.style.objectPosition = slide.objectPos || '50% 50%';
+            memberBackdropEl.classList.remove('hidden');
+          }
+          memberImgEl.className = 'relative z-[1] w-full h-full max-h-[380px] object-contain drop-shadow-2xl transition-all duration-500 climate-photo-motion';
+          memberImgEl.style.objectPosition = '50% 50%';
         } else {
-          memberImgEl.className = 'w-full h-full max-h-[380px] object-cover transition-all duration-500 climate-photo-motion';
+          if (memberBackdropEl) memberBackdropEl.classList.add('hidden');
+          memberImgEl.className = 'relative z-[1] w-full h-full max-h-[380px] object-cover transition-all duration-500 climate-photo-motion';
           memberImgEl.style.objectPosition = slide.objectPos || '50% 22%';
         }
       }
