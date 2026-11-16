@@ -439,46 +439,6 @@
       <div class="climate-intro-atmosphere pointer-events-none absolute inset-0" aria-hidden="true"></div>
       <div class="relative w-full max-w-6xl climate-intro-glass rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 lg:p-6 flex flex-col max-h-[95dvh] overflow-hidden shadow-2xl">
 
-        <!-- CABECERA DEL MODAL -->
-        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-space-800 shrink-0">
-          <button id="intro-header-logo-btn" type="button" class="flex items-center gap-2.5 min-w-0 text-left group cursor-pointer" title="Volver al Portal de Bienvenida CLIMATE">
-            <div class="w-9 h-9 rounded-xl overflow-hidden border border-amber-400/50 bg-black shadow-lg shadow-amber-950/40 shrink-0 group-hover:scale-105 transition-transform">
-              <img src="assets/team/climate_logo.jpg" alt="CLIMATE" class="w-full h-full object-cover" />
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-black tracking-widest text-sm sm:text-base intro-text-main text-white">CLIMATE</span>
-                <span class="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/35 whitespace-nowrap">NASA Space Apps · Gran Chaco</span>
-              </div>
-              <p id="intro-subtitle-line" class="text-[10.5px] sm:text-xs intro-text-muted text-slate-400 truncate">
-                Plataforma Híbrida de Alerta Temprana, Satélites NASA & Red LoRaWAN Rural
-              </p>
-            </div>
-          </button>
-
-          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <button type="button" data-intro-step="0" class="intro-step-tab px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] font-mono font-semibold transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-              <span id="intro-tab-label-0">Inicio</span>
-            </button>
-            <button type="button" data-intro-step="1" class="intro-step-tab px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="users" class="w-3.5 h-3.5"></i>
-              <span id="intro-tab-label-1">1. Equipo (1–7)</span>
-            </button>
-            <button type="button" data-intro-step="2" class="intro-step-tab px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="clapperboard" class="w-3.5 h-3.5"></i>
-              <span id="intro-tab-label-2">2. Prototipo</span>
-            </button>
-            <button type="button" data-intro-step="3" class="intro-step-tab px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer">
-              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-              <span id="intro-tab-label-3">3. Beneficios</span>
-            </button>
-            <button id="intro-btn-close-x" type="button" class="ml-1 p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-space-800 transition cursor-pointer" title="Ir a la plataforma">
-              <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-          </div>
-        </div>
-
         <!-- CUERPO SCROLLEABLE ADAPTATIVO -->
         <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar py-3 sm:py-4 pr-0.5">
 
@@ -1060,7 +1020,7 @@
       const btnNext = document.getElementById('intro-btn-next');
       const nextLabel = document.getElementById('intro-btn-next-label');
 
-      if (btnBack) btnBack.disabled = currentStep <= 1;
+      if (btnBack) btnBack.disabled = currentStep === 0;
       if (btnNext) btnNext.classList.toggle('hidden', currentStep === 3);
 
       if (nextLabel) {
@@ -1763,10 +1723,8 @@
       }
     });
 
-    // Auto-open logic (Portal de bienvenida con logo CLIMATE)
-    let alreadySeen = false;
-    try { alreadySeen = sessionStorage.getItem(opts.storageKey) === '1'; } catch (e) {}
-    if (opts.standalone || (opts.autoOpen && !alreadySeen)) {
+    // Auto-open logic (Siempre abre en el Portal de Bienvenida al abrir la página)
+    if (opts.standalone || opts.autoOpen) {
       open(0);
     }
 
