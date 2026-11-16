@@ -21,6 +21,7 @@
       bioEs: 'Acompañamiento estratégico del equipo C.L.I.M.A.T.E. en Santiago del Estero, articulando los desafíos agroclimáticos reales del Gran Chaco con validación académica e institucional.',
       bioEn: 'Strategic guidance for Team C.L.I.M.A.T.E. in Santiago del Estero, connecting real Gran Chaco agroclimatic challenges with academic and institutional validation.',
       tags: ['Mentoría NASA', 'Gran Chaco', 'Articulación Territorial'],
+      objectPos: '50% 28%',
       isGroup: false
     },
     {
@@ -35,6 +36,7 @@
       bioEs: 'Relevamiento de necesidades de productores rurales y gobiernos locales frente a sequías prolongadas y anegamientos, traduciendo la ciencia de datos en protocolos de acción claros.',
       bioEn: 'Assessment of rural producers and local governments facing severe droughts and floods, translating data science into clear action protocols.',
       tags: ['Riesgo Hídrico', 'Impacto Social', 'Defensa Civil'],
+      objectPos: '50% 28%',
       isGroup: false
     },
     {
@@ -49,6 +51,7 @@
       bioEs: 'Diseño del sistema híbrido NASA GEE + LightGBM/Random Forest con explicabilidad SHAP, broker ChirpStack v4 y failover autónomo Edge Computing en gateways rurales MultiTech.',
       bioEn: 'Design of the hybrid NASA GEE + LightGBM/Random Forest engine with SHAP explainability, ChirpStack v4 broker, and autonomous Edge Computing failover on rural MultiTech gateways.',
       tags: ['Arquitectura IoT', 'LightGBM + SHAP', 'ChirpStack & Edge'],
+      objectPos: '50% 18%',
       isGroup: false
     },
     {
@@ -63,6 +66,7 @@
       bioEs: 'Construcción de la Planilla Maestra de 30 años, análisis estadístico de tendencias Mann-Kendall / Sen y módulo de ingesta de planillas Excel para validación directa de campo.',
       bioEn: 'Development of the 30-year Master Workbook, Mann-Kendall / Sen statistical trend analysis, and Excel ingestion module for direct field validation.',
       tags: ['SARIMAX 30Y', 'Mann-Kendall', 'Analítica Excel'],
+      objectPos: '50% 20%',
       isGroup: false
     },
     {
@@ -77,6 +81,7 @@
       bioEs: 'Integración de hardware de ultra bajo consumo (ESP32-C3 + SX1262/Ra-02) con sondas de humedad radicular, panel solar autónomo y enlaces sub-GHz de largo alcance sin red celular.',
       bioEn: 'Ultra-low-power hardware integration (ESP32-C3 + SX1262/Ra-02) with root-zone moisture probes, autonomous solar power, and long-range sub-GHz links without cellular service.',
       tags: ['ESP32-C3 + SX1262', 'Telemetría Solar', 'Sonda Suelo'],
+      objectPos: '50% 18%',
       isGroup: false
     },
     {
@@ -91,6 +96,7 @@
       bioEs: 'Diseño visual de la consola geoespacial, mapas coropléticos multiescala del Gran Chaco Americano y síntesis narrativa del impacto ambiental para la toma de decisiones.',
       bioEn: 'Visual design of the geospatial console, multi-scale choropleth maps of the American Gran Chaco, and clear environmental storytelling for decision makers.',
       tags: ['MapLibre GIS', 'UI/UX Espacial', 'Pitch NASA'],
+      objectPos: '50% 16%',
       isGroup: false
     },
     {
@@ -105,6 +111,7 @@
       bioEs: 'Un equipo multidisciplinario unido desde Santiago del Estero para proteger al Gran Chaco Americano combinando observación espacial de la NASA, inteligencia artificial explicable y sensores rurales LoRaWAN.',
       bioEn: 'A multidisciplinary team united from Santiago del Estero to protect the American Gran Chaco by combining NASA Earth observation, explainable AI, and rural LoRaWAN sensors.',
       tags: ['NASA Space Apps', 'Equipo Multidisciplinario', 'Gran Chaco Resiliente'],
+      objectPos: '50% 50%',
       isGroup: true
     }
   ];
@@ -760,10 +767,10 @@
       if (!filmstripEl) return;
       filmstripEl.innerHTML = TEAM_SLIDES.map((s, idx) => {
         const num = String(idx + 1).padStart(2, '0');
-        const objPos = s.isGroup ? 'object-cover object-center' : 'object-cover object-[center_20%]';
+        const objPos = s.objectPos || (s.isGroup ? '50% 50%' : '50% 20%');
         return `
           <button type="button" data-thumb-idx="${idx}" aria-current="${idx === currentMemberIdx}" class="climate-thumb-btn relative aspect-square sm:aspect-[4/3] rounded-xl overflow-hidden border-2 border-space-700 bg-space-950 opacity-60 hover:opacity-100 cursor-pointer group">
-            <img src="${s.image}" alt="Foto ${num}" class="w-full h-full ${objPos}">
+            <img src="${s.image}" alt="Foto ${num}" class="w-full h-full object-cover" style="object-position: ${objPos};">
             <span class="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/75 font-mono text-[9px] font-bold text-white">${num}</span>
           </button>
         `;
@@ -789,8 +796,10 @@
         memberImgEl.alt = slide.name;
         if (slide.isGroup) {
           memberImgEl.className = 'w-full h-full max-h-[380px] object-contain bg-black transition-all duration-500 climate-photo-motion';
+          memberImgEl.style.objectPosition = slide.objectPos || '50% 50%';
         } else {
-          memberImgEl.className = 'w-full h-full max-h-[380px] object-cover object-[center_18%] transition-all duration-500 climate-photo-motion';
+          memberImgEl.className = 'w-full h-full max-h-[380px] object-cover transition-all duration-500 climate-photo-motion';
+          memberImgEl.style.objectPosition = slide.objectPos || '50% 22%';
         }
       }
 
