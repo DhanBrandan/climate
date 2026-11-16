@@ -30,7 +30,7 @@
       image: 'assets/team/2.jpeg?v=2',
       badge: '02 / 07 · TERRITORIO',
       badgeEn: '02 / 07 · TERRITORY',
-      name: 'Integrante 02 · Gestión Climática',
+      name: 'Gabriela Belén Ibañez · Gestión Climática',
       roleEs: 'Investigación Ambiental, Riesgo Hídrico & Vinculación Regional',
       roleEn: 'Environmental Research, Water Risk & Regional Outreach',
       bioEs: 'Relevamiento de necesidades de productores rurales y gobiernos locales frente a sequías prolongadas y anegamientos, traduciendo la ciencia de datos en protocolos de acción claros.',
@@ -76,7 +76,7 @@
       image: 'assets/team/5.jpeg',
       badge: '05 / 07 · HARDWARE IOT',
       badgeEn: '05 / 07 · IOT HARDWARE',
-      name: 'Integrante 05 · Ingeniería de Campo',
+      name: 'Santiago Joaquín Gramajo · Ingeniería de Campo',
       roleEs: 'Nodos Centinela LoRa, Sensores de Suelo & Energía Solar',
       roleEn: 'LoRa Sentinel Nodes, Soil Sensors & Solar Power Engineering',
       bioEs: 'Integración de hardware de ultra bajo consumo (ESP32-C3 + SX1262/Ra-02) con sondas de humedad radicular, panel solar autónomo y enlaces sub-GHz de largo alcance sin red celular.',
@@ -91,7 +91,7 @@
       image: 'assets/team/6.jpeg',
       badge: '06 / 07 · UX & GEOMÁTICA',
       badgeEn: '06 / 07 · UX & GEOMATICS',
-      name: 'Integrante 06 · Cartografía & Diseño',
+      name: 'Milagros Constanza Tavella · Cartografía & Diseño',
       roleEs: 'Experiencia UI/UX, Visualización GIS & Comunicación Científica',
       roleEn: 'UI/UX Experience, GIS Visualization & Scientific Storytelling',
       bioEs: 'Diseño visual de la consola geoespacial, mapas coropléticos multiescala del Gran Chaco Americano y síntesis narrativa del impacto ambiental para la toma de decisiones.',
@@ -938,10 +938,9 @@
       videoChaptersEl.innerHTML = VIDEO_CHAPTERS.map(ch => {
         const isActive = ch.id === activeId;
         return `
-          <button type="button" data-chapter-id="${ch.id}" class="text-left p-3 rounded-xl border transition cursor-pointer ${
-            isActive
-              ? 'bg-cyan-950/50 border-cyan-400/60 shadow-lg shadow-cyan-950/30 intro-surface-card'
-              : 'bg-space-900/75 border-space-800 hover:border-cyan-500/40 intro-surface-card opacity-85 hover:opacity-100'
+          <button type="button" data-chapter-id="${ch.id}" class="text-left p-3 rounded-xl border transition cursor-pointer ${isActive
+            ? 'bg-cyan-950/50 border-cyan-400/60 shadow-lg shadow-cyan-950/30 intro-surface-card'
+            : 'bg-space-900/75 border-space-800 hover:border-cyan-500/40 intro-surface-card opacity-85 hover:opacity-100'
           }">
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="font-mono text-[10px] font-bold ${isActive ? 'text-cyan-400' : 'text-slate-400'}">${lang === 'en' ? ch.codeEn : ch.code}</span>
@@ -959,7 +958,7 @@
           const chapter = VIDEO_CHAPTERS.find(c => c.id === cid);
           if (chapter && videoEl) {
             videoEl.currentTime = chapter.timeSec;
-            videoEl.play().catch(() => {});
+            videoEl.play().catch(() => { });
             syncVideoHud();
           }
         });
@@ -1034,7 +1033,7 @@
       }
 
       if (currentStep === 2 && videoEl) {
-        videoEl.play().catch(() => {});
+        videoEl.play().catch(() => { });
         syncVideoHud();
       } else if (videoEl && !videoEl.paused) {
         videoEl.pause();
@@ -1122,7 +1121,7 @@
       stopAutoCarousel();
       if (videoEl && !videoEl.paused) videoEl.pause();
       if (opts.storageKey) {
-        try { sessionStorage.setItem(opts.storageKey, '1'); } catch (e) {}
+        try { sessionStorage.setItem(opts.storageKey, '1'); } catch (e) { }
       }
       if (opts.standalone) {
         window.location.href = 'index.html';
@@ -1185,13 +1184,13 @@
       });
       videoReplayBtn?.addEventListener('click', () => {
         videoEl.currentTime = 0;
-        videoEl.play().catch(() => {});
+        videoEl.play().catch(() => { });
         syncVideoHud();
       });
       videoPlayPauseBtn?.addEventListener('click', () => {
         const icon = document.getElementById('intro-video-playpause-icon');
         if (videoEl.paused) {
-          videoEl.play().catch(() => {});
+          videoEl.play().catch(() => { });
           if (icon) icon.setAttribute('data-lucide', 'pause');
         } else {
           videoEl.pause();
@@ -1234,7 +1233,7 @@
           try {
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             scrolledFirst = true;
-          } catch (e) {}
+          } catch (e) { }
         }
       });
     }
@@ -1509,17 +1508,17 @@
           </div>
           <div class="flex flex-wrap gap-1.5 mb-2">
             ${[
-              { id: 'quimili', label: 'Quimilí' },
-              { id: 'anatuya', label: 'Añatuya' },
-              { id: 'bandera', label: 'Bandera' },
-              { id: 'termas', label: 'Termas' }
-            ].map(gw => {
-              const activeGw = activeDemoGatewayId === gw.id;
-              const cls = activeGw
-                ? 'bg-cyan-500/25 text-cyan-200 border-cyan-400 shadow-sm shadow-cyan-500/30 font-bold'
-                : 'demo-hud-btn-idle bg-space-800/90 hover:bg-space-700 text-slate-300 border-space-700';
-              return `<button type="button" data-demo-gw="${gw.id}" class="px-2 py-1 rounded-lg text-[10px] font-mono border transition flex items-center gap-1 cursor-pointer ${cls}"><span>🏭</span><span>${gw.label}</span></button>`;
-            }).join('')}
+          { id: 'quimili', label: 'Quimilí' },
+          { id: 'anatuya', label: 'Añatuya' },
+          { id: 'bandera', label: 'Bandera' },
+          { id: 'termas', label: 'Termas' }
+        ].map(gw => {
+          const activeGw = activeDemoGatewayId === gw.id;
+          const cls = activeGw
+            ? 'bg-cyan-500/25 text-cyan-200 border-cyan-400 shadow-sm shadow-cyan-500/30 font-bold'
+            : 'demo-hud-btn-idle bg-space-800/90 hover:bg-space-700 text-slate-300 border-space-700';
+          return `<button type="button" data-demo-gw="${gw.id}" class="px-2 py-1 rounded-lg text-[10px] font-mono border transition flex items-center gap-1 cursor-pointer ${cls}"><span>🏭</span><span>${gw.label}</span></button>`;
+        }).join('')}
           </div>
         </div>
       ` : '';
@@ -1674,7 +1673,7 @@
       stopAutoCarousel();
       if (videoEl && !videoEl.paused) videoEl.pause();
       if (opts.storageKey) {
-        try { sessionStorage.setItem(opts.storageKey, '1'); } catch (e) {}
+        try { sessionStorage.setItem(opts.storageKey, '1'); } catch (e) { }
       }
       root.classList.add('hidden');
       root.classList.remove('flex');
