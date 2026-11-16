@@ -121,7 +121,7 @@
     {
       id: 'node',
       timeSec: 0,
-      endSec: 9.0,
+      endSec: 11.5,
       code: 'ESCENA 01 · 00:00',
       codeEn: 'SCENE 01 · 00:00',
       titleEs: 'Nodo Centinela en Lote',
@@ -133,10 +133,10 @@
     },
     {
       id: 'gateway',
-      timeSec: 9.2,
-      endSec: 18.0,
-      code: 'ESCENA 02 · 00:09',
-      codeEn: 'SCENE 02 · 00:09',
+      timeSec: 11.5,
+      endSec: 21.5,
+      code: 'ESCENA 02 · 00:12',
+      codeEn: 'SCENE 02 · 00:12',
       titleEs: 'Gateway MultiTech en Altura',
       titleEn: 'Elevated MultiTech Gateway',
       descEs: 'Gateway industrial IP67 montado sobre molino rural captando múltiples parcelas a hasta 15 km sin depender de señal celular.',
@@ -146,10 +146,10 @@
     },
     {
       id: 'mesh',
-      timeSec: 18.2,
-      endSec: 28.0,
-      code: 'ESCENA 03 · 00:18',
-      codeEn: 'SCENE 03 · 00:18',
+      timeSec: 21.5,
+      endSec: 30.5,
+      code: 'ESCENA 03 · 00:22',
+      codeEn: 'SCENE 03 · 00:22',
       titleEs: 'Convergencia & Fusión NASA',
       titleEn: 'Network & NASA Fusion',
       descEs: 'Desduplicación en ChirpStack v4, cómputo Edge offline ante tormentas y fusión en vivo con satélites GPM, SMAP y MODIS.',
@@ -244,6 +244,63 @@
     .climate-intro-media-stage {
       background: radial-gradient(circle at 50% 35%, #111c33 0%, #060a14 100%) !important;
       color: #F8FAFC !important;
+    }
+    html.light #climate-intro-overlay .climate-intro-media-stage .climate-hud-overlay-pill,
+    #climate-intro-overlay .climate-intro-media-stage .climate-hud-overlay-pill {
+      background: rgba(4, 8, 20, 0.90) !important;
+      border-color: rgba(56, 189, 248, 0.45) !important;
+      color: #F8FAFC !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55) !important;
+    }
+    html.light #climate-intro-overlay .climate-intro-media-stage #intro-video-hud-caption,
+    #climate-intro-overlay .climate-intro-media-stage #intro-video-hud-caption {
+      color: #F8FAFC !important;
+      font-weight: 600 !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+    }
+    html.light #climate-intro-overlay .climate-intro-media-stage #intro-video-hud-telemetry,
+    html.light #climate-intro-overlay .climate-intro-media-stage #intro-member-badge,
+    #climate-intro-overlay .climate-intro-media-stage #intro-video-hud-telemetry,
+    #climate-intro-overlay .climate-intro-media-stage #intro-member-badge {
+      color: #67E8F9 !important;
+    }
+    html.light #climate-intro-overlay .climate-intro-media-stage #intro-video-time-pill,
+    #climate-intro-overlay .climate-intro-media-stage #intro-video-time-pill {
+      color: #F8FAFC !important;
+    }
+    /* High-contrast signature button for Entering the Platform */
+    .climate-btn-enter-platform {
+      background: linear-gradient(135deg, #F59E0B 0%, #EA580C 55%, #D97706 100%) !important;
+      border: 1.5px solid #FDE68A !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.50), 0 8px 20px rgba(234, 88, 12, 0.35) !important;
+    }
+    .climate-btn-enter-platform:hover {
+      background: linear-gradient(135deg, #FBBF24 0%, #F97316 55%, #EA580C 100%) !important;
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.72), 0 10px 24px rgba(234, 88, 12, 0.45) !important;
+      transform: translateY(-1px);
+    }
+    html.light #climate-intro-overlay .climate-btn-enter-platform {
+      color: #FFFFFF !important;
+    }
+    /* Magical Portal Glow around CLIMATE official logo */
+    @keyframes climatePortalFloat {
+      0%, 100% { transform: translateY(0px) scale(1); box-shadow: 0 0 36px rgba(249, 115, 22, 0.35), 0 0 70px rgba(6, 182, 212, 0.18); }
+      50% { transform: translateY(-4px) scale(1.015); box-shadow: 0 0 54px rgba(249, 115, 22, 0.55), 0 0 90px rgba(6, 182, 212, 0.32); }
+    }
+    .climate-logo-portal {
+      background: radial-gradient(circle at 50% 45%, #160c07 0%, #050507 68%, #020308 100%) !important;
+      animation: climatePortalFloat 4.8s ease-in-out infinite;
+    }
+    .climate-logo-portal:hover {
+      border-color: rgba(251, 146, 60, 0.85) !important;
+      box-shadow: 0 0 65px rgba(249, 115, 22, 0.65), 0 0 95px rgba(34, 211, 238, 0.35) !important;
+    }
+    html.light #climate-intro-overlay .climate-logo-portal #intro-welcome-tap-hint {
+      color: #FDE68A !important;
+    }
+    html.light #climate-intro-overlay .climate-logo-portal:hover #intro-welcome-tap-hint {
+      color: #FFFFFF !important;
     }
     .climate-intro-atmosphere {
       background:
@@ -351,7 +408,7 @@
 
     injectStyles();
 
-    let currentStep = 1; // 1 = Equipo, 2 = Prototipo Video, 3 = Beneficios & Impacto
+    let currentStep = 0; // 0 = Bienvenida Logo CLIMATE, 1 = Equipo, 2 = Prototipo Video, 3 = Beneficios & Impacto
     let currentMemberIdx = 0;
     let isPlayingCarousel = true;
     let carouselTimer = null;
@@ -384,9 +441,9 @@
 
         <!-- CABECERA DEL MODAL -->
         <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-space-800 shrink-0">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-cyan-950/40 shrink-0">
-              <i data-lucide="satellite" class="w-4.5 h-4.5"></i>
+          <button id="intro-header-logo-btn" type="button" class="flex items-center gap-2.5 min-w-0 text-left group cursor-pointer" title="Volver al Portal de Bienvenida CLIMATE">
+            <div class="w-9 h-9 rounded-xl overflow-hidden border border-amber-400/50 bg-black shadow-lg shadow-amber-950/40 shrink-0 group-hover:scale-105 transition-transform">
+              <img src="assets/team/climate_logo.jpg" alt="CLIMATE" class="w-full h-full object-cover" />
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
@@ -397,9 +454,13 @@
                 Plataforma Híbrida de Alerta Temprana, Satélites NASA & Red LoRaWAN Rural
               </p>
             </div>
-          </div>
+          </button>
 
           <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <button type="button" data-intro-step="0" class="intro-step-tab px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] font-mono font-semibold transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              <span id="intro-tab-label-0">Inicio</span>
+            </button>
             <button type="button" data-intro-step="1" class="intro-step-tab px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer">
               <i data-lucide="users" class="w-3.5 h-3.5"></i>
               <span id="intro-tab-label-1">1. Equipo (1–7)</span>
@@ -421,8 +482,46 @@
         <!-- CUERPO SCROLLEABLE ADAPTATIVO -->
         <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar py-3 sm:py-4 pr-0.5">
 
+          <!-- ================= PASO 0: PORTAL DE BIENVENIDA CON LOGO CLIMATE ================= -->
+          <section id="intro-panel-step-0" class="flex flex-col items-center justify-center text-center py-2 sm:py-4 space-y-4 sm:space-y-5">
+            <div class="space-y-1.5 max-w-2xl">
+              <span id="intro-welcome-kicker" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                PORTAL OFICIAL DE BIENVENIDA · GRAN CHACO AMERICANO
+              </span>
+              <h1 id="intro-welcome-title" class="text-xl sm:text-3xl font-black intro-text-main text-white tracking-tight leading-tight">
+                Bienvenido al Sistema Híbrido <span class="text-cyan-400">CLIMATE</span>
+              </h1>
+              <p id="intro-welcome-sub" class="text-xs sm:text-sm intro-text-sub text-slate-300 leading-relaxed">
+                Toca el emblema interactivo para descubrir al equipo y nuestro prototipo en acción, o ingresa directo al mapa geoespacial.
+              </p>
+            </div>
+
+            <!-- Portal Interactivo del Logo CLIMATE -->
+            <button id="intro-logo-portal-trigger" type="button" class="climate-logo-portal relative group w-full max-w-[340px] sm:max-w-[390px] rounded-3xl p-2 sm:p-2.5 border-2 border-amber-400/45 overflow-hidden transition-all duration-300 cursor-pointer focus:outline-none">
+              <img src="assets/team/climate_logo.jpg" alt="Logo oficial CLIMATE" class="w-full aspect-square object-contain rounded-2xl mx-auto transition-transform duration-500 group-hover:scale-[1.03]" />
+              <div class="mt-2 py-1.5 px-3 rounded-xl bg-black/75 border border-amber-400/35 flex items-center justify-center gap-2 text-[11px] font-mono font-bold text-amber-200 group-hover:text-white transition">
+                <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-amber-400 animate-bounce"></i>
+                <span id="intro-welcome-tap-hint">Toca el logo para comenzar el recorrido</span>
+              </div>
+            </button>
+
+            <!-- Dos caminos claros y destacados -->
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
+              <button id="intro-welcome-explore" type="button" class="px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/40 transition flex items-center gap-2 cursor-pointer">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span id="intro-welcome-explore-label">Ver Intro, Equipo y Prototipo</span>
+              </button>
+
+              <button id="intro-welcome-enter" type="button" class="climate-btn-enter-platform px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-black transition flex items-center gap-2 cursor-pointer">
+                <i data-lucide="rocket" class="w-4 h-4"></i>
+                <span id="intro-welcome-enter-label">Entrar Directo a la Plataforma</span>
+              </button>
+            </div>
+          </section>
+
           <!-- ================= PASO 1: CARRUSEL EQUIPO (IMÁGENES 1 A 7) ================= -->
-          <section id="intro-panel-step-1" class="space-y-3.5">
+          <section id="intro-panel-step-1" class="hidden space-y-3.5">
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
               <div>
                 <span id="intro-team-kicker" class="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400">
@@ -454,7 +553,7 @@
 
                 <!-- Badges sobre foto -->
                 <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-                  <span id="intro-member-badge" class="px-2.5 py-1 rounded-lg bg-space-950/85 backdrop-blur-md border border-cyan-400/40 text-[10px] font-mono font-bold text-cyan-300 tracking-wider">
+                  <span id="intro-member-badge" class="climate-hud-overlay-pill px-2.5 py-1 rounded-lg bg-space-950/85 backdrop-blur-md border border-cyan-400/40 text-[10px] font-mono font-bold text-cyan-300 tracking-wider">
                     01 / 07 · MENTORÍA
                   </span>
                 </div>
@@ -558,7 +657,7 @@
             <div class="relative rounded-2xl overflow-hidden climate-intro-media-stage border border-cyan-500/40 shadow-2xl">
               <div class="relative aspect-video max-h-[46vh] w-full bg-black flex items-center justify-center overflow-hidden">
                 <video id="intro-prototype-video" class="w-full h-full object-contain" muted loop playsinline preload="metadata" controlsList="nodownload">
-                  <source src="assets/video/prototipo_climate_unificado.mp4" type="video/mp4">
+                  <source src="assets/video/prototipo_climate_unificado.mp4?v=3" type="video/mp4">
                 </video>
 
                 <!-- HUD Superpuesto Sutil -->
@@ -566,22 +665,22 @@
 
                 <!-- Esquinas tácticas HUD -->
                 <div class="pointer-events-none absolute top-2.5 left-2.5 flex items-center gap-2">
-                  <span class="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-cyan-400/40 font-mono text-[10px] font-bold text-cyan-300 flex items-center gap-1.5">
+                  <span class="climate-hud-overlay-pill px-2.5 py-1 rounded-lg bg-black/85 backdrop-blur-md border border-cyan-400/45 font-mono text-[10px] font-bold text-cyan-300 flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                     <span id="intro-video-hud-telemetry">ESP32-C3 · HUMEDAD SUELO · 915 MHz TX</span>
                   </span>
                 </div>
 
                 <div class="pointer-events-none absolute top-2.5 right-2.5 hidden sm:flex items-center gap-1.5">
-                  <span id="intro-video-time-pill" class="px-2 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/15 font-mono text-[10px] text-slate-200 tabular-nums">
-                    00:00 / 00:27
+                  <span id="intro-video-time-pill" class="climate-hud-overlay-pill px-2 py-1 rounded-lg bg-black/85 backdrop-blur-md border border-white/20 font-mono text-[10px] text-slate-100 tabular-nums">
+                    00:00 / 00:30
                   </span>
                 </div>
 
                 <!-- Subtítulo dinámico de escena en la base del video -->
                 <div class="pointer-events-none absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between gap-2">
-                  <div class="px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/15 max-w-2xl">
-                    <p id="intro-video-hud-caption" class="text-[11px] sm:text-xs text-slate-100 font-medium leading-snug">
+                  <div class="climate-hud-overlay-pill px-3.5 py-2 rounded-xl bg-black/90 backdrop-blur-md border border-cyan-400/40 max-w-2xl shadow-lg">
+                    <p id="intro-video-hud-caption" class="text-[11px] sm:text-xs text-slate-100 font-semibold leading-snug">
                       Estación solar autónoma con sonda de suelo, sensor BME280 y radio LoRa SX1262 capturando microclima en el lote.
                     </p>
                   </div>
@@ -718,7 +817,7 @@
         </div>
 
         <!-- PIE DE NAVEGACIÓN FIJO -->
-        <div class="pt-3 border-t border-space-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div id="intro-modal-footer" class="pt-3 border-t border-space-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <button id="intro-btn-back" type="button" class="px-3.5 py-2 rounded-xl text-xs font-mono font-semibold intro-text-sub text-slate-300 hover:bg-space-800 border border-space-700/80 transition disabled:opacity-35 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
             <span id="intro-btn-back-label">Anterior</span>
@@ -735,8 +834,8 @@
               <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
             </button>
 
-            <button id="intro-btn-enter" type="button" class="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-950/40">
-              <i data-lucide="rocket" class="w-3.5 h-3.5"></i>
+            <button id="intro-btn-enter" type="button" class="climate-btn-enter-platform px-4 sm:px-5 py-2 rounded-xl text-xs font-mono font-black transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="rocket" class="w-4 h-4"></i>
               <span id="intro-btn-enter-label">Entrar a la Plataforma</span>
             </button>
           </div>
@@ -917,7 +1016,7 @@
     function syncVideoHud(forceRender) {
       if (!videoEl) return;
       const t = videoEl.currentTime || 0;
-      const dur = videoEl.duration || 27.5;
+      const dur = videoEl.duration || 30.0;
       if (videoTimePillEl) {
         videoTimePillEl.textContent = `${formatTime(t)} / ${formatTime(dur)}`;
       }
@@ -936,13 +1035,17 @@
     }
 
     function goToStep(step) {
-      currentStep = Math.max(1, Math.min(3, step));
+      currentStep = Math.max(0, Math.min(3, step));
+      const p0 = document.getElementById('intro-panel-step-0');
       const p1 = document.getElementById('intro-panel-step-1');
       const p2 = document.getElementById('intro-panel-step-2');
       const p3 = document.getElementById('intro-panel-step-3');
+      const footerEl = document.getElementById('intro-modal-footer');
+      if (p0) p0.classList.toggle('hidden', currentStep !== 0);
       if (p1) p1.classList.toggle('hidden', currentStep !== 1);
       if (p2) p2.classList.toggle('hidden', currentStep !== 2);
       if (p3) p3.classList.toggle('hidden', currentStep !== 3);
+      if (footerEl) footerEl.classList.toggle('hidden', currentStep === 0);
 
       root.querySelectorAll('.intro-step-tab').forEach(tab => {
         const s = Number(tab.getAttribute('data-intro-step'));
@@ -957,12 +1060,17 @@
       const btnNext = document.getElementById('intro-btn-next');
       const nextLabel = document.getElementById('intro-btn-next-label');
 
-      if (btnBack) btnBack.disabled = currentStep === 1;
+      if (btnBack) btnBack.disabled = currentStep <= 1;
       if (btnNext) btnNext.classList.toggle('hidden', currentStep === 3);
 
       if (nextLabel) {
         if (currentStep === 1) nextLabel.textContent = lang === 'en' ? 'Next: Prototype Video' : 'Siguiente: Prototipo en Video';
         else if (currentStep === 2) nextLabel.textContent = lang === 'en' ? 'Next: Benefits & Impact' : 'Siguiente: Beneficios e Impacto';
+      }
+
+      if (currentStep === 1) {
+        showMember(currentMemberIdx);
+        if (isPlayingCarousel) startAutoCarousel();
       }
 
       if (currentStep === 2 && videoEl) {
@@ -982,9 +1090,21 @@
         if (el) el.textContent = lang === 'en' ? en : es;
       };
       setTxt('intro-subtitle-line', 'Plataforma Híbrida de Alerta Temprana, Satélites NASA & Red LoRaWAN Rural', 'Hybrid Early Warning Platform, NASA Satellites & Rural LoRaWAN');
+      setTxt('intro-tab-label-0', 'Inicio', 'Home');
       setTxt('intro-tab-label-1', '1. Equipo (1–7)', '1. Team (1–7)');
       setTxt('intro-tab-label-2', '2. Prototipo', '2. Prototype');
       setTxt('intro-tab-label-3', '3. Beneficios', '3. Benefits');
+      setTxt('intro-welcome-kicker', 'PORTAL OFICIAL DE BIENVENIDA · GRAN CHACO AMERICANO', 'OFFICIAL WELCOME PORTAL · AMERICAN GRAN CHACO');
+      const welcomeTitleEl = document.getElementById('intro-welcome-title');
+      if (welcomeTitleEl) {
+        welcomeTitleEl.innerHTML = lang === 'en'
+          ? 'Welcome to the Hybrid <span class="text-cyan-400">CLIMATE</span> System'
+          : 'Bienvenido al Sistema Híbrido <span class="text-cyan-400">CLIMATE</span>';
+      }
+      setTxt('intro-welcome-sub', 'Toca el emblema interactivo para descubrir al equipo y nuestro prototipo en acción, o ingresa directo al mapa geoespacial.', 'Tap the interactive emblem to explore the team and prototype in action, or jump straight into the geospatial console.');
+      setTxt('intro-welcome-tap-hint', 'Toca el logo para comenzar el recorrido', 'Tap the logo to start the tour');
+      setTxt('intro-welcome-explore-label', 'Ver Intro, Equipo y Prototipo', 'Explore Intro, Team & Prototype');
+      setTxt('intro-welcome-enter-label', opts.standalone ? 'Abrir Plataforma en Vivo' : 'Entrar Directo a la Plataforma', opts.standalone ? 'Launch Live Platform' : 'Enter Live Platform');
       setTxt('intro-team-kicker', 'NUESTRO EQUIPO · ORDEN 01 A 07', 'OUR TEAM · SEQUENCE 01 TO 07');
       setTxt('intro-team-heading', 'El talento humano detrás de CLIMATE', 'The people behind CLIMATE');
       setTxt('intro-prev-txt', 'Anterior', 'Previous');
@@ -1034,11 +1154,7 @@
     function open(startStep) {
       root.classList.remove('hidden');
       root.classList.add('flex');
-      goToStep(startStep || 1);
-      if (currentStep === 1) {
-        showMember(currentMemberIdx);
-        startAutoCarousel();
-      }
+      goToStep(typeof startStep === 'number' ? startStep : 0);
       if (global.lucide) global.lucide.createIcons();
     }
 
@@ -1079,6 +1195,10 @@
       else startAutoCarousel();
     });
 
+    document.getElementById('intro-header-logo-btn')?.addEventListener('click', () => goToStep(0));
+    document.getElementById('intro-logo-portal-trigger')?.addEventListener('click', () => goToStep(1));
+    document.getElementById('intro-welcome-explore')?.addEventListener('click', () => goToStep(1));
+    document.getElementById('intro-welcome-enter')?.addEventListener('click', close);
     document.getElementById('intro-jump-video')?.addEventListener('click', () => goToStep(2));
     document.getElementById('intro-btn-back')?.addEventListener('click', () => goToStep(currentStep - 1));
     document.getElementById('intro-btn-next')?.addEventListener('click', () => goToStep(currentStep + 1));
@@ -1643,11 +1763,11 @@
       }
     });
 
-    // Auto-open logic
+    // Auto-open logic (Portal de bienvenida con logo CLIMATE)
     let alreadySeen = false;
     try { alreadySeen = sessionStorage.getItem(opts.storageKey) === '1'; } catch (e) {}
     if (opts.standalone || (opts.autoOpen && !alreadySeen)) {
-      open(1);
+      open(0);
     }
 
     return {
